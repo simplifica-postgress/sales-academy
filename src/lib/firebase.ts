@@ -1,6 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Configuração do app web do Firebase.
@@ -19,7 +19,14 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+// Auto-detecta long-polling para redes/proxies que bloqueiam WebChannel.
+// Atenção: o banco deste projeto é NOMEADO "default" (criado assim no
+// console), diferente do banco padrão "(default)" do Firebase.
+export const db = initializeFirestore(
+  app,
+  { experimentalAutoDetectLongPolling: true },
+  "default"
+);
 export const storage = getStorage(app);
 
 export default app;

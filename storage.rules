@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Cada vendedor grava e lê apenas a própria pasta de uploads.
+    // Limite de 500 MB e apenas áudio/vídeo.
+    match /uploads/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 500 * 1024 * 1024
+        && (request.resource.contentType.matches('audio/.*')
+            || request.resource.contentType.matches('video/.*'));
+    }
+  }
+}
