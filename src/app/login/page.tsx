@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/contexts/AuthContext";
+import Logo from "@/components/Logo";
 import Spinner from "@/components/Spinner";
 
 type Mode = "signin" | "signup" | "reset";
@@ -107,12 +108,9 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-md">
         {/* Marca */}
-        <div className="mb-8 text-center">
-          <p className="text-2xl font-bold lowercase tracking-tight text-white">
-            simplifica
-            <span className="text-cyan">.</span>
-          </p>
-          <p className="label-dash mt-2">Sales Academy</p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Logo width={200} />
+          <p className="label-dash mt-3">Sales Academy</p>
           <p className="mt-3 text-sm text-muted">
             30 dias para o seu atendimento ideal, com análise de IA a cada
             envio.

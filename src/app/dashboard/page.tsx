@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import AuthGate from "@/components/AuthGate";
+import Logo from "@/components/Logo";
 
 function Dashboard() {
   const { profile, signOut } = useAuth();
@@ -12,10 +13,8 @@ function Dashboard() {
       <div className="mx-auto w-full max-w-5xl">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <p className="text-xl font-bold lowercase tracking-tight text-white">
-              simplifica<span className="text-cyan">.</span>
-            </p>
-            <p className="label-dash mt-1">Sales Academy</p>
+            <Logo width={150} />
+            <p className="label-dash mt-2">Sales Academy</p>
           </div>
           <button
             type="button"

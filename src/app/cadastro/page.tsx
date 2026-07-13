@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthGate from "@/components/AuthGate";
+import Logo from "@/components/Logo";
 import { completeProfile } from "@/lib/user";
 import { ATTENDANCE_TYPES } from "@/lib/constants";
 import type { AttendanceType } from "@/lib/types";
@@ -80,9 +81,7 @@ function ProfileForm() {
     <main className="min-h-screen bg-background px-4 py-10">
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-8">
-          <p className="text-xl font-bold lowercase tracking-tight text-white">
-            simplifica<span className="text-cyan">.</span>
-          </p>
+          <Logo width={150} />
           <h1 className="mt-4 text-2xl font-bold text-white">
             Vamos montar o seu perfil
           </h1>
