@@ -17,8 +17,14 @@ import { getAuth } from "firebase-admin/auth";
  *   2. variáveis de ambiente FIREBASE_ADMIN_* (recomendado em produção)
  */
 function loadServiceAccount(): ServiceAccount {
-  const filePath = join(process.cwd(), "service-account.json");
-  if (existsSync(filePath)) {
+  // Procura o arquivo tanto na raiz do projeto quanto na pasta-pai
+  // (o dev server pode ser iniciado de qualquer uma via npm --prefix).
+  const candidates = [
+    join(process.cwd(), "service-account.json"),
+    join(process.cwd(), "simplifica-sales-academy", "service-account.json"),
+  ];
+  const filePath = candidates.find((p) => existsSync(p));
+  if (filePath) {
     const raw = JSON.parse(readFileSync(filePath, "utf8"));
     return {
       projectId: raw.project_id,

@@ -13,6 +13,54 @@ import { prepareAudioChunks } from "./audio";
 const TRANSCRIBE_MODEL = "whisper-1";
 const ANALYSIS_MODEL = "gpt-4o";
 
+/**
+ * Modo simulado: quando AI_MOCK=true, o pipeline devolve uma transcrição e
+ * análise de exemplo sem chamar a OpenAI. Útil para desenvolver/demonstrar
+ * sem consumir créditos. A nota geral continua sendo calculada de verdade.
+ */
+const MOCK = process.env.AI_MOCK === "true";
+
+const MOCK_TRANSCRIPT = `Vendedor: Oi, bom dia! Aqui é o Thiago, da Simplifica, tudo bem? Recebi seu contato pedindo informação sobre a consultoria comercial.
+Cliente: Oi, tudo bem. É, eu queria entender melhor como funciona.
+Vendedor: Perfeito. Deixa eu te perguntar rapidinho: hoje quantos vendedores você tem no time?
+Cliente: A gente tem quatro vendedores.
+Vendedor: E qual tem sido o maior gargalo de vocês nas vendas atualmente?
+Cliente: Olha, a gente até gera bastante lead, mas na hora de fechar trava muito. O pessoal some depois que passa o preço.
+Vendedor: Entendi. Olha, a gente tem um método que trabalha exatamente isso, a condução até o fechamento. O investimento é de dois mil reais por mês. O que você acha, fechamos?
+Cliente: Hmm, preciso pensar, é um valor considerável.
+Vendedor: Sem problema, qualquer coisa me chama.`;
+
+const MOCK_RESULT: AIAnalysisResult = {
+  summary:
+    "Thiago, você abriu bem e fez boas perguntas iniciais de diagnóstico, mas apresentou preço cedo demais e não aprofundou a dor antes de propor a solução, o que abriu espaço para o clássico 'vou pensar'.",
+  strengths: [
+    "Abertura cordial e objetiva, se apresentando e conectando ao contato anterior.",
+    "Fez duas boas perguntas de diagnóstico (tamanho do time e principal gargalo).",
+    "Identificou um sinal de dor claro: leads que somem depois do preço.",
+  ],
+  mistakes: [
+    "Apresentou o preço logo após ouvir a dor, sem construir valor antes.",
+    "Não explorou o impacto financeiro do gargalo (quanto essa perda custa por mês).",
+    "Aceitou o 'preciso pensar' sem tentar entender a real objeção nem marcar próximo passo.",
+  ],
+  improvements: [
+    "Antes de falar preço, aprofunde a dor com perguntas de consequência e valor.",
+    "Sempre encerre com um próximo passo agendado (data e hora), não um 'me chama'.",
+  ],
+  criteriaScores: {
+    abertura: 82,
+    clareza: 78,
+    diagnostico: 68,
+    dor: 60,
+    valor: 45,
+    objecoes: 40,
+    proximoPasso: 38,
+    fechamento: 50,
+  },
+  nextMission:
+    "No próximo atendimento, antes de mencionar qualquer preço, faça pelo menos 3 perguntas de diagnóstico (cenário atual, problema e consequência financeira) e só apresente a solução depois que o cliente confirmar a dor.",
+};
+
 let client: OpenAI | null = null;
 function openai(): OpenAI {
   if (!process.env.OPENAI_API_KEY) {
@@ -27,6 +75,7 @@ export async function transcribe(
   input: Buffer,
   originalName: string
 ): Promise<string> {
+  if (MOCK) return MOCK_TRANSCRIPT;
   const chunks = await prepareAudioChunks(input, originalName);
   const parts: string[] = [];
   for (const chunk of chunks) {
@@ -53,6 +102,13 @@ export async function analyze(
   observation: string,
   transcript: string
 ): Promise<{ result: AIAnalysisResult; generalScore: number }> {
+  if (MOCK) {
+    return {
+      result: MOCK_RESULT,
+      generalScore: weightedGeneralScore(MOCK_RESULT.criteriaScores),
+    };
+  }
+
   const completion = await openai().chat.completions.create({
     model: ANALYSIS_MODEL,
     temperature: 0.3,

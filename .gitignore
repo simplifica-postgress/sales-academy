@@ -43,3 +43,6 @@ service-account.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Áudio de teste gerado localmente
+test-atendimento.mp3
