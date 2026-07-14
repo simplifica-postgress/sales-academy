@@ -14,6 +14,7 @@ export default function Logo({
       alt="Simplifica — Aceleradora de Negócios"
       width={width}
       height={Math.round(width / 3.8)}
+      style={{ width, height: "auto" }}
       className={className}
       priority
     />

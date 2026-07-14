@@ -14,6 +14,8 @@ export default function Home() {
     if (loading) return;
     if (!user) {
       router.replace("/login");
+    } else if (profile?.role === "admin") {
+      router.replace("/admin");
     } else if (!profile?.profileCompleted) {
       router.replace("/cadastro");
     } else {
