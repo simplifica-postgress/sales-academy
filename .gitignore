@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Firebase Admin service account (segredo — nunca versionar)
+service-account.json
+
 # vercel
 .vercel
 
