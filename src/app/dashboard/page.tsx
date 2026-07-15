@@ -15,18 +15,26 @@ function attendanceLabel(value: string): string {
   return ATTENDANCE_TYPES.find((t) => t.value === value)?.label ?? value;
 }
 
-function LevelBars({ level }: { level: number }) {
-  return (
-    <div className="mt-3 flex gap-1">
-      {[0, 1, 2, 3, 4].map((i) => (
-        <span
-          key={i}
-          className="h-1 flex-1 rounded-full"
-          style={{ background: i < level - 1 ? "#0087f8" : i === level - 1 ? "#00cbff" : "#152946" }}
-        />
-      ))}
-    </div>
-  );
+const WEEK_DEFS = [
+  { label: "Sem 1", name: "Diagnóstico", end: 7 },
+  { label: "Sem 2", name: "Comercial", end: 14 },
+  { label: "Sem 3", name: "Objeções", end: 21 },
+  { label: "Sem 4", name: "Ideal", end: 30 },
+];
+
+function buildWeekNodes(day: number) {
+  return WEEK_DEFS.map((w, i) => {
+    const prevEnd = i === 0 ? 0 : WEEK_DEFS[i - 1].end;
+    const done = day > w.end;
+    const current = day > prevEnd && day <= w.end;
+    return {
+      ...w,
+      pos: `${((w.end / 30) * 100).toFixed(1)}%`,
+      done,
+      current,
+      future: !done && !current,
+    };
+  });
 }
 
 export default function DashboardPage() {
@@ -53,71 +61,102 @@ function DashboardContent() {
   const hasData = analyses.length > 0;
   const sentToday = uploads.some((u) => isToday(u.createdAt));
   const analysisByUpload = new Map(analyses.map((a) => [a.uploadId, a]));
+  const streak = progress?.highScoreStreak ?? 0;
+  const weekNodes = buildWeekNodes(day);
 
   return (
     <div className="fade-up">
       {/* Cabeçalho */}
-      <div className="mb-[26px] flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Treinamento comercial · 30 dias</div>
-          <h1 className="mt-2 text-[27px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
-            Olá, {firstName}
+          <h1 className="mt-[7px] text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
+            Olá, {firstName} 👋
           </h1>
         </div>
-        <div className="flex items-center gap-3.5">
-          <div className="text-right">
-            <div className="mono-label">Dia {day} de {TRAINING_TOTAL_DAYS}</div>
-            <div className="mt-[5px] text-[13px] font-medium text-cyan">Semana {week.week} — {week.name}</div>
-          </div>
-          <div className="flex h-11 w-11 flex-none items-center justify-center rounded-xl border border-[rgba(0,135,248,.35)] font-mono text-[15px] font-semibold text-cyan" style={{ background: "rgba(0,135,248,.09)" }}>
-            {day}
-          </div>
-        </div>
+        <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,203,255,.28)] px-3.5 py-2 text-[12px] font-semibold text-cyan" style={{ background: "rgba(0,203,255,.08)" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l2.4 6.3L21 9.6l-5 4.3 1.6 6.5L12 16.9 6.4 20.4 8 13.9l-5-4.3 6.6-.3z" /></svg>
+          Nível {level} de 5 · {levelInfo.name}
+        </span>
       </div>
 
-      {/* KPIs */}
-      <div className="mb-3.5 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))" }}>
-        {/* Progresso */}
-        <div className="dc-card px-[22px] py-5">
-          <div className="mono-label">Progresso</div>
-          <div className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="font-mono text-[32px] font-semibold tracking-[-0.02em] text-foreground">{progressPct}</span>
-            <span className="font-mono text-[15px] font-medium text-muted">%</span>
-          </div>
-          <div className="mt-3 h-[5px] overflow-hidden rounded-full bg-indicator">
-            <div className="h-full rounded-full" style={{ width: `${progressPct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8,#00cbff)" }} />
-          </div>
-          <div className="mt-2.5 text-[11.5px] text-muted">Consistência de envio + qualidade das notas</div>
-        </div>
-
-        {/* Nota atual */}
-        <div className="dc-card flex items-center gap-[18px] px-[22px] py-5">
-          <ScoreRing value={lastAnalysis?.generalScore ?? null} size={84} strokeWidth={8} />
-          <div>
-            <div className="mono-label">Nota atual</div>
-            <div className="mt-2 text-[12px] leading-[1.55] text-muted">
-              Média <span className="font-semibold text-foreground">{Math.round(progress?.averageScore ?? 0)}</span> · Melhor <span className="font-semibold text-cyan">{Math.round(progress?.bestScore ?? 0)}</span>
+      {/* Hero: barra de progresso (centro da página) */}
+      <section className="relative mb-4 overflow-hidden rounded-[22px] p-px" style={{ background: "linear-gradient(150deg, rgba(0,135,248,.55), rgba(0,45,115,.4) 45%, rgba(0,203,255,.3))", boxShadow: "0 22px 60px rgba(0,2,12,.5)" }}>
+        <div className="relative rounded-[21px]" style={{ padding: "clamp(24px,4vw,40px) clamp(22px,4vw,44px)", background: "radial-gradient(760px 340px at 82% -30%, rgba(0,135,248,.22), transparent 62%), linear-gradient(120deg, #00173d 0%, #03112d 60%)" }}>
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <div>
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-cyan">Sua jornada até o atendimento ideal</div>
+              <div className="mt-3.5 flex items-baseline gap-3">
+                <span className="font-semibold leading-none text-foreground" style={{ fontSize: "clamp(56px,10vw,92px)", letterSpacing: "-0.04em", textShadow: "0 4px 40px rgba(0,135,248,.4)" }}>
+                  {progressPct}<span className="text-muted" style={{ fontSize: "0.42em" }}>%</span>
+                </span>
+                <div className="pb-2">
+                  <div className="text-[14px] font-medium text-foreground">concluído</div>
+                  <div className="mt-0.5 text-[12.5px] font-medium text-muted">Dia {day} de {TRAINING_TOTAL_DAYS}</div>
+                </div>
+              </div>
             </div>
-            {hasData && lastAnalysis && (
-              <Link href={`/analise/${lastAnalysis.id}`} className="mt-2 inline-block text-[12.5px] font-semibold text-cyan hover:text-cyan-light">
-                Ver última análise →
-              </Link>
-            )}
+            <div className="text-right">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Semana atual</div>
+              <div className="mt-1.5 text-[17px] font-semibold text-foreground">Semana {week.week}</div>
+              <div className="mt-0.5 text-[12.5px] font-medium text-cyan">{week.name}</div>
+            </div>
           </div>
-        </div>
 
-        {/* Nível */}
-        <div className="dc-card px-[22px] py-5">
-          <div className="flex items-center justify-between">
-            <div className="mono-label">Nível</div>
-            <span className="rounded-full border border-[rgba(0,203,255,.25)] px-2.5 py-1 font-mono text-[10px] font-semibold text-cyan" style={{ background: "rgba(0,203,255,.08)" }}>
-              {level} / 5
-            </span>
+          {/* Barra com thumb e marcadores */}
+          <div className="relative mb-2 mt-[38px] px-0.5">
+            <div className="relative h-4 overflow-hidden rounded-full border border-[rgba(0,45,115,.7)]" style={{ background: "#0a1c38" }}>
+              <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progressPct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8 55%,#00e3ff)", boxShadow: "0 0 24px rgba(0,203,255,.5)" }} />
+            </div>
+            <div className="absolute top-1/2 h-[30px] w-[30px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-cyan bg-white" style={{ left: `${progressPct}%`, boxShadow: "0 0 0 6px rgba(0,203,255,.18), 0 6px 18px rgba(0,2,12,.6)", zIndex: 3 }} />
+            {weekNodes.map((w) => (
+              <div key={w.label} className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ left: w.pos, zIndex: 2 }}>
+                <span className="block h-2.5 w-2.5 rounded-full border-2 border-card" style={{ background: w.done ? "#00e3ff" : w.current ? "#0087f8" : "#0a1c38", boxShadow: w.current ? "0 0 0 5px rgba(0,135,248,.22)" : w.done ? "0 0 10px rgba(0,227,255,.6)" : "none" }} />
+              </div>
+            ))}
           </div>
-          <div className="mt-2.5 text-[21px] font-semibold tracking-[-0.01em] text-foreground">{levelInfo.name}</div>
-          <div className="mt-1.5 text-[12px] leading-[1.5] text-muted">{levelInfo.description}</div>
-          <LevelBars level={level} />
+
+          {/* Labels das semanas */}
+          <div className="relative mt-3 flex justify-between">
+            {weekNodes.map((w) => (
+              <div key={w.label} className="flex-1 px-0.5 text-center">
+                <div className="text-[9.5px] font-semibold uppercase tracking-[0.12em]" style={{ color: w.future ? "#5f778a" : "#00cbff" }}>{w.label}</div>
+                <div className="mt-[3px] truncate text-[11px] font-medium" style={{ color: w.future ? "#5f778a" : "#ffffff" }}>{w.name}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats compactos */}
+          <div className="mt-8 grid gap-3.5 border-t border-[rgba(0,45,115,.55)] pt-[26px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+            <div className="flex items-center gap-3.5">
+              <ScoreRing value={lastAnalysis?.generalScore ?? null} size={56} strokeWidth={6} />
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Nota atual</div>
+                {hasData && lastAnalysis && (
+                  <Link href={`/analise/${lastAnalysis.id}`} className="mt-1.5 inline-block text-[12px] font-semibold text-cyan hover:text-cyan-light">Ver análise →</Link>
+                )}
+              </div>
+            </div>
+            <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média</div>
+              <div className="mt-1.5 text-[24px] font-semibold text-foreground">{Math.round(progress?.averageScore ?? 0)}</div>
+            </div>
+            <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Melhor nota</div>
+              <div className="mt-1.5 text-[24px] font-semibold text-cyan">{Math.round(progress?.bestScore ?? 0)}</div>
+            </div>
+            <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Sequência</div>
+              <div className="mt-1.5 flex items-baseline gap-1.5"><span className="text-[24px] font-semibold text-foreground">{streak}</span><span className="text-[12px] font-medium text-muted">dias 🔥</span></div>
+            </div>
+          </div>
         </div>
+      </section>
+
+      {/* Dica de rolagem */}
+      <div className="mb-4 mt-0.5 flex items-center justify-center gap-2 text-[11.5px] font-medium tracking-[0.08em] text-muted">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ animation: "pulseSoft 2s infinite" }}><path d="M12 5v14" /><path d="M6 13l6 6 6-6" /></svg>
+        role para ver missão, análises e histórico
       </div>
 
       {/* CTA enviar */}
@@ -127,7 +166,7 @@ function DashboardContent() {
         style={{ background: "linear-gradient(100deg, #00173d 0%, #03112d 70%)", boxShadow: "0 12px 32px rgba(0,2,12,.35)" }}
       >
         <div className="flex items-center gap-4">
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl border border-[rgba(0,135,248,.35)] text-cyan" style={{ background: "rgba(0,135,248,.12)" }}>
+          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl border border-[rgba(255,255,255,.9)] bg-white text-primary">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3v10" /><path d="M7.5 7.5 12 3l4.5 4.5" /><path d="M4 15v3a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-3" /></svg>
           </span>
           <div>
@@ -205,7 +244,7 @@ function DashboardContent() {
                 <div key={u.id} className="flex items-center gap-3.5 border-b border-[rgba(0,45,115,.3)] px-0.5 py-3 last:border-0">
                   <span className="w-[46px] flex-none font-mono text-[12px] text-muted">{shortDate(u.createdAt)}</span>
                   <span className="flex-1 truncate text-[13.5px] text-foreground">{u.fileType === "video" ? "Vídeo" : "Áudio"} · {attendanceLabel(u.attendanceType)}</span>
-                  <span className="w-[30px] flex-none text-right font-mono text-[14px] font-semibold" style={{ color: a ? scoreColor(a.generalScore) : "#6d8698" }}>
+                  <span className="w-[30px] flex-none text-right font-mono text-[14px] font-semibold" style={{ color: a ? scoreColor(a.generalScore) : "#9db2c3" }}>
                     {a ? Math.round(a.generalScore) : "—"}
                   </span>
                   <span className="flex-none rounded-full px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.06em]" style={{ color: pill.color, background: pill.bg, border: `1px solid ${pill.border}` }}>

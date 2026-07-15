@@ -92,7 +92,7 @@ function SellerDetail() {
           <span className="mono-label">Evolução das notas</span>
           <span className="flex gap-3.5 font-mono text-[10.5px] text-muted">
             <span><span className="mr-1.5 inline-block h-[2px] w-3.5 align-middle" style={{ background: "#00cbff" }} />nota</span>
-            <span><span className="mr-1.5 inline-block w-3.5 align-middle" style={{ borderTop: "1px dashed #6d8698", height: 0 }} />meta 85</span>
+            <span><span className="mr-1.5 inline-block w-3.5 align-middle" style={{ borderTop: "1px dashed #9db2c3", height: 0 }} />meta 85</span>
           </span>
         </div>
         {analyses.length > 0 ? (

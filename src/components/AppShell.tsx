@@ -151,7 +151,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   style={{
                     borderColor: active ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.55)",
                     background: active ? "linear-gradient(90deg, rgba(0,135,248,.16), rgba(0,135,248,.03))" : "transparent",
-                    color: active ? "#f5f9fb" : "#6d8698",
+                    color: active ? "#ffffff" : "#9db2c3",
                   }}
                 >
                   {item.label === "Enviar atendimento" ? "Enviar" : item.label}

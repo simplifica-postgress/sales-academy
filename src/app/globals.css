@@ -12,8 +12,8 @@
   --primary: #0087f8;
   --cyan: #00cbff;
   --cyan-light: #00e3ff;
-  --foreground: #f5f9fb;
-  --muted: #6d8698;
+  --foreground: #ffffff;
+  --muted: #9db2c3;
   --danger: #ff8d85;
 }
 
@@ -31,8 +31,9 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Fonte única Sora; font-mono mapeado para Sora para compatibilidade. */
+  --font-sans: var(--font-sora);
+  --font-mono: var(--font-sora);
 }
 
 html,
@@ -40,7 +41,7 @@ body {
   margin: 0;
   padding: 0;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-sora), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -112,9 +113,9 @@ select option {
   box-shadow: 0 12px 32px rgba(0, 2, 12, 0.35);
 }
 
-/* Label em Geist Mono, caixa alta, espaçada */
+/* Label caixa alta espaçada (Sora) */
 .mono-label {
-  font-family: var(--font-geist-mono), monospace;
+  font-family: var(--font-sora), sans-serif;
   font-weight: 600;
   font-size: 10.5px;
   letter-spacing: 0.16em;
@@ -130,12 +131,12 @@ select option {
   border: 1px solid rgba(0, 45, 115, 0.65);
   background: var(--card-alt);
   color: var(--foreground);
-  font: 400 13.5px var(--font-geist-sans), sans-serif;
+  font: 400 13.5px var(--font-sora), sans-serif;
   outline: none;
   transition: all 0.15s;
 }
 .field::placeholder {
-  color: rgba(109, 134, 152, 0.55);
+  color: rgba(157, 178, 195, 0.55);
 }
 .field:focus {
   border-color: var(--primary);

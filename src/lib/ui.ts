@@ -3,8 +3,8 @@ import type { UploadStatus } from "./types";
 /** Cor da nota conforme faixa (padrão do design). */
 export function scoreColor(v: number): string {
   if (v >= 85) return "#00e3ff"; // cyan-light
-  if (v >= 70) return "#f5f9fb"; // foreground
-  return "#6d8698"; // muted
+  if (v >= 70) return "#ffffff"; // foreground
+  return "#9db2c3"; // muted
 }
 
 /** Preenchimento da barra de critério conforme faixa. */
@@ -34,7 +34,7 @@ export function statusPill(status: UploadStatus): StatusPill {
     case "pending":
       return {
         label: "na fila",
-        color: "#6d8698",
+        color: "#9db2c3",
         bg: "#152946",
         border: "rgba(0,45,115,.5)",
       };

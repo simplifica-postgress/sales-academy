@@ -47,7 +47,7 @@ function History() {
               <button key={f} onClick={() => setFilter(f)} className="rounded-full px-3.5 py-[7px] text-[12.5px] font-medium transition" style={{
                 border: `1px solid ${active ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.55)"}`,
                 background: active ? "rgba(0,135,248,.12)" : "#020d23",
-                color: active ? "#00cbff" : "#6d8698",
+                color: active ? "#00cbff" : "#9db2c3",
               }}>{f}</button>
             );
           })}
@@ -77,7 +77,7 @@ function History() {
                       <span className="font-mono text-[12px] text-muted">{shortDate(u.createdAt)}</span>
                       <span className="text-[13.5px] text-foreground">{attendanceLabel(u.attendanceType)}</span>
                       <span className="text-[12.5px] text-muted">{u.fileType === "video" ? "Vídeo" : "Áudio"}</span>
-                      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: a ? scoreColor(a.generalScore) : "#6d8698" }}>{a ? Math.round(a.generalScore) : "—"}</span>
+                      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: a ? scoreColor(a.generalScore) : "#9db2c3" }}>{a ? Math.round(a.generalScore) : "—"}</span>
                       <span className="text-center"><span className="inline-block rounded-full px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.06em]" style={{ color: pill.color, background: pill.bg, border: `1px solid ${pill.border}` }}>{pill.label}</span></span>
                       <span className="text-right">{a && <Link href={`/analise/${a.id}`} className="text-[12px] font-semibold text-cyan hover:text-cyan-light">Ver análise</Link>}</span>
                     </div>

@@ -117,7 +117,7 @@ function ProfileForm() {
                     style={{
                       border: `1px solid ${active ? "rgba(0,135,248,.55)" : "rgba(0,45,115,.55)"}`,
                       background: active ? "rgba(0,135,248,.14)" : "#020d23",
-                      color: active ? "#00cbff" : "#6d8698",
+                      color: active ? "#00cbff" : "#9db2c3",
                     }}
                   >
                     {label}

@@ -79,11 +79,11 @@ function UploadForm() {
               return (
                 <div key={i} className="flex items-center gap-[11px]">
                   <span className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full text-[9.5px] font-semibold" style={{
-                    color: done ? "#00cbff" : current ? "#0087f8" : "#6d8698",
+                    color: done ? "#00cbff" : current ? "#0087f8" : "#9db2c3",
                     background: done ? "rgba(0,203,255,.1)" : current ? "rgba(0,135,248,.12)" : "#152946",
                     border: `1px solid ${done ? "rgba(0,203,255,.35)" : current ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.5)"}`,
                   }}>{done ? "✓" : i + 1}</span>
-                  <span className="text-[13px] font-medium" style={{ color: done ? "#6d8698" : current ? "#f5f9fb" : "rgba(109,134,152,.6)" }}>{label}{current ? "…" : ""}</span>
+                  <span className="text-[13px] font-medium" style={{ color: done ? "#9db2c3" : current ? "#ffffff" : "rgba(157,178,195,.6)" }}>{label}{current ? "…" : ""}</span>
                 </div>
               );
             })}
@@ -122,12 +122,12 @@ function UploadForm() {
               <button key={t.value} type="button" onClick={() => setAttendanceType(t.value)} className="rounded-full px-4 py-2 text-[13px] font-medium transition" style={{
                 border: `1px solid ${active ? "rgba(0,135,248,.55)" : "rgba(0,45,115,.55)"}`,
                 background: active ? "rgba(0,135,248,.14)" : "#020d23",
-                color: active ? "#00cbff" : "#6d8698",
+                color: active ? "#00cbff" : "#9db2c3",
               }}>{t.label}</button>
             );
           })}
         </div>
-        <div className="mono-label mb-2.5 mt-5">Observação <span className="lowercase" style={{ color: "rgba(109,134,152,.6)", letterSpacing: 0 }}>(opcional)</span></div>
+        <div className="mono-label mb-2.5 mt-5">Observação <span className="lowercase" style={{ color: "rgba(157,178,195,.6)", letterSpacing: 0 }}>(opcional)</span></div>
         <textarea rows={3} value={observation} onChange={(e) => setObservation(e.target.value)} className="field" style={{ resize: "vertical" }} placeholder="Ex.: lead pediu desconto no final; era um follow-up de proposta…" />
       </div>
 

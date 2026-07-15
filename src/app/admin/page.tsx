@@ -35,7 +35,7 @@ function Row({ row, onOpen }: { row: SellerRow; onOpen: () => void }) {
         <span className="h-1 flex-1 overflow-hidden rounded-full bg-indicator"><span className="block h-full rounded-full" style={{ width: `${pct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8)" }} /></span>
         <span className="w-8 text-right font-mono text-[11.5px] text-muted">{pct}%</span>
       </span>
-      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: avg > 0 ? scoreColor(avg) : "#6d8698" }}>{avg > 0 ? Math.round(avg) : "—"}</span>
+      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: avg > 0 ? scoreColor(avg) : "#9db2c3" }}>{avg > 0 ? Math.round(avg) : "—"}</span>
       <span><span className="inline-block whitespace-nowrap rounded-full border border-[rgba(0,203,255,.22)] px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.04em] text-cyan" style={{ background: "rgba(0,203,255,.07)" }}>{level} · {levelName(level)}</span></span>
       <span className="text-right font-mono text-[11.5px] text-muted">{shortDate(row.lastUpload)}</span>
     </button>

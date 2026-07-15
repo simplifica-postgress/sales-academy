@@ -22,11 +22,11 @@ export default function Journey({ currentDay }: { currentDay: number }) {
               opacity: !done && !current ? 0.65 : 1,
             }}
           >
-            <div className="flex items-center justify-between font-mono text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: current ? "#00cbff" : "#6d8698" }}>
+            <div className="flex items-center justify-between font-mono text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: current ? "#00cbff" : "#9db2c3" }}>
               <span>Semana {w.week}</span>
               {done ? <span className="text-cyan">✓</span> : current ? <span style={{ animation: "pulseSoft 2s infinite" }}>em curso</span> : null}
             </div>
-            <div className="mt-[7px] text-[12.5px] font-medium" style={{ color: done || current ? "#f5f9fb" : "#6d8698" }}>
+            <div className="mt-[7px] text-[12.5px] font-medium" style={{ color: done || current ? "#ffffff" : "#9db2c3" }}>
               {w.name}
             </div>
             <div className="mt-2.5 h-[3px] overflow-hidden rounded-full bg-indicator">

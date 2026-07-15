@@ -177,7 +177,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="mt-[22px] text-center font-mono text-[11px] text-[rgba(109,134,152,.6)]">
+        <p className="mt-[22px] text-center font-mono text-[11px] text-[rgba(157,178,195,.6)]">
           Simplifica © 2026 · Aceleradora de Negócios
         </p>
       </div>
