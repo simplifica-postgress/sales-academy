@@ -1,32 +1,15 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthGate from "@/components/AuthGate";
-import AppHeader from "@/components/AppHeader";
-import Card from "@/components/Card";
-import Spinner from "@/components/Spinner";
-import {
-  ACCEPTED_AUDIO_TYPES,
-  ACCEPTED_VIDEO_TYPES,
-  ATTENDANCE_TYPES,
-  MAX_UPLOAD_BYTES,
-} from "@/lib/constants";
+import AppShell from "@/components/AppShell";
+import { ACCEPTED_AUDIO_TYPES, ACCEPTED_VIDEO_TYPES, ATTENDANCE_TYPES, MAX_UPLOAD_BYTES } from "@/lib/constants";
 
 const ACCEPT = [...ACCEPTED_AUDIO_TYPES, ...ACCEPTED_VIDEO_TYPES].join(",");
-
-const inputClass =
-  "w-full rounded-lg border border-card-border bg-card-alt px-3 py-2.5 text-sm text-foreground placeholder-muted/60 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30";
-
-const PROCESSING_STEPS = [
-  "Enviando seu atendimento…",
-  "Transcrevendo a conversa…",
-  "Analisando sua performance comercial…",
-  "Montando seu plano de melhoria…",
-];
+const PROCESSING_STEPS = ["Enviando seu atendimento", "Transcrevendo a conversa", "Analisando sua performance comercial", "Montando seu plano de melhoria"];
 
 function humanSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -35,7 +18,6 @@ function humanSize(bytes: number): string {
 function UploadForm() {
   const { profile } = useAuth();
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [attendanceType, setAttendanceType] = useState("");
@@ -44,25 +26,15 @@ function UploadForm() {
   const [submitting, setSubmitting] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
-  const suggestedTypes = profile?.attendanceTypes ?? [];
-  const typeOptions = ATTENDANCE_TYPES.filter(
-    (t) => suggestedTypes.length === 0 || suggestedTypes.includes(t.value)
-  );
+  const suggested = profile?.attendanceTypes ?? [];
+  const typeOptions = ATTENDANCE_TYPES.filter((t) => suggested.length === 0 || suggested.includes(t.value));
 
   function onPickFile(f: File | null) {
     setError("");
     if (!f) return setFile(null);
-    const ok =
-      ACCEPTED_AUDIO_TYPES.includes(f.type) ||
-      ACCEPTED_VIDEO_TYPES.includes(f.type);
-    if (!ok) {
-      setError("Formato não suportado. Envie um áudio ou vídeo.");
-      return;
-    }
-    if (f.size > MAX_UPLOAD_BYTES) {
-      setError("Arquivo muito grande (máximo 500 MB).");
-      return;
-    }
+    const ok = ACCEPTED_AUDIO_TYPES.includes(f.type) || ACCEPTED_VIDEO_TYPES.includes(f.type);
+    if (!ok) return setError("Formato não suportado. Envie um áudio ou vídeo.");
+    if (f.size > MAX_UPLOAD_BYTES) return setError("Arquivo muito grande (máximo 500 MB).");
     setFile(f);
   }
 
@@ -70,32 +42,20 @@ function UploadForm() {
     e.preventDefault();
     if (!file) return setError("Selecione um arquivo de áudio ou vídeo.");
     if (!attendanceType) return setError("Selecione o tipo de atendimento.");
-
     setError("");
     setSubmitting(true);
     setStepIndex(0);
-    // Avança as mensagens de status enquanto processa (feedback ao usuário).
-    const ticker = setInterval(() => {
-      setStepIndex((i) => Math.min(i + 1, PROCESSING_STEPS.length - 1));
-    }, 6000);
-
+    const ticker = setInterval(() => setStepIndex((i) => Math.min(i + 1, PROCESSING_STEPS.length - 1)), 6000);
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Sessão expirada. Entre novamente.");
-
       const body = new FormData();
       body.append("file", file);
       body.append("attendanceType", attendanceType);
       body.append("observation", observation);
-
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body,
-      });
+      const res = await fetch("/api/analyze", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Falha ao processar.");
-
       router.replace(`/analise/${data.analysisId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado.");
@@ -107,118 +67,75 @@ function UploadForm() {
 
   if (submitting) {
     return (
-      <Card>
-        <div className="flex flex-col items-center gap-4 py-8 text-center">
-          <Spinner />
-          <div>
-            <p className="text-base font-semibold text-white">
-              {PROCESSING_STEPS[stepIndex]}
-            </p>
-            <p className="mt-2 text-sm text-muted">
-              Isso pode levar alguns minutos, dependendo do tamanho da gravação.
-              Não feche esta página.
-            </p>
+      <div className="fade-up mx-auto max-w-[660px]">
+        <div className="dc-card mt-10 px-8 py-11 text-center">
+          <div className="mx-auto h-[52px] w-[52px] rounded-full border-[3px] border-indicator" style={{ borderTopColor: "#00cbff", animation: "spin .9s linear infinite" }} />
+          <div className="mt-[22px] text-base font-semibold text-foreground">{PROCESSING_STEPS[stepIndex]}…</div>
+          <p className="mt-2 text-[12.5px] leading-[1.6] text-muted">Isso pode levar alguns minutos, dependendo do tamanho da gravação.<br />Não feche esta página.</p>
+          <div className="mx-auto mt-[26px] flex max-w-[330px] flex-col gap-[11px] text-left">
+            {PROCESSING_STEPS.map((label, i) => {
+              const done = i < stepIndex;
+              const current = i === stepIndex;
+              return (
+                <div key={i} className="flex items-center gap-[11px]">
+                  <span className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full text-[9.5px] font-semibold" style={{
+                    color: done ? "#00cbff" : current ? "#0087f8" : "#6d8698",
+                    background: done ? "rgba(0,203,255,.1)" : current ? "rgba(0,135,248,.12)" : "#152946",
+                    border: `1px solid ${done ? "rgba(0,203,255,.35)" : current ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.5)"}`,
+                  }}>{done ? "✓" : i + 1}</span>
+                  <span className="text-[13px] font-medium" style={{ color: done ? "#6d8698" : current ? "#f5f9fb" : "rgba(109,134,152,.6)" }}>{label}{current ? "…" : ""}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Card title="Arquivo do atendimento">
-        <label
-          htmlFor="file"
-          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-card-border bg-card-alt px-4 py-8 text-center transition hover:border-primary/60"
-        >
-          <span className="text-3xl">{file ? "🎧" : "⬆️"}</span>
+    <form onSubmit={handleSubmit} className="fade-up mx-auto max-w-[660px]">
+      <div className="mb-6">
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Enviar atendimento</h1>
+        <p className="mt-2 text-[13.5px] leading-[1.6] text-muted">Áudio ou vídeo de um atendimento real. A IA transcreve, analisa e devolve seu plano de melhoria em minutos.</p>
+      </div>
+
+      <label htmlFor="up-file" className="mb-3.5 flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl px-5 py-[38px] text-center transition hover:border-[rgba(0,135,248,.65)]" style={{ border: `1.5px dashed ${file ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.7)"}`, background: file ? "rgba(0,135,248,.05)" : "rgba(2,13,35,.5)" }}>
+        <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] border border-[rgba(0,135,248,.35)] text-cyan" style={{ background: "rgba(0,135,248,.1)" }}>
           {file ? (
-            <>
-              <span className="text-sm font-medium text-foreground">
-                {file.name}
-              </span>
-              <span className="text-xs text-muted">
-                {humanSize(file.size)} · clique para trocar
-              </span>
-            </>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 18V6l10-2v11" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="15" r="2.5" /></svg>
           ) : (
-            <>
-              <span className="text-sm font-medium text-foreground">
-                Clique para escolher um áudio ou vídeo
-              </span>
-              <span className="text-xs text-muted">
-                MP3, M4A, WAV, MP4, MOV · até 500 MB
-              </span>
-            </>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3v10" /><path d="M7.5 7.5 12 3l4.5 4.5" /><path d="M4 15v3a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-3" /></svg>
           )}
-          <input
-            id="file"
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT}
-            className="hidden"
-            onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-          />
-        </label>
-      </Card>
+        </span>
+        <div className="text-sm font-semibold text-foreground">{file ? file.name : "Clique para escolher um áudio ou vídeo"}</div>
+        <div className="font-mono text-[11.5px] text-muted">{file ? `${humanSize(file.size)} · clique para trocar` : "MP3, M4A, WAV, MP4, MOV · até 500 MB"}</div>
+        <input id="up-file" type="file" accept={ACCEPT} className="hidden" onChange={(e) => onPickFile(e.target.files?.[0] ?? null)} />
+      </label>
 
-      <Card title="Sobre o atendimento">
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="type" className="label-dash mb-1.5 block">
-              Tipo de atendimento
-            </label>
-            <select
-              id="type"
-              value={attendanceType}
-              onChange={(e) => setAttendanceType(e.target.value)}
-              className={inputClass}
-            >
-              <option value="" disabled>
-                Selecione…
-              </option>
-              {typeOptions.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="obs" className="label-dash mb-1.5 block">
-              Observação (opcional)
-            </label>
-            <textarea
-              id="obs"
-              rows={3}
-              value={observation}
-              onChange={(e) => setObservation(e.target.value)}
-              className={inputClass}
-              placeholder="Ex.: lead pediu desconto no final; era um follow-up de proposta…"
-            />
-          </div>
+      <div className="dc-card mb-3.5 p-6">
+        <div className="mono-label mb-3">Tipo de atendimento</div>
+        <div className="flex flex-wrap gap-2">
+          {typeOptions.map((t) => {
+            const active = attendanceType === t.value;
+            return (
+              <button key={t.value} type="button" onClick={() => setAttendanceType(t.value)} className="rounded-full px-4 py-2 text-[13px] font-medium transition" style={{
+                border: `1px solid ${active ? "rgba(0,135,248,.55)" : "rgba(0,45,115,.55)"}`,
+                background: active ? "rgba(0,135,248,.14)" : "#020d23",
+                color: active ? "#00cbff" : "#6d8698",
+              }}>{t.label}</button>
+            );
+          })}
         </div>
-      </Card>
+        <div className="mono-label mb-2.5 mt-5">Observação <span className="lowercase" style={{ color: "rgba(109,134,152,.6)", letterSpacing: 0 }}>(opcional)</span></div>
+        <textarea rows={3} value={observation} onChange={(e) => setObservation(e.target.value)} className="field" style={{ resize: "vertical" }} placeholder="Ex.: lead pediu desconto no final; era um follow-up de proposta…" />
+      </div>
 
-      {error && (
-        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-          {error}
-        </p>
-      )}
+      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          className="flex-1 rounded-lg bg-gradient-to-r from-blue-dark to-primary px-4 py-3 text-sm font-semibold text-white transition hover:from-primary hover:to-cyan"
-        >
-          Enviar para análise
-        </button>
-        <Link
-          href="/dashboard"
-          className="rounded-lg border border-card-border bg-card-alt px-4 py-3 text-sm font-medium text-muted transition hover:text-foreground"
-        >
-          Cancelar
-        </Link>
+      <div className="flex gap-2.5">
+        <button type="submit" className="btn-primary flex-1 rounded-[11px] px-5 py-[13px] text-sm font-semibold">Enviar para análise</button>
+        <button type="button" onClick={() => router.push("/dashboard")} className="rounded-[11px] border border-[rgba(0,45,115,.6)] bg-card-alt px-5 py-[13px] text-sm font-medium text-muted transition hover:text-foreground">Cancelar</button>
       </div>
     </form>
   );
@@ -227,21 +144,9 @@ function UploadForm() {
 export default function UploadPage() {
   return (
     <AuthGate>
-      <main className="min-h-screen bg-background px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mx-auto w-full max-w-2xl">
-          <AppHeader />
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">
-              Enviar atendimento
-            </h1>
-            <p className="mt-1 text-sm text-muted">
-              Envie um áudio ou vídeo de um atendimento real. A IA transcreve,
-              analisa e devolve seu plano de melhoria.
-            </p>
-          </div>
-          <UploadForm />
-        </div>
-      </main>
+      <AppShell>
+        <UploadForm />
+      </AppShell>
     </AuthGate>
   );
 }

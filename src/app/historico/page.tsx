@@ -1,134 +1,104 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSellerData } from "@/hooks/useSellerData";
 import AuthGate from "@/components/AuthGate";
-import AppHeader from "@/components/AppHeader";
-import Card from "@/components/Card";
+import AppShell from "@/components/AppShell";
 import Spinner from "@/components/Spinner";
 import { ATTENDANCE_TYPES } from "@/lib/constants";
 import { shortDate } from "@/lib/training";
-import type { UploadStatus } from "@/lib/types";
-
-const STATUS_LABELS: Record<UploadStatus, { label: string; className: string }> =
-  {
-    pending: { label: "Na fila", className: "bg-indicator text-muted" },
-    processing: { label: "Processando", className: "bg-primary/15 text-primary" },
-    done: { label: "Concluído", className: "bg-cyan/15 text-cyan" },
-    error: { label: "Erro", className: "bg-red-500/15 text-red-400" },
-  };
+import { scoreColor, statusPill } from "@/lib/ui";
 
 function attendanceLabel(value: string): string {
   return ATTENDANCE_TYPES.find((t) => t.value === value)?.label ?? value;
 }
 
+const GRID = "70px 1fr 110px 70px 120px 90px";
+
 function History() {
   const { user } = useAuth();
   const { uploads, analyses, loading } = useSellerData(user?.uid);
+  const [filter, setFilter] = useState("Todos");
+
   const analysisByUpload = new Map(analyses.map((a) => [a.uploadId, a]));
+  const presentTypes = [...new Set(uploads.map((u) => attendanceLabel(u.attendanceType)))];
+  const filters = ["Todos", ...presentTypes];
+  const rows = uploads.filter((u) => filter === "Todos" || attendanceLabel(u.attendanceType) === filter);
+  const scored = analyses.map((a) => a.generalScore);
+  const avg = scored.length ? Math.round(scored.reduce((s, v) => s + v, 0) / scored.length) : 0;
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mx-auto w-full max-w-4xl">
-        <AppHeader />
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">Histórico de envios</h1>
-          <p className="mt-1 text-sm text-muted">
-            Todos os seus atendimentos enviados e suas análises.
-          </p>
+    <div className="fade-up">
+      <div className="mb-[22px] flex flex-wrap items-end justify-between gap-3.5">
+        <div>
+          <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Seu treinamento</div>
+          <h1 className="mt-2 text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Histórico de envios</h1>
         </div>
-
-        <Card>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Spinner />
-            </div>
-          ) : uploads.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted">
-              Você ainda não enviou nenhum atendimento.{" "}
-              <Link href="/upload" className="text-cyan hover:text-cyan-light">
-                Enviar o primeiro
-              </Link>
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-card-border text-left">
-                    <th className="pb-3 font-medium text-muted">Data</th>
-                    <th className="pb-3 font-medium text-muted">Tipo</th>
-                    <th className="pb-3 font-medium text-muted">Atendimento</th>
-                    <th className="pb-3 text-right font-medium text-muted">
-                      Nota
-                    </th>
-                    <th className="pb-3 text-right font-medium text-muted">
-                      Status
-                    </th>
-                    <th className="pb-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-card-border">
-                  {uploads.map((u) => {
-                    const analysis = analysisByUpload.get(u.id);
-                    const status = STATUS_LABELS[u.status];
-                    return (
-                      <tr key={u.id}>
-                        <td className="py-3 text-foreground">
-                          {shortDate(u.createdAt)}
-                        </td>
-                        <td className="py-3 text-foreground">
-                          {u.fileType === "video" ? "Vídeo" : "Áudio"}
-                        </td>
-                        <td className="py-3 text-foreground">
-                          {attendanceLabel(u.attendanceType)}
-                        </td>
-                        <td className="py-3 text-right font-bold text-white">
-                          {analysis ? Math.round(analysis.generalScore) : "—"}
-                        </td>
-                        <td className="py-3 text-right">
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}
-                          >
-                            {status.label}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          {analysis ? (
-                            <Link
-                              href={`/analise/${analysis.id}`}
-                              className="text-xs font-semibold text-cyan hover:text-cyan-light"
-                            >
-                              Ver análise
-                            </Link>
-                          ) : null}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-
-        <div className="mt-4 flex justify-center">
-          <Link
-            href="/dashboard"
-            className="text-sm font-semibold text-cyan transition hover:text-cyan-light"
-          >
-            ← Voltar ao dashboard
-          </Link>
-        </div>
+        <Link href="/upload" className="btn-primary rounded-[10px] px-[18px] py-2.5 text-[13px] font-semibold">+ Novo envio</Link>
       </div>
-    </main>
+
+      {uploads.length > 1 && filters.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {filters.map((f) => {
+            const active = filter === f;
+            return (
+              <button key={f} onClick={() => setFilter(f)} className="rounded-full px-3.5 py-[7px] text-[12.5px] font-medium transition" style={{
+                border: `1px solid ${active ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.55)"}`,
+                background: active ? "rgba(0,135,248,.12)" : "#020d23",
+                color: active ? "#00cbff" : "#6d8698",
+              }}>{f}</button>
+            );
+          })}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="dc-card flex justify-center py-12"><Spinner /></div>
+      ) : uploads.length === 0 ? (
+        <div className="dc-card px-6 py-12 text-center">
+          <p className="text-[13.5px] text-muted">Você ainda não enviou nenhum atendimento.</p>
+          <Link href="/upload" className="btn-primary mt-4 inline-block rounded-[10px] px-5 py-[11px] text-[13px] font-semibold">Enviar o primeiro</Link>
+        </div>
+      ) : (
+        <>
+          <div className="dc-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <div className="min-w-[640px]">
+                <div className="grid items-center gap-3 border-b border-[rgba(0,45,115,.5)] px-[22px] py-3.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: GRID }}>
+                  <span>Data</span><span>Atendimento</span><span>Formato</span><span className="text-right">Nota</span><span className="text-center">Status</span><span />
+                </div>
+                {rows.map((u) => {
+                  const a = analysisByUpload.get(u.id);
+                  const pill = statusPill(u.status);
+                  return (
+                    <div key={u.id} className="grid items-center gap-3 border-b border-[rgba(0,45,115,.25)] px-[22px] py-[13px] transition last:border-0 hover:bg-[rgba(0,135,248,.04)]" style={{ gridTemplateColumns: GRID }}>
+                      <span className="font-mono text-[12px] text-muted">{shortDate(u.createdAt)}</span>
+                      <span className="text-[13.5px] text-foreground">{attendanceLabel(u.attendanceType)}</span>
+                      <span className="text-[12.5px] text-muted">{u.fileType === "video" ? "Vídeo" : "Áudio"}</span>
+                      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: a ? scoreColor(a.generalScore) : "#6d8698" }}>{a ? Math.round(a.generalScore) : "—"}</span>
+                      <span className="text-center"><span className="inline-block rounded-full px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.06em]" style={{ color: pill.color, background: pill.bg, border: `1px solid ${pill.border}` }}>{pill.label}</span></span>
+                      <span className="text-right">{a && <Link href={`/analise/${a.id}`} className="text-[12px] font-semibold text-cyan hover:text-cyan-light">Ver análise</Link>}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <p className="mt-3.5 text-center text-[12px] text-muted">{uploads.length} envios no total{avg > 0 && <> · média <span className="font-semibold text-foreground">{avg}</span></>}</p>
+        </>
+      )}
+    </div>
   );
 }
 
 export default function HistoryPage() {
   return (
     <AuthGate>
-      <History />
+      <AppShell>
+        <History />
+      </AppShell>
     </AuthGate>
   );
 }

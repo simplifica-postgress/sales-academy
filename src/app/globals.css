@@ -14,6 +14,7 @@
   --cyan-light: #00e3ff;
   --foreground: #f5f9fb;
   --muted: #6d8698;
+  --danger: #ff8d85;
 }
 
 @theme inline {
@@ -29,17 +30,132 @@
   --color-cyan-light: var(--cyan-light);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+html,
 body {
-  background: var(--background);
+  margin: 0;
+  padding: 0;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Label estilo dashboard: uppercase com espaçamento largo */
-.label-dash {
-  @apply text-[11px] font-semibold uppercase tracking-[0.15em] text-muted;
+/* Fundo com brilho radial azul/ciano */
+body {
+  background:
+    radial-gradient(
+      1100px 520px at 78% -12%,
+      rgba(0, 135, 248, 0.09),
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 500px at -8% 108%,
+      rgba(0, 203, 255, 0.05),
+      transparent 60%
+    ),
+    var(--background);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(0, 135, 248, 0.35);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--indicator);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+select option {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pulseSoft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* ---------- Componentes do design ---------- */
+
+/* Card padrão (dashboard/analise/etc.) */
+.dc-card {
+  background: var(--card);
+  border: 1px solid rgba(0, 45, 115, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 2, 12, 0.35);
+}
+
+/* Label em Geist Mono, caixa alta, espaçada */
+.mono-label {
+  font-family: var(--font-geist-mono), monospace;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Campo de formulário (input/select/textarea) */
+.field {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 45, 115, 0.65);
+  background: var(--card-alt);
+  color: var(--foreground);
+  font: 400 13.5px var(--font-geist-sans), sans-serif;
+  outline: none;
+  transition: all 0.15s;
+}
+.field::placeholder {
+  color: rgba(109, 134, 152, 0.55);
+}
+.field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 135, 248, 0.16);
+}
+
+/* Botão primário com gradiente */
+.btn-primary {
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--blue-dark), var(--primary));
+  box-shadow: 0 8px 24px rgba(0, 135, 248, 0.28);
+  transition: all 0.2s;
+}
+.btn-primary:hover {
+  box-shadow: 0 10px 30px rgba(0, 203, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.fade-up {
+  animation: fadeUp 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }

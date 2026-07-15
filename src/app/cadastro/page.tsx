@@ -2,23 +2,14 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthGate from "@/components/AuthGate";
-import Logo from "@/components/Logo";
 import { completeProfile } from "@/lib/user";
 import { ATTENDANCE_TYPES } from "@/lib/constants";
 import type { AttendanceType } from "@/lib/types";
 
-const EXPERIENCE_OPTIONS = [
-  "Menos de 1 ano",
-  "1 a 3 anos",
-  "3 a 5 anos",
-  "5 a 10 anos",
-  "Mais de 10 anos",
-];
-
-const inputClass =
-  "w-full rounded-lg border border-card-border bg-card-alt px-3 py-2.5 text-sm text-foreground placeholder-muted/60 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30";
+const EXPERIENCE_OPTIONS = ["Menos de 1 ano", "1 a 3 anos", "3 a 5 anos", "5 a 10 anos", "Mais de 10 anos"];
 
 function ProfileForm() {
   const { user, profile, refreshProfile } = useAuth();
@@ -39,9 +30,7 @@ function ProfileForm() {
   }, [profile?.name]);
 
   function toggleType(type: AttendanceType) {
-    setAttendanceTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
+    setAttendanceTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -77,92 +66,45 @@ function ProfileForm() {
     }
   }
 
-  return (
-    <main className="min-h-screen bg-background px-4 py-10">
-      <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-8">
-          <Logo width={150} />
-          <h1 className="mt-4 text-2xl font-bold text-white">
-            Vamos montar o seu perfil
-          </h1>
-          <p className="mt-2 text-sm text-muted">
-            Essas informações personalizam a análise da IA para o seu contexto
-            de vendas. Leva menos de 2 minutos.
-          </p>
-        </div>
+  const labelCls = "mono-label mb-[7px] block";
+  const labelStyle = { letterSpacing: "0.14em" };
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5 rounded-2xl border border-card-border bg-card p-6 sm:p-8"
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
+  return (
+    <main className="fade-up min-h-screen px-[18px] pb-[120px] pt-12">
+      <div className="mx-auto w-full max-w-[620px]">
+        <Image src="/logo.png" alt="Simplifica" width={150} height={40} style={{ width: 150, height: "auto" }} priority />
+        <h1 className="mt-[22px] text-[25px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
+          Vamos montar o seu perfil
+        </h1>
+        <p className="mb-[26px] mt-[9px] text-[13.5px] leading-relaxed text-muted">
+          Essas informações personalizam a análise da IA para o seu contexto de vendas. Leva menos de 2 minutos.
+        </p>
+
+        <form onSubmit={handleSubmit} className="rounded-[18px] bg-card px-7 py-[30px]" style={{ border: "1px solid rgba(0,45,115,.6)", boxShadow: "0 24px 60px rgba(0,2,12,.5)" }}>
+          <div className="grid gap-[18px] sm:grid-cols-2">
             <div>
-              <label htmlFor="name" className="label-dash mb-1.5 block">
-                Nome
-              </label>
-              <input
-                id="name"
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClass}
-                placeholder="Seu nome completo"
-              />
+              <label htmlFor="name" className={labelCls} style={labelStyle}>Nome</label>
+              <input id="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="field" placeholder="Seu nome completo" />
             </div>
             <div>
-              <label htmlFor="company" className="label-dash mb-1.5 block">
-                Empresa
-              </label>
-              <input
-                id="company"
-                type="text"
-                required
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                className={inputClass}
-                placeholder="Onde você trabalha"
-              />
+              <label htmlFor="company" className={labelCls} style={labelStyle}>Empresa</label>
+              <input id="company" type="text" required value={company} onChange={(e) => setCompany(e.target.value)} className="field" placeholder="Onde você trabalha" />
             </div>
             <div>
-              <label htmlFor="salesRole" className="label-dash mb-1.5 block">
-                Cargo / função
-              </label>
-              <input
-                id="salesRole"
-                type="text"
-                required
-                value={salesRole}
-                onChange={(e) => setSalesRole(e.target.value)}
-                className={inputClass}
-                placeholder="Ex.: Vendedor, SDR, Closer"
-              />
+              <label htmlFor="salesRole" className={labelCls} style={labelStyle}>Cargo / função</label>
+              <input id="salesRole" type="text" required value={salesRole} onChange={(e) => setSalesRole(e.target.value)} className="field" placeholder="Ex.: Vendedor, SDR, Closer" />
             </div>
             <div>
-              <label htmlFor="experience" className="label-dash mb-1.5 block">
-                Experiência em vendas
-              </label>
-              <select
-                id="experience"
-                required
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                className={inputClass}
-              >
-                <option value="" disabled>
-                  Selecione…
-                </option>
-                {EXPERIENCE_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
+              <label htmlFor="experience" className={labelCls} style={labelStyle}>Experiência em vendas</label>
+              <select id="experience" required value={experience} onChange={(e) => setExperience(e.target.value)} className="field" style={{ appearance: "none", cursor: "pointer" }}>
+                <option value="" disabled>Selecione…</option>
+                {EXPERIENCE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
           </div>
 
-          <div>
-            <p className="label-dash mb-2">Tipos de atendimento que você faz</p>
+          <div className="mt-[22px]">
+            <div className={labelCls} style={labelStyle}>Tipos de atendimento que você faz</div>
             <div className="flex flex-wrap gap-2">
               {ATTENDANCE_TYPES.map(({ value, label }) => {
                 const active = attendanceTypes.includes(value);
@@ -171,11 +113,12 @@ function ProfileForm() {
                     key={value}
                     type="button"
                     onClick={() => toggleType(value)}
-                    className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
-                      active
-                        ? "border-primary bg-primary/20 text-cyan"
-                        : "border-card-border bg-card-alt text-muted hover:border-primary/50 hover:text-foreground"
-                    }`}
+                    className="rounded-full px-4 py-2 text-[13px] font-medium transition"
+                    style={{
+                      border: `1px solid ${active ? "rgba(0,135,248,.55)" : "rgba(0,45,115,.55)"}`,
+                      background: active ? "rgba(0,135,248,.14)" : "#020d23",
+                      color: active ? "#00cbff" : "#6d8698",
+                    }}
                   >
                     {label}
                   </button>
@@ -184,47 +127,19 @@ function ProfileForm() {
             </div>
           </div>
 
-          <div>
-            <label htmlFor="difficulty" className="label-dash mb-1.5 block">
-              Principal dificuldade comercial
-            </label>
-            <textarea
-              id="difficulty"
-              required
-              rows={3}
-              value={mainDifficulty}
-              onChange={(e) => setMainDifficulty(e.target.value)}
-              className={inputClass}
-              placeholder="Ex.: leads que somem depois do preço, dificuldade em contornar 'vou pensar'…"
-            />
+          <div className="mt-[22px]">
+            <label htmlFor="difficulty" className={labelCls} style={labelStyle}>Principal dificuldade comercial</label>
+            <textarea id="difficulty" required rows={3} value={mainDifficulty} onChange={(e) => setMainDifficulty(e.target.value)} className="field" style={{ resize: "vertical" }} placeholder="Ex.: leads que somem depois do preço, dificuldade em contornar 'vou pensar'…" />
           </div>
 
-          <div>
-            <label htmlFor="goal" className="label-dash mb-1.5 block">
-              Objetivo no treinamento
-            </label>
-            <textarea
-              id="goal"
-              required
-              rows={3}
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              className={inputClass}
-              placeholder="Ex.: fechar mais reuniões, melhorar meu diagnóstico, vender com mais segurança…"
-            />
+          <div className="mt-[18px]">
+            <label htmlFor="goal" className={labelCls} style={labelStyle}>Objetivo no treinamento</label>
+            <textarea id="goal" required rows={3} value={goal} onChange={(e) => setGoal(e.target.value)} className="field" style={{ resize: "vertical" }} placeholder="Ex.: fechar mais reuniões, melhorar meu diagnóstico, vender com mais segurança…" />
           </div>
 
-          {error && (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-              {error}
-            </p>
-          )}
+          {error && <p className="mt-4 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-gradient-to-r from-blue-dark to-primary px-4 py-3 text-sm font-semibold text-white transition hover:from-primary hover:to-cyan disabled:opacity-50"
-          >
+          <button type="submit" disabled={submitting} className="btn-primary mt-6 w-full rounded-[11px] px-4 py-[13px] text-sm font-semibold disabled:opacity-50">
             {submitting ? "Salvando…" : "Começar meu treinamento de 30 dias"}
           </button>
         </form>

@@ -55,11 +55,17 @@ export default function ScoreRing({
         ) : null}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold text-white">
+        <span
+          className="font-mono font-semibold text-foreground"
+          style={{ fontSize: Math.round(size * 0.26), letterSpacing: "-0.02em" }}
+        >
           {value === null ? "–" : Math.round(value)}
         </span>
         {sublabel ? (
-          <span className="text-[10px] uppercase tracking-wider text-muted">
+          <span
+            className="font-mono font-semibold uppercase text-muted"
+            style={{ fontSize: Math.max(9, size * 0.065), letterSpacing: "0.18em" }}
+          >
             {sublabel}
           </span>
         ) : null}
