@@ -18,7 +18,7 @@ import {
   updateProfile as updateAuthProfile,
   type User,
 } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
 
@@ -76,16 +76,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubProfile: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Encerra o listener do perfil anterior ao trocar de usuário.
+      if (unsubProfile) {
+        unsubProfile();
+        unsubProfile = null;
+      }
+
+      if (!firebaseUser) {
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
       try {
-        if (firebaseUser) {
-          const userProfile = await ensureUserDoc(firebaseUser);
-          setUser(firebaseUser);
-          setProfile(userProfile);
-        } else {
-          setUser(null);
-          setProfile(null);
-        }
+        // Garante o doc e define user+profile juntos (invariante do app).
+        const initial = await ensureUserDoc(firebaseUser);
+        setUser(firebaseUser);
+        setProfile(initial);
       } catch (err) {
         console.error("Erro ao carregar perfil:", err);
         setUser(firebaseUser);
@@ -93,8 +104,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         setLoading(false);
       }
+
+      // Mantém o perfil ao vivo (progresso, nível etc. atualizam sozinhos).
+      unsubProfile = onSnapshot(doc(db, "users", firebaseUser.uid), (snap) => {
+        if (snap.exists()) setProfile(snap.data() as UserProfile);
+      });
     });
-    return unsubscribe;
+
+    return () => {
+      if (unsubProfile) unsubProfile();
+      unsubscribe();
+    };
   }, []);
 
   const refreshProfile = useCallback(async () => {

@@ -21,14 +21,17 @@ export function shortDate(ts: Timestamp | null | undefined): string {
   });
 }
 
-/** True se o timestamp cai no dia de hoje (fuso local). */
+/** Fuso de referência do produto (evita divergência de "dia" entre client e backend). */
+export const APP_TIMEZONE = "America/Sao_Paulo";
+
+/** Chave do dia (YYYY-MM-DD) no fuso do produto. */
+export function dayKeyBR(d: Date): string {
+  // "en-CA" formata como YYYY-MM-DD.
+  return d.toLocaleDateString("en-CA", { timeZone: APP_TIMEZONE });
+}
+
+/** True se o timestamp cai no dia de hoje (fuso do produto). */
 export function isToday(ts: Timestamp | null | undefined): boolean {
   if (!ts) return false;
-  const d = ts.toDate();
-  const now = new Date();
-  return (
-    d.getDate() === now.getDate() &&
-    d.getMonth() === now.getMonth() &&
-    d.getFullYear() === now.getFullYear()
-  );
+  return dayKeyBR(ts.toDate()) === dayKeyBR(new Date());
 }

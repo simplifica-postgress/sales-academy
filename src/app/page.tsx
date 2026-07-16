@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LandingPage from "@/components/LandingPage";
+import Spinner from "@/components/Spinner";
 
 /**
  * Home pública: mostra a landing page para visitantes.
@@ -19,6 +20,15 @@ export default function Home() {
     else if (!profile?.profileCompleted) router.replace("/cadastro");
     else router.replace("/dashboard");
   }, [loading, user, profile, router]);
+
+  // Logado: mostra spinner enquanto redireciona (evita flash da landing).
+  if (user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
 
   return <LandingPage />;
 }

@@ -33,7 +33,6 @@ export function useSellerData(uid: string | undefined) {
 
   useEffect(() => {
     if (!uid) return;
-    setLoading(true);
 
     const unsubProgress = onSnapshot(doc(db, "progress", uid), (snap) => {
       setProgress(snap.exists() ? (snap.data() as Progress) : null);

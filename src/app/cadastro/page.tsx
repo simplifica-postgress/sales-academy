@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +15,9 @@ function ProfileForm() {
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
 
-  const [name, setName] = useState("");
+  // ProfileForm só monta após o AuthGate carregar o perfil, então dá para
+  // pré-preencher o nome (vindo do cadastro/Google) direto no estado inicial.
+  const [name, setName] = useState(profile?.name ?? "");
   const [company, setCompany] = useState("");
   const [salesRole, setSalesRole] = useState("");
   const [experience, setExperience] = useState("");
@@ -24,10 +26,6 @@ function ProfileForm() {
   const [goal, setGoal] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (profile?.name) setName(profile.name);
-  }, [profile?.name]);
 
   function toggleType(type: AttendanceType) {
     setAttendanceTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));

@@ -16,8 +16,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
+// Agrupa por dia no mesmo fuso do cliente (America/Sao_Paulo) para que
+// "enviou hoje" e a contagem de dias/sequência sejam consistentes.
 function dayKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
 
 /** Streak atual de dias (mais recente p/ trás) com melhor nota do dia > 85. */
