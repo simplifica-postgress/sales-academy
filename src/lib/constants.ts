@@ -139,3 +139,16 @@ export const ACCEPTED_VIDEO_TYPES = [
 
 /** Limite de upload (500 MB) — vídeos de reunião podem ser grandes. */
 export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
+
+// ---------- Consentimento (LGPD) ----------
+
+/**
+ * Versão do termo aceito no envio. Ao mudar o texto, incremente a versão:
+ * cada envio guarda a versão que o vendedor aceitou, o que dá à Simplifica
+ * uma trilha de prova de qual termo estava valendo naquele dia.
+ */
+export const CONSENT_VERSION = "1.0";
+
+/** Termo exibido (e registrado) a cada envio de atendimento. */
+export const CONSENT_TEXT =
+  "Declaro que este atendimento foi gravado de forma lícita e que tenho autorização para compartilhá-lo com a Simplifica para fins de treinamento comercial. Estou ciente de que o arquivo será armazenado em servidor seguro, processado por inteligência artificial para gerar a análise e ficará acessível ao meu gestor.";

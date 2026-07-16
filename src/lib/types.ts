@@ -41,12 +41,26 @@ export interface Upload {
   filePath: string; // caminho no Storage: uploads/{userId}/{data}/{arquivo}
   fileType: "audio" | "video";
   mimeType: string;
+  fileSize?: number;
   status: UploadStatus;
   trainingDay: number;
   attendanceType: AttendanceType;
   observation: string;
   errorMessage?: string;
   createdAt: Timestamp;
+
+  // ---- Consentimento (LGPD) ----
+  /** Versão do termo aceita no momento do envio. */
+  consentVersion?: string;
+  /** Quando o vendedor aceitou o termo. */
+  consentAt?: Timestamp;
+
+  // ---- Exclusão da gravação ----
+  /** True quando o arquivo foi apagado do Storage (a análise é preservada). */
+  fileDeleted?: boolean;
+  fileDeletedAt?: Timestamp;
+  /** uid de quem solicitou a exclusão (ou "retention" se automática). */
+  fileDeletedBy?: string;
 }
 
 // ---------- Análises ----------

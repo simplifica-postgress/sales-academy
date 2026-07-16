@@ -7,7 +7,7 @@ import { auth, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
-import { ACCEPTED_AUDIO_TYPES, ACCEPTED_VIDEO_TYPES, ATTENDANCE_TYPES, MAX_UPLOAD_BYTES } from "@/lib/constants";
+import { ACCEPTED_AUDIO_TYPES, ACCEPTED_VIDEO_TYPES, ATTENDANCE_TYPES, CONSENT_TEXT, MAX_UPLOAD_BYTES } from "@/lib/constants";
 
 const ACCEPT = [...ACCEPTED_AUDIO_TYPES, ...ACCEPTED_VIDEO_TYPES].join(",");
 const PROCESSING_STEPS = ["Enviando seu atendimento", "Transcrevendo a conversa", "Analisando sua performance comercial", "Montando seu plano de melhoria"];
@@ -33,6 +33,7 @@ function UploadForm() {
   const [stepIndex, setStepIndex] = useState(0);
   // Progresso real do envio ao Storage (0–100); null enquanto não envia.
   const [uploadPct, setUploadPct] = useState<number | null>(null);
+  const [consent, setConsent] = useState(false);
 
   const suggested = profile?.attendanceTypes ?? [];
   const typeOptions = ATTENDANCE_TYPES.filter((t) => suggested.length === 0 || suggested.includes(t.value));
@@ -50,6 +51,7 @@ function UploadForm() {
     e.preventDefault();
     if (!file) return setError("Selecione um arquivo de áudio ou vídeo.");
     if (!attendanceType) return setError("Selecione o tipo de atendimento.");
+    if (!consent) return setError("É preciso aceitar o termo para enviar o atendimento.");
     if (!user) return setError("Sessão expirada. Entre novamente.");
 
     setError("");
@@ -101,7 +103,12 @@ function UploadForm() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ filePath: path, attendanceType, observation }),
+        body: JSON.stringify({
+          filePath: path,
+          attendanceType,
+          observation,
+          consent: true,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Falha ao processar.");
@@ -192,10 +199,35 @@ function UploadForm() {
         <textarea rows={3} value={observation} onChange={(e) => setObservation(e.target.value)} className="field" style={{ resize: "vertical" }} placeholder="Ex.: lead pediu desconto no final; era um follow-up de proposta…" />
       </div>
 
+      {/* Consentimento + aviso de armazenamento (LGPD) */}
+      <div className="dc-card mb-3.5 p-6">
+        <div className="mono-label mb-3">Privacidade e consentimento</div>
+
+        <div className="mb-4 flex gap-3 rounded-xl border border-[rgba(0,45,115,.6)] bg-card-alt p-4">
+          <span className="mt-0.5 flex h-[22px] w-[22px] flex-none items-center justify-center rounded-md border border-[rgba(0,135,248,.35)] text-cyan" style={{ background: "rgba(0,135,248,.1)" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+          </span>
+          <div className="text-[12.5px] leading-[1.6] text-muted">
+            <strong className="text-foreground">Este arquivo será armazenado.</strong> A gravação fica guardada em servidor seguro da Simplifica, é processada por IA para gerar sua análise e fica acessível ao seu gestor. Só você e a Simplifica têm acesso — nenhum outro vendedor consegue ver.
+          </div>
+        </div>
+
+        <label htmlFor="consent" className="flex cursor-pointer gap-3">
+          <input
+            id="consent"
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-0.5 h-[18px] w-[18px] flex-none cursor-pointer accent-[#0087f8]"
+          />
+          <span className="text-[12.5px] leading-[1.6] text-muted">{CONSENT_TEXT}</span>
+        </label>
+      </div>
+
       {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
       <div className="flex gap-2.5">
-        <button type="submit" className="btn-primary flex-1 rounded-[11px] px-5 py-[13px] text-sm font-semibold">Enviar para análise</button>
+        <button type="submit" disabled={!consent} className="btn-primary flex-1 rounded-[11px] px-5 py-[13px] text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Enviar para análise</button>
         <button type="button" onClick={() => router.push("/dashboard")} className="rounded-[11px] border border-[rgba(0,45,115,.6)] bg-card-alt px-5 py-[13px] text-sm font-medium text-muted transition hover:text-foreground">Cancelar</button>
       </div>
     </form>

@@ -6,6 +6,7 @@ import { computeProgression } from "@/lib/progression";
 import {
   ACCEPTED_AUDIO_TYPES,
   ACCEPTED_VIDEO_TYPES,
+  CONSENT_VERSION,
   IDEAL_SCORE_THRESHOLD,
   MAX_UPLOAD_BYTES,
   TRAINING_TOTAL_DAYS,
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
     filePath?: string;
     attendanceType?: string;
     observation?: string;
+    consent?: boolean;
   };
   const filePath = (body.filePath ?? "").trim();
   const attendanceType = body.attendanceType ?? "";
@@ -62,6 +64,13 @@ export async function POST(req: Request) {
 
   if (!filePath) {
     return NextResponse.json({ error: "Arquivo não enviado." }, { status: 400 });
+  }
+  // Consentimento é obrigatório e fica registrado no envio (LGPD).
+  if (body.consent !== true) {
+    return NextResponse.json(
+      { error: "É preciso aceitar o termo de consentimento para enviar." },
+      { status: 400 }
+    );
   }
   // O caminho precisa ser da pasta do próprio vendedor (anti-adulteração).
   if (!filePath.startsWith(`uploads/${uid}/`)) {
@@ -134,6 +143,10 @@ export async function POST(req: Request) {
     trainingDay,
     attendanceType,
     observation,
+    // Trilha de consentimento: qual termo foi aceito e quando.
+    consentVersion: CONSENT_VERSION,
+    consentAt: FieldValue.serverTimestamp(),
+    fileDeleted: false,
     createdAt: FieldValue.serverTimestamp(),
   });
 
