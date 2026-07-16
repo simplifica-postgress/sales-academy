@@ -90,9 +90,13 @@ function DashboardContent() {
                 <span className="font-semibold leading-none text-foreground" style={{ fontSize: "clamp(56px,10vw,92px)", letterSpacing: "-0.04em", textShadow: "0 4px 40px rgba(0,135,248,.4)" }}>
                   {progressPct}<span className="text-muted" style={{ fontSize: "0.42em" }}>%</span>
                 </span>
-                <div className="pb-2">
-                  <div className="text-[14px] font-medium text-foreground">concluído</div>
-                  <div className="mt-0.5 text-[12.5px] font-medium text-muted">Dia {day} de {TRAINING_TOTAL_DAYS}</div>
+                <div className="pb-2.5">
+                  <div className="text-[22px] font-semibold leading-none text-foreground">concluído</div>
+                  <div className="mt-2 inline-flex items-baseline gap-1.5 rounded-lg border border-[rgba(0,203,255,.28)] px-3 py-1.5" style={{ background: "rgba(0,203,255,.08)" }}>
+                    <span className="text-[12px] font-medium uppercase tracking-[0.1em] text-muted">Dia</span>
+                    <span className="text-[22px] font-semibold leading-none text-cyan">{day}</span>
+                    <span className="text-[13px] font-medium text-muted">de {TRAINING_TOTAL_DAYS}</span>
+                  </div>
                 </div>
               </div>
             </div>
