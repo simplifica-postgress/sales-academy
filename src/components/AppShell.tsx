@@ -48,8 +48,40 @@ const SELLER_NAV: NavItem[] = [
   { label: "Enviar atendimento", href: "/upload", icon: iconUpload, active: (p) => p.startsWith("/upload") },
   { label: "Histórico", href: "/historico", icon: iconHist, active: (p) => p.startsWith("/historico") || p.startsWith("/analise") },
 ];
+const iconUsers = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5 20c.9-3.6 3.6-5.5 7-5.5s6.1 1.9 7 5.5" />
+  </svg>
+);
+const iconBook = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z" />
+    <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z" />
+  </svg>
+);
+const iconLab = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <path d="M9 3v6.5L4.5 18a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L15 9.5V3" />
+    <path d="M8 3h8" />
+  </svg>
+);
+
+// Seções fixas do admin; o resto de /admin/* é o detalhe de um vendedor.
+const ADMIN_SECTIONS = ["usuarios", "conhecimento", "testar-ia"];
+
 const ADMIN_NAV: NavItem[] = [
-  { label: "Equipe", href: "/admin", icon: iconTeam, active: (p) => p.startsWith("/admin") },
+  {
+    label: "Equipe",
+    href: "/admin",
+    icon: iconTeam,
+    active: (p) =>
+      p === "/admin" ||
+      (p.startsWith("/admin/") && !ADMIN_SECTIONS.includes(p.split("/")[2])),
+  },
+  { label: "Usuários", href: "/admin/usuarios", icon: iconUsers, active: (p) => p.startsWith("/admin/usuarios") },
+  { label: "Conhecimento", href: "/admin/conhecimento", icon: iconBook, active: (p) => p.startsWith("/admin/conhecimento") },
+  { label: "Testar IA", href: "/admin/testar-ia", icon: iconLab, active: (p) => p.startsWith("/admin/testar-ia") },
 ];
 
 export default function AppShell({ children }: { children: ReactNode }) {

@@ -1,5 +1,4 @@
 import { CRITERIA, weekForDay } from "./constants";
-import { knowledgeAsPrompt } from "./knowledge";
 import type { CriteriaScores, UserProfile } from "./types";
 
 /** Resposta estruturada que a IA devolve (a nota geral é calculada no backend). */
@@ -73,12 +72,14 @@ export const ANALYSIS_JSON_SCHEMA = {
   },
 } as const;
 
-export function buildSystemPrompt(): string {
+/**
+ * Monta o system prompt do avaliador.
+ * @param knowledge Metodologia da Simplifica já formatada (vem do Firestore).
+ */
+export function buildSystemPrompt(knowledge = ""): string {
   const criteriaList = CRITERIA.map(
     (c) => `- ${c.label} (peso ${c.weight})`
   ).join("\n");
-
-  const knowledge = knowledgeAsPrompt();
 
   return `Você é um avaliador comercial sênior da Simplifica, especialista em vendas consultivas B2B e B2C. Sua função é analisar a transcrição de um atendimento comercial real e devolver uma avaliação estruturada, específica e acionável.
 

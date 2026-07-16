@@ -51,5 +51,11 @@ service cloud.firestore {
         && (resource.data.userId == request.auth.uid || isAdmin());
       allow create, update, delete: if false;
     }
+
+    // Base de conhecimento que alimenta a IA: só o gestor edita.
+    match /knowledge/{docId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
   }
 }

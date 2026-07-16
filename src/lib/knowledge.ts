@@ -5,8 +5,9 @@
  * análise dos atendimentos e as recomendações fiquem alinhadas ao método da
  * Simplifica — não a técnicas genéricas.
  *
- * O conteúdo é abastecido em partes pelo time. Para adicionar novos trechos,
- * basta acrescentar entradas ao array `SALES_KNOWLEDGE`.
+ * ATENÇÃO: em produção a base viva fica no Firestore (coleção `knowledge`),
+ * editável pelo painel do gestor. O array abaixo é a **carga inicial** (seed)
+ * e o fallback caso a coleção esteja vazia. Ver `lib/server/knowledge.ts`.
  */
 
 export interface KnowledgeEntry {
@@ -16,6 +17,8 @@ export interface KnowledgeEntry {
   source?: string;
   /** O aprendizado central e como aplicar. */
   content: string;
+  /** Ordem de exibição/injeção (opcional). */
+  order?: number;
 }
 
 export const SALES_KNOWLEDGE: KnowledgeEntry[] = [
@@ -105,11 +108,19 @@ export const SALES_KNOWLEDGE: KnowledgeEntry[] = [
 export const METHODOLOGY_SUMMARY =
   "O método defende um atendimento que combina empatia, personalização e firmeza. O vendedor deve ouvir, recuperar o que o cliente falou, adaptar a abordagem ao perfil comportamental, deixar próximos passos definidos e conduzir a decisão sem parecer agressivo. Falas muito incisivas não devem ser copiadas literalmente — o valor está na técnica: questionar com respeito, cobrar coerência, manter o controle da conversa e nunca deixar o atendimento sem uma definição clara.";
 
-/** Formata a base de conhecimento para injeção no prompt da IA. */
+/** Formata uma lista de entradas para injeção no prompt da IA. */
+export function formatKnowledge(
+  entries: KnowledgeEntry[],
+  summary = METHODOLOGY_SUMMARY
+): string {
+  if (entries.length === 0) return "";
+  const items = entries
+    .map((k, i) => `${i + 1}. ${k.title}: ${k.content}`)
+    .join("\n");
+  return `METODOLOGIA COMERCIAL DA SIMPLIFICA (referência oficial — avalie o atendimento e escreva as recomendações à luz destes princípios):\n${items}\n\nSíntese do método: ${summary}`;
+}
+
+/** Base versionada (seed/fallback) formatada para o prompt. */
 export function knowledgeAsPrompt(): string {
-  if (SALES_KNOWLEDGE.length === 0) return "";
-  const items = SALES_KNOWLEDGE.map(
-    (k, i) => `${i + 1}. ${k.title}: ${k.content}`
-  ).join("\n");
-  return `METODOLOGIA COMERCIAL DA SIMPLIFICA (referência oficial — avalie o atendimento e escreva as recomendações à luz destes princípios):\n${items}\n\nSíntese do método: ${METHODOLOGY_SUMMARY}`;
+  return formatKnowledge(SALES_KNOWLEDGE);
 }

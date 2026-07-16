@@ -9,6 +9,7 @@ import {
 import { weightedGeneralScore } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
 import { prepareAudioChunks } from "./audio";
+import { getKnowledgeText } from "./knowledge";
 
 const TRANSCRIBE_MODEL = "whisper-1";
 const ANALYSIS_MODEL = "gpt-4o";
@@ -109,11 +110,14 @@ export async function analyze(
     };
   }
 
+  // Metodologia da Simplifica (Firestore, editável pelo painel do gestor).
+  const knowledge = await getKnowledgeText();
+
   const completion = await openai().chat.completions.create({
     model: ANALYSIS_MODEL,
     temperature: 0.3,
     messages: [
-      { role: "system", content: buildSystemPrompt() },
+      { role: "system", content: buildSystemPrompt(knowledge) },
       {
         role: "user",
         content: buildUserPrompt(profile, trainingDay, observation, transcript),
