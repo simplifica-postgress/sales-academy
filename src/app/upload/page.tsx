@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
+import { ref, uploadBytesResumable } from "firebase/storage";
+import { auth, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
@@ -11,12 +12,17 @@ import { ACCEPTED_AUDIO_TYPES, ACCEPTED_VIDEO_TYPES, ATTENDANCE_TYPES, MAX_UPLOA
 const ACCEPT = [...ACCEPTED_AUDIO_TYPES, ...ACCEPTED_VIDEO_TYPES].join(",");
 const PROCESSING_STEPS = ["Enviando seu atendimento", "Transcrevendo a conversa", "Analisando sua performance comercial", "Montando seu plano de melhoria"];
 
+/** Nome de arquivo seguro para o Storage. */
+function safeName(name: string): string {
+  return name.replace(/[^\w.-]/g, "_").slice(-80);
+}
+
 function humanSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function UploadForm() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
 
   const [file, setFile] = useState<File | null>(null);
@@ -25,6 +31,8 @@ function UploadForm() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  // Progresso real do envio ao Storage (0–100); null enquanto não envia.
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
 
   const suggested = profile?.attendanceTypes ?? [];
   const typeOptions = ATTENDANCE_TYPES.filter((t) => suggested.length === 0 || suggested.includes(t.value));
@@ -42,26 +50,68 @@ function UploadForm() {
     e.preventDefault();
     if (!file) return setError("Selecione um arquivo de áudio ou vídeo.");
     if (!attendanceType) return setError("Selecione o tipo de atendimento.");
+    if (!user) return setError("Sessão expirada. Entre novamente.");
+
     setError("");
     setSubmitting(true);
     setStepIndex(0);
-    const ticker = setInterval(() => setStepIndex((i) => Math.min(i + 1, PROCESSING_STEPS.length - 1)), 6000);
+    setUploadPct(0);
+    let ticker: ReturnType<typeof setInterval> | undefined;
+
     try {
+      // 1. Envia direto para o Storage (sem passar pelo servidor do app).
+      const path = `uploads/${user.uid}/${Date.now()}-${safeName(file.name)}`;
+      const task = uploadBytesResumable(ref(storage, path), file, {
+        contentType: file.type,
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        task.on(
+          "state_changed",
+          (snap) =>
+            setUploadPct(
+              Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
+            ),
+          (err) =>
+            reject(
+              new Error(
+                err.code === "storage/unauthorized"
+                  ? "Sem permissão para enviar. Verifique as regras do Storage."
+                  : "Falha ao enviar o arquivo. Tente novamente."
+              )
+            ),
+          () => resolve()
+        );
+      });
+
+      // 2. Pede a análise: o backend baixa o arquivo do Storage.
+      setUploadPct(null);
+      ticker = setInterval(
+        () => setStepIndex((i) => Math.min(i + 1, PROCESSING_STEPS.length - 1)),
+        6000
+      );
+      setStepIndex(1);
+
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Sessão expirada. Entre novamente.");
-      const body = new FormData();
-      body.append("file", file);
-      body.append("attendanceType", attendanceType);
-      body.append("observation", observation);
-      const res = await fetch("/api/analyze", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
+
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ filePath: path, attendanceType, observation }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Falha ao processar.");
       router.replace(`/analise/${data.analysisId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado.");
       setSubmitting(false);
+      setUploadPct(null);
     } finally {
-      clearInterval(ticker);
+      if (ticker) clearInterval(ticker);
     }
   }
 
@@ -70,12 +120,23 @@ function UploadForm() {
       <div className="fade-up mx-auto max-w-[660px]">
         <div className="dc-card mt-10 px-8 py-11 text-center">
           <div className="mx-auto h-[52px] w-[52px] rounded-full border-[3px] border-indicator" style={{ borderTopColor: "#00cbff", animation: "spin .9s linear infinite" }} />
-          <div className="mt-[22px] text-base font-semibold text-foreground">{PROCESSING_STEPS[stepIndex]}…</div>
-          <p className="mt-2 text-[12.5px] leading-[1.6] text-muted">Isso pode levar alguns minutos, dependendo do tamanho da gravação.<br />Não feche esta página.</p>
+          <div className="mt-[22px] text-base font-semibold text-foreground">
+            {uploadPct !== null ? `Enviando seu atendimento… ${uploadPct}%` : `${PROCESSING_STEPS[stepIndex]}…`}
+          </div>
+
+          {uploadPct !== null && (
+            <div className="mx-auto mt-4 h-2 max-w-[330px] overflow-hidden rounded-full bg-indicator">
+              <div className="h-full rounded-full transition-all" style={{ width: `${uploadPct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8,#00cbff)" }} />
+            </div>
+          )}
+
+          <p className="mt-3 text-[12.5px] leading-[1.6] text-muted">Isso pode levar alguns minutos, dependendo do tamanho da gravação.<br />Não feche esta página.</p>
           <div className="mx-auto mt-[26px] flex max-w-[330px] flex-col gap-[11px] text-left">
             {PROCESSING_STEPS.map((label, i) => {
-              const done = i < stepIndex;
-              const current = i === stepIndex;
+              // Durante o envio, só o passo 0 está em andamento.
+              const activeIndex = uploadPct !== null ? 0 : stepIndex;
+              const done = i < activeIndex;
+              const current = i === activeIndex;
               return (
                 <div key={i} className="flex items-center gap-[11px]">
                   <span className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full text-[9.5px] font-semibold" style={{

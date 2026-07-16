@@ -10,7 +10,7 @@ Plataforma de treinamento comercial de 30 dias: vendedores enviam áudios/vídeo
 - **Autenticação:** Firebase Authentication (Google + e-mail/senha)
 - **Banco:** Cloud Firestore
 - **Backend/IA:** Route Handler do Next.js (`/api/analyze`) · OpenAI (Whisper + GPT-4o) · ffmpeg
-- **Arquivos:** Firebase Storage *(pendente — requer plano Blaze; ver "Produção")*
+- **Arquivos:** Firebase Storage (upload direto do cliente; o backend baixa para processar)
 
 ## Status de implementação
 
@@ -75,15 +75,23 @@ node scripts/test-admin.mjs
 
 ## Como funciona o pipeline de análise
 
-1. O vendedor envia áudio ou vídeo em `/upload`.
-2. `POST /api/analyze` verifica o token do Firebase e identifica o usuário.
-3. **ffmpeg** extrai a faixa de áudio (no caso de vídeo), comprime para mp3 mono 16 kHz e, se necessário, divide em blocos abaixo do limite de 25 MB do Whisper.
-4. **Whisper** transcreve; **GPT-4o** analisa com saída estruturada (JSON Schema), recebendo o perfil do vendedor e a fase da semana como contexto.
+1. O vendedor escolhe o arquivo em `/upload`; o navegador envia **direto para o Firebase Storage** em `uploads/{uid}/…` (com barra de progresso). O arquivo não passa pelo servidor do app — por isso não há limite de tamanho de requisição.
+2. `POST /api/analyze` recebe apenas o **caminho** do arquivo, verifica o token do Firebase e **rejeita caminho fora da pasta do próprio vendedor**.
+3. O backend baixa o arquivo do Storage. **ffmpeg** extrai a faixa de áudio (no caso de vídeo), comprime para mp3 mono 16 kHz e, se necessário, divide em blocos abaixo do limite de 25 MB do Whisper.
+4. **Whisper** transcreve; **GPT-4o** analisa com saída estruturada (JSON Schema), recebendo o perfil do vendedor, a fase da semana e a **base de conhecimento** (coleção `knowledge`, editável em `/admin/conhecimento`) como contexto.
 5. A **nota geral é recalculada no backend** pela média ponderada dos 8 critérios — o número que a IA escreve não é usado.
 6. Análise, upload e progresso são gravados no Firestore; o dashboard atualiza em tempo real.
 
+## Painel do gestor (admin)
+
+- `/admin` — acompanhamento da equipe
+- `/admin/usuarios` — promover/rebaixar gestor e criar contas
+- `/admin/conhecimento` — abastecer a IA (sem mexer em código)
+- `/admin/testar-ia` — analisar uma transcrição sem salvar nada
+
 ## Produção — o que ainda precisa ser decidido
 
-- **Hospedagem:** o pipeline roda em um Route Handler Node.js com ffmpeg e pode levar minutos. **Vercel (plano gratuito) não é adequado** por limites de duração e de tamanho do corpo da requisição. Recomendado: Cloud Run, Railway, Render ou um servidor Node próprio.
-- **Storage (requer plano Blaze):** hoje o arquivo é processado em memória e **não é persistido**. O caminho de produção correto é: o cliente envia direto para o Firebase Storage → o backend baixa e processa. Isso remove o limite de upload da requisição e guarda a gravação original.
-- **Custo:** ~US$ 0,10 por atendimento de 10 min (transcrição + análise). Configure alertas de orçamento na OpenAI e no Google Cloud.
+- **Hospedagem:** o pipeline roda em um Route Handler Node.js com ffmpeg e pode levar minutos. **Vercel (plano gratuito) não é adequado** pelo limite de duração da função. Recomendado: Cloud Run, Railway, Render ou um servidor Node próprio. (O limite de *tamanho de upload* deixou de ser problema: o arquivo vai direto para o Storage.)
+- **Retenção de gravações:** os áudios/vídeos ficam no Storage indefinidamente e consomem armazenamento cobrado (plano Blaze). Vale definir uma política de expiração (ex.: apagar com mais de 90 dias) — a transcrição e a análise permanecem no Firestore.
+- **Custo:** ~US$ 0,10 por atendimento de 10 min (transcrição + análise), mais armazenamento/banda do Storage. Configure alertas de orçamento na OpenAI e no Google Cloud.
+- **LGPD:** as gravações contêm conversas com terceiros. Definir consentimento no upload e política de retenção.

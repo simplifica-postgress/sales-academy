@@ -6,6 +6,7 @@ import { join } from "node:path";
 import OpenAI from "openai";
 import { cert, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getStorage } from "firebase-admin/storage";
 
 const ROOT = process.cwd();
 
@@ -24,6 +25,7 @@ const app = initializeApp({
     clientEmail: sa.client_email,
     privateKey: sa.private_key,
   }),
+  storageBucket: env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
 });
 
 const TEST_EMAIL = "teste.vendedor@simplifica.dev";
@@ -74,19 +76,28 @@ async function main() {
   if (!idToken) throw new Error("Falha ao obter idToken: " + JSON.stringify(exchange));
   console.log("Autenticado como", TEST_EMAIL, "(uid " + uid + ")");
 
-  // 3. Envia para /api/analyze.
+  // 3. Sobe o arquivo para o Storage (como o vendedor faz no navegador).
   const audio = readFileSync(AUDIO_PATH);
-  const form = new FormData();
-  form.append("file", new Blob([audio], { type: "audio/mpeg" }), "atendimento.mp3");
-  form.append("attendanceType", "reuniao");
-  form.append("observation", "Atendimento de teste gerado por TTS.");
+  const filePath = `uploads/${uid}/${Date.now()}-atendimento.mp3`;
+  await getStorage(app).bucket().file(filePath).save(audio, {
+    contentType: "audio/mpeg",
+  });
+  console.log("Arquivo no Storage:", filePath);
 
-  console.log("Enviando para /api/analyze... (transcrição + análise)");
+  // 4. Pede a análise (o backend baixa o arquivo do Storage).
+  console.log("Chamando /api/analyze... (download + transcrição + análise)");
   const t0 = Date.now();
   const res = await fetch("http://localhost:3000/api/analyze", {
     method: "POST",
-    headers: { Authorization: `Bearer ${idToken}` },
-    body: form,
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      filePath,
+      attendanceType: "reuniao",
+      observation: "Atendimento de teste gerado por TTS.",
+    }),
   });
   const body = await res.json();
   console.log(`\nStatus: ${res.status} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);

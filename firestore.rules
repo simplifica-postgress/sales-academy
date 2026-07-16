@@ -1,5 +1,8 @@
 rules_version = '2';
 
+// PRINCÍPIO: o cliente nunca escreve nada que afete avaliação, progresso ou
+// permissão. Tudo isso é gravado só pelo backend (Admin SDK, que ignora estas
+// regras). O cliente só edita os campos do próprio perfil.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -16,46 +19,70 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // Campos que o vendedor pode editar no próprio perfil.
+    // Fora desta lista (role, profileCompleted, trainingStartDate, currentDay,
+    // progressPercent, averageScore, currentLevel) só o backend grava.
+    function editableProfileKeys() {
+      return [
+        'name', 'company', 'salesRole', 'experience',
+        'attendanceTypes', 'mainDifficulty', 'goal'
+      ];
+    }
+
     // Usuários: cada um lê/edita o próprio; admin lê todos.
-    // Ninguém muda o próprio role pelo cliente (anti-fraude).
     match /users/{userId} {
       allow read: if isSelf(userId) || isAdmin();
+
+      // Criação no primeiro login: sempre como vendedor, sem progresso.
       allow create: if isSelf(userId)
-        && request.resource.data.role == 'seller';
+        && request.resource.data.role == 'seller'
+        && request.resource.data.profileCompleted == false
+        && request.resource.data.progressPercent == 0
+        && request.resource.data.averageScore == 0
+        && request.resource.data.currentLevel == 1
+        && request.resource.data.currentDay == 0
+        && request.resource.data.trainingStartDate == null;
+
+      // Edição pelo cliente: apenas campos de perfil.
+      // Impede forjar progresso/nível/dia e escalada de privilégio.
       allow update: if isSelf(userId)
-        && request.resource.data.role == resource.data.role;
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(editableProfileKeys());
+
       allow delete: if false;
     }
 
-    // Progresso: leitura própria/admin; criação inicial pelo próprio;
-    // atualizações apenas pelo backend (Admin SDK ignora estas regras).
+    // Progresso: leitura própria/admin. Escrita 100% pelo backend.
     match /progress/{userId} {
       allow read: if isSelf(userId) || isAdmin();
-      allow create: if isSelf(userId);
-      allow update, delete: if false;
+      allow write: if false;
     }
 
-    // Uploads: vendedor cria/lê os próprios; admin lê todos.
-    // Status é atualizado pelo backend.
+    // Envios: leitura própria/admin. Criados pelo backend após o arquivo
+    // chegar ao Storage (o cliente não registra envio direto no banco).
     match /uploads/{uploadId} {
       allow read: if isSignedIn()
         && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow write: if false;
     }
 
     // Análises: geradas apenas pelo backend; leitura própria/admin.
     match /analyses/{analysisId} {
       allow read: if isSignedIn()
         && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create, update, delete: if false;
+      allow write: if false;
     }
 
-    // Base de conhecimento que alimenta a IA: só o gestor edita.
+    // Base de conhecimento que alimenta a IA: só o gestor.
+    // O vendedor não precisa ler (minimização de dados).
     match /knowledge/{docId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Nega qualquer coleção não declarada acima.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

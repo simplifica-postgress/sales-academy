@@ -10,6 +10,7 @@ import {
 } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
+import { getStorage } from "firebase-admin/storage";
 
 /**
  * Credenciais do backend. Aceita, nesta ordem:
@@ -50,10 +51,18 @@ function loadServiceAccount(): ServiceAccount {
   };
 }
 
+const STORAGE_BUCKET =
+  process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ??
+  "treinamentos-simplifica.firebasestorage.app";
+
 const adminApp = getApps().length
   ? getApp()
-  : initializeApp({ credential: cert(loadServiceAccount()) });
+  : initializeApp({
+      credential: cert(loadServiceAccount()),
+      storageBucket: STORAGE_BUCKET,
+    });
 
 export const adminAuth = getAuth(adminApp);
 // Banco NOMEADO "default" neste projeto (não o "(default)" padrão).
 export const adminDb = getFirestore(adminApp, "default");
+export const adminBucket = getStorage(adminApp).bucket();

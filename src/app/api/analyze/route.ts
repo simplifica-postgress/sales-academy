@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { adminAuth, adminDb } from "@/lib/server/firebaseAdmin";
+import { adminAuth, adminBucket, adminDb } from "@/lib/server/firebaseAdmin";
 import { analyze, transcribe } from "@/lib/server/openai";
 import { computeProgression } from "@/lib/progression";
 import {
@@ -50,26 +50,48 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
   }
 
-  // 2. Lê o formulário.
-  const form = await req.formData();
-  const file = form.get("file");
-  const attendanceType = String(form.get("attendanceType") ?? "");
-  const observation = String(form.get("observation") ?? "");
+  // 2. Lê o pedido: o arquivo já está no Storage, recebemos o caminho.
+  const body = (await req.json()) as {
+    filePath?: string;
+    attendanceType?: string;
+    observation?: string;
+  };
+  const filePath = (body.filePath ?? "").trim();
+  const attendanceType = body.attendanceType ?? "";
+  const observation = body.observation ?? "";
 
-  if (!(file instanceof File)) {
+  if (!filePath) {
+    return NextResponse.json({ error: "Arquivo não enviado." }, { status: 400 });
+  }
+  // O caminho precisa ser da pasta do próprio vendedor (anti-adulteração).
+  if (!filePath.startsWith(`uploads/${uid}/`)) {
     return NextResponse.json(
-      { error: "Arquivo não enviado." },
-      { status: 400 }
+      { error: "Caminho de arquivo inválido." },
+      { status: 403 }
     );
   }
-  if (file.size > MAX_UPLOAD_BYTES) {
+
+  const storageFile = adminBucket.file(filePath);
+  const [exists] = await storageFile.exists();
+  if (!exists) {
+    return NextResponse.json(
+      { error: "Arquivo não encontrado no Storage." },
+      { status: 404 }
+    );
+  }
+
+  const [meta] = await storageFile.getMetadata();
+  const mimeType = meta.contentType ?? "";
+  const size = Number(meta.size ?? 0);
+
+  if (size > MAX_UPLOAD_BYTES) {
     return NextResponse.json(
       { error: "Arquivo muito grande (máximo 500 MB)." },
       { status: 400 }
     );
   }
-  const isAudio = ACCEPTED_AUDIO_TYPES.includes(file.type);
-  const isVideo = ACCEPTED_VIDEO_TYPES.includes(file.type);
+  const isAudio = ACCEPTED_AUDIO_TYPES.includes(mimeType);
+  const isVideo = ACCEPTED_VIDEO_TYPES.includes(mimeType);
   if (!isAudio && !isVideo) {
     return NextResponse.json(
       { error: "Formato não suportado. Envie áudio ou vídeo." },
@@ -99,14 +121,15 @@ export async function POST(req: Request) {
       )
     : 1;
 
-  // 4. Registra o upload como "processing".
+  // 4. Registra o upload como "processing", já apontando para o arquivo.
   const uploadRef = adminDb.collection("uploads").doc();
   await uploadRef.set({
     userId: uid,
     fileUrl: "",
-    filePath: "",
+    filePath,
     fileType: isVideo ? "video" : "audio",
-    mimeType: file.type,
+    mimeType,
+    fileSize: size,
     status: "processing",
     trainingDay,
     attendanceType,
@@ -115,9 +138,9 @@ export async function POST(req: Request) {
   });
 
   try {
-    // 5. Transcreve e analisa.
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const transcript = await transcribe(buffer, file.name);
+    // 5. Baixa do Storage, transcreve e analisa.
+    const [buffer] = await storageFile.download();
+    const transcript = await transcribe(buffer, filePath.split("/").pop() ?? "audio");
     if (!transcript || transcript.length < 20) {
       throw new Error(
         "Não foi possível entender o áudio. Verifique a gravação e tente de novo."

@@ -41,25 +41,21 @@ function ProfileForm() {
     setError("");
     setSubmitting(true);
     try {
-      await completeProfile(
-        user.uid,
-        user.email ?? "",
-        {
-          name: name.trim(),
-          company: company.trim(),
-          salesRole: salesRole.trim(),
-          experience,
-          attendanceTypes,
-          mainDifficulty: mainDifficulty.trim(),
-          goal: goal.trim(),
-        },
-        { isNew: !profile }
-      );
+      await completeProfile({
+        name: name.trim(),
+        company: company.trim(),
+        salesRole: salesRole.trim(),
+        experience,
+        attendanceTypes,
+        mainDifficulty: mainDifficulty.trim(),
+        goal: goal.trim(),
+      });
       await refreshProfile();
       router.replace("/dashboard");
     } catch (err) {
-      console.error(err);
-      setError("Não foi possível salvar. Tente novamente.");
+      setError(
+        err instanceof Error ? err.message : "Não foi possível salvar. Tente novamente."
+      );
       setSubmitting(false);
     }
   }

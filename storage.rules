@@ -1,16 +1,29 @@
 rules_version = '2';
 
+// As gravações contêm conversas com clientes (dados de terceiros).
+// Regra: cada vendedor só enxerga a própria pasta, só consegue ENVIAR
+// (não trocar nem apagar) e só áudio/vídeo até 500 MB.
+// Exclusão fica com o backend (política de retenção / pedido de exclusão),
+// para que a gravação que gerou uma análise não suma sem controle.
 service firebase.storage {
   match /b/{bucket}/o {
-    // Cada vendedor grava e lê apenas a própria pasta de uploads.
-    // Limite de 500 MB e apenas áudio/vídeo.
+
     match /uploads/{userId}/{allPaths=**} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null
+      allow read: if request.auth != null
+        && request.auth.uid == userId;
+
+      allow create: if request.auth != null
         && request.auth.uid == userId
         && request.resource.size < 500 * 1024 * 1024
         && (request.resource.contentType.matches('audio/.*')
             || request.resource.contentType.matches('video/.*'));
+
+      allow update, delete: if false;
+    }
+
+    // Nega qualquer caminho fora de uploads/{uid}/.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

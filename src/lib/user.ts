@@ -1,5 +1,4 @@
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { auth } from "./firebase";
 import type { AttendanceType } from "./types";
 
 export interface ProfileFormData {
@@ -13,47 +12,29 @@ export interface ProfileFormData {
 }
 
 /**
- * Completa o cadastro inicial do vendedor: grava o perfil,
- * inicia o treinamento (dia 1) e cria o documento de progresso.
+ * Conclui o cadastro do vendedor via backend.
  *
- * Usa setDoc com merge para funcionar mesmo se o documento do
- * usuário ainda não existir (ex.: falha na criação do primeiro login).
+ * O cliente NÃO escreve no Firestore aqui de propósito: as Rules bloqueiam
+ * qualquer escrita de campos ligados a avaliação/progresso. Quem inicia o
+ * treinamento (trainingStartDate, currentDay, progress) é o servidor.
  */
-export async function completeProfile(
-  uid: string,
-  email: string,
-  data: ProfileFormData,
-  opts: { isNew: boolean }
-) {
-  await setDoc(
-    doc(db, "users", uid),
-    {
-      ...data,
-      email,
-      role: "seller",
-      profileCompleted: true,
-      trainingStartDate: serverTimestamp(),
-      currentDay: 1,
-      ...(opts.isNew
-        ? {
-            createdAt: serverTimestamp(),
-            progressPercent: 0,
-            averageScore: 0,
-            currentLevel: 1,
-          }
-        : {}),
-    },
-    { merge: true }
-  );
+export async function completeProfile(data: ProfileFormData): Promise<void> {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error("Sessão expirada. Entre novamente.");
 
-  await setDoc(doc(db, "progress", uid), {
-    totalUploads: 0,
-    completedDays: 0,
-    currentLevel: 1,
-    bestScore: 0,
-    averageScore: 0,
-    idealAttendanceReached: false,
-    highScoreStreak: 0,
-    lastAnalysisDate: null,
+  const res = await fetch("/api/profile/complete", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
   });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      (payload as { error?: string }).error ?? "Não foi possível salvar."
+    );
+  }
 }
