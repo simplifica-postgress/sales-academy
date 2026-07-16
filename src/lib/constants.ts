@@ -149,6 +149,18 @@ export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
  */
 export const CONSENT_VERSION = "1.0";
 
+/**
+ * Retenção das gravações, em dias (LGPD: finalidade e necessidade).
+ * A gravação existe para gerar a análise; cumprida essa finalidade, ela é
+ * descartada. A análise (nota, transcrição, missão) permanece para sempre.
+ *
+ * Configurável sem mexer no código via NEXT_PUBLIC_RETENTION_DAYS no .env
+ * (público de propósito: o vendedor precisa ver o prazo no termo).
+ */
+export const RETENTION_DAYS = Number(
+  process.env.NEXT_PUBLIC_RETENTION_DAYS ?? 60
+);
+
 /** Termo exibido (e registrado) a cada envio de atendimento. */
 export const CONSENT_TEXT =
-  "Declaro que este atendimento foi gravado de forma lícita e que tenho autorização para compartilhá-lo com a Simplifica para fins de treinamento comercial. Estou ciente de que o arquivo será armazenado em servidor seguro, processado por inteligência artificial para gerar a análise e ficará acessível ao meu gestor.";
+  `Declaro que este atendimento foi gravado de forma lícita e que tenho autorização para compartilhá-lo com a Simplifica para fins de treinamento comercial. Estou ciente de que o arquivo será armazenado em servidor seguro, processado por inteligência artificial para gerar a análise, ficará acessível ao meu gestor e será excluído automaticamente após ${RETENTION_DAYS} dias.`;

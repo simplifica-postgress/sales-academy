@@ -96,6 +96,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const go = (href: string) => router.push(href);
   const home = isAdmin ? "/admin" : "/dashboard";
 
+  // Botão de voltar: aparece em toda página que não é a inicial do papel.
+  const showBack = pathname !== home;
+  const goBack = () => {
+    // Se não há histórico dentro do app (ex.: link direto), cai na home.
+    if (window.history.length > 1) router.back();
+    else router.push(home);
+  };
+
   return (
     <div className="flex min-h-screen items-stretch">
       {/* Sidebar (desktop e notebook) */}
@@ -193,7 +201,20 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </nav>
         </header>
 
-        <main className="mx-auto w-full max-w-[1180px] flex-1 px-4 py-6 lg:px-10 lg:py-9">{children}</main>
+        <main className="mx-auto w-full max-w-[1180px] flex-1 px-4 py-6 lg:px-10 lg:py-9">
+          {showBack && (
+            <button
+              onClick={goBack}
+              className="mb-4 inline-flex items-center gap-2 rounded-lg border border-[rgba(0,45,115,.6)] bg-card-alt px-3.5 py-2 text-[12.5px] font-medium text-muted transition hover:border-[rgba(0,135,248,.5)] hover:text-foreground"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Voltar
+            </button>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminData, type SellerRow } from "@/hooks/useAdminData";
+import { adminPost } from "@/lib/adminApi";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import Spinner from "@/components/Spinner";
-import { LEVELS } from "@/lib/constants";
+import { LEVELS, RETENTION_DAYS } from "@/lib/constants";
 import { shortDate } from "@/lib/training";
 import { initials, scoreColor } from "@/lib/ui";
 
@@ -47,6 +49,55 @@ function Kpi({ label, children }: { label: string; children: React.ReactNode }) 
     <div className="dc-card px-[22px] py-5">
       <div className="mono-label">{label}</div>
       {children}
+    </div>
+  );
+}
+
+function RetentionCard() {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState("");
+  const [error, setError] = useState("");
+
+  async function run() {
+    setError("");
+    setResult("");
+    setRunning(true);
+    try {
+      const r = await adminPost<{ deleted: number; scanned: number }>(
+        "/api/admin/retention",
+        {}
+      );
+      setResult(
+        r.deleted === 0
+          ? "Nenhuma gravação venceu o prazo — nada a apagar."
+          : `${r.deleted} gravação(ões) apagada(s). As análises foram preservadas.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha na limpeza.");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div className="dc-card mt-3.5 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-[640px]">
+          <div className="mono-label mb-1.5">Privacidade · retenção de gravações</div>
+          <p className="text-[12.5px] leading-[1.6] text-muted">
+            As gravações são apagadas após <strong className="text-foreground">{RETENTION_DAYS} dias</strong>, cumprida a finalidade de gerar a análise. <strong className="text-foreground">As análises são preservadas</strong> — o histórico do vendedor não perde nada.
+          </p>
+        </div>
+        <button
+          onClick={run}
+          disabled={running}
+          className="flex-none rounded-lg border border-[rgba(0,45,115,.6)] bg-card-alt px-3.5 py-2 text-[12px] font-medium text-muted transition hover:border-[rgba(0,135,248,.5)] hover:text-foreground disabled:opacity-50"
+        >
+          {running ? "Executando…" : "Executar limpeza agora"}
+        </button>
+      </div>
+      {result && <p className="mt-3 rounded-[10px] border border-[rgba(0,203,255,.3)] bg-[rgba(0,203,255,.08)] px-3.5 py-2.5 text-[12.5px] text-cyan">{result}</p>}
+      {error && <p className="mt-3 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-2.5 text-[12.5px] text-danger">{error}</p>}
     </div>
   );
 }
@@ -104,6 +155,8 @@ function AdminPanel() {
           </div>
         )}
       </div>
+
+      <RetentionCard />
     </div>
   );
 }

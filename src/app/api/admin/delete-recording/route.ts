@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
 import { AuthError, requireAdmin } from "@/lib/server/adminAuth";
-import { adminBucket, adminDb } from "@/lib/server/firebaseAdmin";
+import { deleteRecordingFile } from "@/lib/server/recordings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,27 +26,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Informe o uploadId." }, { status: 400 });
   }
 
-  const ref = adminDb.collection("uploads").doc(uploadId);
-  const snap = await ref.get();
-  if (!snap.exists) {
+  const result = await deleteRecordingFile(uploadId, caller.uid);
+  if (result.notFound) {
     return NextResponse.json({ error: "Envio não encontrado." }, { status: 404 });
   }
 
-  if (snap.get("fileDeleted") === true) {
-    return NextResponse.json({ ok: true, alreadyDeleted: true });
-  }
-
-  const filePath = snap.get("filePath") as string | undefined;
-  if (filePath) {
-    // ignoreNotFound: se o arquivo já sumiu, marcamos assim mesmo.
-    await adminBucket.file(filePath).delete({ ignoreNotFound: true });
-  }
-
-  await ref.update({
-    fileDeleted: true,
-    fileDeletedAt: FieldValue.serverTimestamp(),
-    fileDeletedBy: caller.uid,
+  return NextResponse.json({
+    ok: true,
+    alreadyDeleted: result.alreadyDeleted ?? false,
   });
-
-  return NextResponse.json({ ok: true });
 }

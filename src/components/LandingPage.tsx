@@ -69,11 +69,6 @@ export default function LandingPage() {
         overflowX: "clip",
       }}
     >
-      {/* Urgência */}
-      <div className="border-b border-[rgba(0,135,248,.25)] px-4 py-2.5 text-center text-[12.5px] font-medium text-white" style={{ background: "linear-gradient(90deg, rgba(0,82,185,.28), rgba(0,135,248,.16), rgba(0,203,255,.1))" }}>
-        🔥 Vagas limitadas — atendemos apenas <strong className="text-cyan">10 empresas por ciclo</strong> de acompanhamento
-      </div>
-
       {/* Topbar */}
       <header className="sticky top-0 z-50 border-b border-[rgba(0,45,115,.45)] backdrop-blur-lg" style={{ background: "rgba(0,4,20,.85)" }}>
         <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-4 px-6 py-3.5">
@@ -266,7 +261,7 @@ export default function LandingPage() {
           <div className="rounded-[19px] px-7 text-center" style={{ padding: "clamp(36px,6vw,64px) 28px", background: "radial-gradient(700px 300px at 50% -20%, rgba(0,135,248,.18), transparent 70%), linear-gradient(100deg, #00173d, #03112d)" }}>
             <h2 className="mx-auto max-w-[640px] font-semibold leading-[1.15] tracking-[-0.02em] text-white" style={{ fontSize: "clamp(26px,3.6vw,42px)", textWrap: "balance" }}>Pronto para colocar seu comercial em outro nível?</h2>
             <p className="mx-auto mt-4 max-w-[520px] text-[15px] leading-[1.65] text-muted">
-              Para garantir acompanhamento de qualidade, atendemos <strong className="text-cyan">apenas 10 empresas por ciclo</strong>. Se houver vaga agora, não perca tempo.
+              Em 30 dias seu time sai do improviso para um método de atendimento com nota, missão diária e evolução medida. Fale com a gente e comece o treinamento.
             </p>
             <div className="mt-[30px] flex flex-wrap justify-center gap-3">
               <Link href="/login" className="inline-flex items-center gap-2.5 rounded-xl px-[30px] py-[15px] text-[15px] font-semibold text-white transition hover:-translate-y-0.5" style={{ background: "linear-gradient(135deg,#0052b9,#0087f8)", boxShadow: "0 12px 34px rgba(0,135,248,.38)" }}>Começar meu treinamento de 30 dias →</Link>

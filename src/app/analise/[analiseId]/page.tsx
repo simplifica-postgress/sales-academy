@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where, type Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -16,7 +16,6 @@ import type { Analysis } from "@/lib/types";
 
 function AnalysisView() {
   const params = useParams<{ analiseId: string }>();
-  const router = useRouter();
   const id = params.analiseId;
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [prevScore, setPrevScore] = useState<number | null>(null);
@@ -67,12 +66,10 @@ function AnalysisView() {
 
   return (
     <div className="fade-up">
-      <div className="mb-6">
-        <button onClick={() => router.back()} className="inline-flex items-center gap-[7px] text-[12.5px] font-medium text-muted transition hover:text-cyan">← Voltar</button>
-        <div className="mt-2.5 flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Análise do atendimento</h1>
-          <span className="font-mono text-[12px] text-muted">Dia {analysis.trainingDay} · {shortDate(analysis.createdAt)}</span>
-        </div>
+      {/* O botão de voltar fica no AppShell (vale para todas as telas). */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Análise do atendimento</h1>
+        <span className="font-mono text-[12px] text-muted">Dia {analysis.trainingDay} · {shortDate(analysis.createdAt)}</span>
       </div>
 
       {/* Ring + resumo */}

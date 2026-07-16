@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where, type Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -30,7 +30,6 @@ function humanSize(bytes?: number): string {
 
 function SellerDetail() {
   const params = useParams<{ sellerId: string }>();
-  const router = useRouter();
   const uid = params.sellerId;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [analyses, setAnalyses] = useState<AnalysisRow[]>([]);
@@ -110,10 +109,7 @@ function SellerDetail() {
 
   return (
     <div className="fade-up">
-      <div className="mb-[22px]">
-        <button onClick={() => router.push("/admin")} className="inline-flex items-center gap-[7px] text-[12.5px] font-medium text-muted transition hover:text-cyan">← Equipe</button>
-      </div>
-
+      {/* O botão de voltar fica no AppShell (vale para todas as telas). */}
       <div className="dc-card mb-3.5 flex flex-wrap items-center gap-[26px] p-[26px]">
         <div className="flex-none"><ScoreRing value={latest?.generalScore ?? null} size={118} strokeWidth={9} sublabel="atual" /></div>
         <div className="min-w-[240px] flex-1">
