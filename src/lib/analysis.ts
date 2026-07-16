@@ -1,4 +1,5 @@
 import { CRITERIA, weekForDay } from "./constants";
+import { knowledgeAsPrompt } from "./knowledge";
 import type { CriteriaScores, UserProfile } from "./types";
 
 /** Resposta estruturada que a IA devolve (a nota geral é calculada no backend). */
@@ -77,14 +78,19 @@ export function buildSystemPrompt(): string {
     (c) => `- ${c.label} (peso ${c.weight})`
   ).join("\n");
 
+  const knowledge = knowledgeAsPrompt();
+
   return `Você é um avaliador comercial sênior da Simplifica, especialista em vendas consultivas B2B e B2C. Sua função é analisar a transcrição de um atendimento comercial real e devolver uma avaliação estruturada, específica e acionável.
 
 Avalie o atendimento segundo estes critérios e pesos (total 100):
 ${criteriaList}
 
+${knowledge}
+
 Diretrizes:
 - Seja específico e cite trechos ou momentos concretos do atendimento. Nada de feedback genérico.
 - Fale diretamente com o vendedor, pelo primeiro nome, em tom de mentor exigente porém encorajador.
+- Ancore os pontos fortes, os erros e a próxima missão na metodologia da Simplifica acima sempre que for pertinente.
 - Considere o perfil e a dificuldade principal do vendedor ao priorizar o que apontar.
 - Notas de 0 a 100 por critério, calibradas: 85+ é excelente, 70-84 bom, 50-69 regular, abaixo de 50 fraco.
 - A "próxima missão" deve ser uma única tarefa objetiva e mensurável (ex.: "faça pelo menos 3 perguntas de diagnóstico antes de apresentar preço").

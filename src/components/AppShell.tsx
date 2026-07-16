@@ -66,8 +66,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen items-stretch">
-      {/* Sidebar (desktop) */}
-      <aside className="sticky top-0 hidden h-screen w-[248px] flex-none flex-col gap-2 border-r border-[rgba(0,45,115,.45)] bg-[rgba(2,13,35,.72)] px-4 pb-5 pt-[26px] backdrop-blur-md lg:flex">
+      {/* Sidebar (desktop e notebook) */}
+      <aside className="sticky top-0 hidden h-screen w-[248px] flex-none flex-col gap-2 border-r border-[rgba(0,45,115,.45)] bg-[rgba(2,13,35,.72)] px-4 pb-5 pt-[26px] backdrop-blur-md min-[900px]:flex">
         <button onClick={() => go(home)} className="border-b border-[rgba(0,45,115,.4)] px-2.5 pb-[18px] text-left">
           <Image src="/logo.png" alt="Simplifica" width={132} height={35} style={{ width: 132, height: "auto" }} priority />
           <div className="mono-label mt-2.5" style={{ letterSpacing: "0.22em", fontSize: 10 }}>
@@ -122,8 +122,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
       {/* Conteúdo */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Topbar (mobile) */}
-        <header className="sticky top-0 z-30 flex flex-col gap-3 border-b border-[rgba(0,45,115,.45)] bg-[rgba(0,4,20,.86)] px-[18px] pb-3 pt-3.5 backdrop-blur-lg lg:hidden">
+        {/* Topbar (apenas celular, abaixo de 900px) */}
+        <header className="sticky top-0 z-30 flex flex-col gap-3 border-b border-[rgba(0,45,115,.45)] bg-[rgba(0,4,20,.86)] px-[18px] pb-3 pt-3.5 backdrop-blur-lg min-[900px]:hidden">
           <div className="flex items-center justify-between gap-3">
             <button onClick={() => go(home)} className="flex items-center gap-2.5">
               <Image src="/logo.png" alt="Simplifica" width={112} height={30} style={{ width: 112, height: "auto" }} priority />
