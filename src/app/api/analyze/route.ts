@@ -153,7 +153,11 @@ export async function POST(req: Request) {
   try {
     // 5. Baixa do Storage, transcreve e analisa.
     const [buffer] = await storageFile.download();
-    const transcript = await transcribe(buffer, filePath.split("/").pop() ?? "audio");
+    const transcript = await transcribe(
+      buffer,
+      filePath.split("/").pop() ?? "audio",
+      mimeType
+    );
     if (!transcript || transcript.length < 20) {
       throw new Error(
         "Não foi possível entender o áudio. Verifique a gravação e tente de novo."

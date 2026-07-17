@@ -74,15 +74,14 @@ function openai(): OpenAI {
 /** Transcreve o arquivo (áudio ou vídeo), dividindo em blocos se necessário. */
 export async function transcribe(
   input: Buffer,
-  originalName: string
+  originalName: string,
+  mimeType = ""
 ): Promise<string> {
   if (MOCK) return MOCK_TRANSCRIPT;
-  const chunks = await prepareAudioChunks(input, originalName);
+  const chunks = await prepareAudioChunks(input, originalName, mimeType);
   const parts: string[] = [];
   for (const chunk of chunks) {
-    const file = await toFile(chunk.data, chunk.filename, {
-      type: "audio/mpeg",
-    });
+    const file = await toFile(chunk.data, chunk.filename);
     const res = await openai().audio.transcriptions.create({
       file,
       model: TRANSCRIBE_MODEL,

@@ -97,6 +97,7 @@ async function main() {
       filePath,
       attendanceType: "reuniao",
       observation: "Atendimento de teste gerado por TTS.",
+      consent: true,
     }),
   });
   const body = await res.json();
