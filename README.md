@@ -89,6 +89,42 @@ node scripts/test-admin.mjs
 - `/admin/conhecimento` — abastecer a IA (sem mexer em código)
 - `/admin/testar-ia` — analisar uma transcrição sem salvar nada
 
+## Deploy (EasyPanel / Docker / qualquer host Node)
+
+O projeto **não usa `.env.local` nem `service-account.json` em produção** — os dois estão no `.gitignore`. Tudo vai por variável de ambiente.
+
+### Variáveis obrigatórias
+
+⚠️ As `NEXT_PUBLIC_*` são **embutidas no código durante o build**. Se faltarem, o build quebra com `auth/invalid-api-key`. Configure-as **antes** de implantar.
+
+```
+# Build + runtime (públicas — identificam o projeto, não são segredo)
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_RETENTION_DAYS=60
+
+# Runtime (SEGREDOS — nunca commitar)
+OPENAI_API_KEY=
+FIREBASE_ADMIN_PROJECT_ID=
+FIREBASE_ADMIN_CLIENT_EMAIL=
+FIREBASE_ADMIN_PRIVATE_KEY=
+AI_MOCK=false
+CRON_SECRET=
+```
+
+Os três `FIREBASE_ADMIN_*` saem do `service-account.json`: `project_id`, `client_email` e `private_key`. **A private key tem quebras de linha** — cole com `\n` literal ou entre aspas, conforme o painel aceitar.
+
+### Detalhes que importam
+
+- **Porta:** o Next sobe na `3000` (`npm start`). Aponte o proxy do painel para ela.
+- **Build:** `npm run build` · **Start:** `npm start`
+- **ffmpeg:** vem do pacote `ffmpeg-static` (binário Linux baixado no `npm install`). Não precisa instalar no servidor.
+- **Duração:** analisar um atendimento leva minutos. Um host com servidor próprio (EasyPanel/VPS) não tem limite de função — por isso ele serve, e a Vercel gratuita não.
+
 ## Produção — o que ainda precisa ser decidido
 
 - **Hospedagem:** o pipeline roda em um Route Handler Node.js com ffmpeg e pode levar minutos. **Vercel (plano gratuito) não é adequado** pelo limite de duração da função. Recomendado: Cloud Run, Railway, Render ou um servidor Node próprio. (O limite de *tamanho de upload* deixou de ser problema: o arquivo vai direto para o Storage.)
