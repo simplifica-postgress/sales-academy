@@ -6,11 +6,13 @@ import {
   getApp,
   getApps,
   initializeApp,
+  type App,
   type ServiceAccount,
 } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getAuth, type Auth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
+import type { Bucket } from "@google-cloud/storage";
 
 /**
  * Credenciais do backend. Aceita, nesta ordem:
@@ -41,7 +43,7 @@ function loadServiceAccount(): ServiceAccount {
   );
   if (!FIREBASE_ADMIN_PROJECT_ID || !FIREBASE_ADMIN_CLIENT_EMAIL || !privateKey) {
     throw new Error(
-      "Credenciais do Firebase Admin ausentes. Adicione service-account.json na raiz ou as variáveis FIREBASE_ADMIN_* no .env.local."
+      "Credenciais do Firebase Admin ausentes. Defina FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL e FIREBASE_ADMIN_PRIVATE_KEY (ou coloque service-account.json na raiz em desenvolvimento)."
     );
   }
   return {
@@ -51,18 +53,44 @@ function loadServiceAccount(): ServiceAccount {
   };
 }
 
-const STORAGE_BUCKET =
-  process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ??
-  "treinamentos-simplifica.firebasestorage.app";
+/**
+ * Inicialização PREGUIÇOSA de propósito.
+ *
+ * Se as credenciais fossem lidas no topo do módulo, o `next build` quebraria:
+ * ele importa todas as rotas para coletar metadados, e no servidor de deploy
+ * não existe service-account.json. Aqui as credenciais só são exigidas quando
+ * uma rota é realmente executada.
+ */
+let cached: App | null = null;
+function app(): App {
+  if (cached) return cached;
+  cached = getApps().length
+    ? getApp()
+    : initializeApp({
+        credential: cert(loadServiceAccount()),
+        storageBucket:
+          process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ??
+          "treinamentos-simplifica.firebasestorage.app",
+      });
+  return cached;
+}
 
-const adminApp = getApps().length
-  ? getApp()
-  : initializeApp({
-      credential: cert(loadServiceAccount()),
-      storageBucket: STORAGE_BUCKET,
-    });
+/**
+ * Exportados como Proxy: o objeto só é criado no primeiro uso real, então
+ * `import { adminDb }` não dispara nada em tempo de build.
+ */
+function lazy<T extends object>(factory: () => T): T {
+  let instance: T | null = null;
+  const get = () => (instance ??= factory());
+  return new Proxy({} as T, {
+    get(_t, prop, receiver) {
+      const value = Reflect.get(get() as object, prop, receiver);
+      return typeof value === "function" ? value.bind(get()) : value;
+    },
+  });
+}
 
-export const adminAuth = getAuth(adminApp);
+export const adminAuth = lazy<Auth>(() => getAuth(app()));
 // Banco NOMEADO "default" neste projeto (não o "(default)" padrão).
-export const adminDb = getFirestore(adminApp, "default");
-export const adminBucket = getStorage(adminApp).bucket();
+export const adminDb = lazy<Firestore>(() => getFirestore(app(), "default"));
+export const adminBucket = lazy<Bucket>(() => getStorage(app()).bucket());
