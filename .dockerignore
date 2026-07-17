@@ -1,0 +1,26 @@
+# Segredos: nunca entram na imagem (em produção tudo vem por variável de
+# ambiente). Mesmo estando no .gitignore, blindamos aqui também.
+.env*
+!.env.example
+service-account.json
+deploy-env.txt
+
+# Artefatos e lixo local
+node_modules
+.next
+.git
+.gitignore
+npm-debug.log*
+*.tsbuildinfo
+
+# Não precisa na imagem
+scripts
+docs
+README.md
+AGENTS.md
+CLAUDE.md
+firestore.rules
+storage.rules
+test-atendimento.mp3
+.vscode
+.idea
