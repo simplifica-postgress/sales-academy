@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Áudio de teste gerado localmente
 test-atendimento.mp3
+
+# Bloco de variaveis gerado para o deploy (contem segredos)
+deploy-env.txt
