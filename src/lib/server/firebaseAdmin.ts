@@ -37,10 +37,12 @@ function loadServiceAccount(): ServiceAccount {
   }
 
   const { FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL } = process.env;
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(
-    /\\n/g,
-    "\n"
-  );
+  // A private key costuma ser colada em painéis (EasyPanel etc.) de formas
+  // diferentes. Toleramos: aspas ao redor do valor e "\n" literal em vez de
+  // quebras de linha reais — as duas coisas quebram o cert() se não tratadas.
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\\n/g, "\n");
   if (!FIREBASE_ADMIN_PROJECT_ID || !FIREBASE_ADMIN_CLIENT_EMAIL || !privateKey) {
     throw new Error(
       "Credenciais do Firebase Admin ausentes. Defina FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL e FIREBASE_ADMIN_PRIVATE_KEY (ou coloque service-account.json na raiz em desenvolvimento)."

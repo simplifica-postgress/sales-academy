@@ -47,7 +47,10 @@ export async function POST(req: Request) {
   let uid: string;
   try {
     uid = (await adminAuth.verifyIdToken(idToken)).uid;
-  } catch {
+  } catch (err) {
+    // Sem log, um erro de configuração do servidor fica disfarçado de
+    // "sessão inválida" e não há como diagnosticar.
+    console.error("Falha ao verificar o token:", err);
     return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
   }
 
