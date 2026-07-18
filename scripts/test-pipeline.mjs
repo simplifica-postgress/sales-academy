@@ -30,6 +30,8 @@ const app = initializeApp({
 
 const TEST_EMAIL = "teste.vendedor@simplifica.dev";
 const AUDIO_PATH = join(ROOT, "test-atendimento.mp3");
+// Permite testar contra produção: BASE=https://... node scripts/test-pipeline.mjs
+const BASE = process.env.BASE || "http://localhost:3000";
 
 const SCRIPT = `Oi, bom dia! Aqui é o Thiago, da Simplifica. Tudo bem?
 Então, recebi seu contato pedindo informação sobre a nossa consultoria comercial.
@@ -87,7 +89,7 @@ async function main() {
   // 4. Pede a análise (o backend baixa o arquivo do Storage).
   console.log("Chamando /api/analyze... (download + transcrição + análise)");
   const t0 = Date.now();
-  const res = await fetch("http://localhost:3000/api/analyze", {
+  const res = await fetch(`${BASE}/api/analyze`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${idToken}`,
