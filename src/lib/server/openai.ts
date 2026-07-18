@@ -12,7 +12,14 @@ import { prepareAudioChunks } from "./audio";
 import { getKnowledgeText } from "./knowledge";
 
 const TRANSCRIBE_MODEL = "whisper-1";
-const ANALYSIS_MODEL = "gpt-4o";
+const ANALYSIS_MODEL = "gpt-5.1";
+
+/**
+ * Modelos de raciocínio (família GPT-5) só aceitam temperatura padrão.
+ * Mandar `temperature` diferente de 1 faz a API retornar erro, então só
+ * enviamos esse parâmetro para modelos que o suportam (ex.: gpt-4o).
+ */
+const SUPPORTS_TEMPERATURE = /^gpt-4/.test(ANALYSIS_MODEL);
 
 /**
  * Modo simulado: quando AI_MOCK=true, o pipeline devolve uma transcrição e
@@ -114,7 +121,7 @@ export async function analyze(
 
   const completion = await openai().chat.completions.create({
     model: ANALYSIS_MODEL,
-    temperature: 0.3,
+    ...(SUPPORTS_TEMPERATURE ? { temperature: 0.3 } : {}),
     messages: [
       { role: "system", content: buildSystemPrompt(knowledge) },
       {
