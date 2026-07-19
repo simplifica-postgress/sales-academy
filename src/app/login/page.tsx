@@ -100,7 +100,7 @@ export default function LoginPage() {
           <Image src="/logo.png" alt="Simplifica — Aceleradora de Negócios" width={200} height={53} style={{ width: 200, height: "auto", margin: "0 auto" }} priority />
           <div className="mono-label mt-3" style={{ letterSpacing: "0.26em" }}>Sales Academy</div>
           <p className="mx-auto mt-3.5 max-w-[300px] text-[13.5px] leading-relaxed text-muted">
-            30 dias para o seu atendimento ideal, com análise de IA a cada envio.
+            Rumo ao seu atendimento ideal, com análise de IA a cada envio.
           </p>
         </div>
 

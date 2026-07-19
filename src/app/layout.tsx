@@ -12,7 +12,7 @@ const sora = Sora({
 export const metadata: Metadata = {
   title: "Simplifica Sales Academy",
   description:
-    "Treinamento comercial de 30 dias com análise de atendimentos por IA.",
+    "Treinamento comercial com análise de atendimentos por IA.",
 };
 
 export default function RootLayout({

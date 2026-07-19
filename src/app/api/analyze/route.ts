@@ -9,7 +9,6 @@ import {
   CONSENT_VERSION,
   IDEAL_SCORE_THRESHOLD,
   MAX_UPLOAD_BYTES,
-  TRAINING_TOTAL_DAYS,
 } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
 
@@ -30,6 +29,27 @@ function currentStreak(byDay: Map<string, number>): number {
   for (let i = days.length - 1; i >= 0; i--) {
     if ((byDay.get(days[i]) ?? 0) > IDEAL_SCORE_THRESHOLD) streak += 1;
     else break;
+  }
+  return streak;
+}
+
+/**
+ * Sequência de dias seguidos com envio (hábito). Só está "viva" se o último
+ * envio foi hoje ou ontem — do contrário a sequência foi quebrada e volta a 0.
+ */
+function sendStreakFrom(dayKeys: Set<string>): number {
+  if (dayKeys.size === 0) return 0;
+  const DAY_MS = 86_400_000;
+  const today = dayKey(new Date());
+  const yesterday = dayKey(new Date(Date.now() - DAY_MS));
+  let cursor: Date;
+  if (dayKeys.has(today)) cursor = new Date();
+  else if (dayKeys.has(yesterday)) cursor = new Date(Date.now() - DAY_MS);
+  else return 0; // último envio há mais de um dia → sequência quebrada
+  let streak = 0;
+  while (dayKeys.has(dayKey(cursor))) {
+    streak += 1;
+    cursor = new Date(cursor.getTime() - DAY_MS);
   }
   return streak;
 }
@@ -122,14 +142,13 @@ export async function POST(req: Request) {
   }
   const profile = userSnap.data() as UserProfile;
 
+  // Dia de prática (dias desde o início do uso), sem teto: a ferramenta é
+  // usada quando o vendedor precisa, não há prazo fixo de 30 dias.
   const start = profile.trainingStartDate as Timestamp | null;
   const trainingDay = start
-    ? Math.min(
-        Math.max(
-          Math.floor((Date.now() - start.toDate().getTime()) / 86_400_000) + 1,
-          1
-        ),
-        TRAINING_TOTAL_DAYS
+    ? Math.max(
+        Math.floor((Date.now() - start.toDate().getTime()) / 86_400_000) + 1,
+        1
       )
     : 1;
 
@@ -221,7 +240,7 @@ export async function POST(req: Request) {
 
     const progression = computeProgression({
       scores: analyses.map((a) => a.score),
-      distinctUploadDays: uploadDays.size,
+      sendStreak: sendStreakFrom(uploadDays),
       highScoreStreak: currentStreak(bestByDay),
     });
 
@@ -233,6 +252,7 @@ export async function POST(req: Request) {
         bestScore: progression.bestScore,
         averageScore: progression.averageScore,
         idealAttendanceReached: progression.idealAttendanceReached,
+        sendStreak: progression.sendStreak,
         highScoreStreak: progression.highScoreStreak,
         lastAnalysisDate: FieldValue.serverTimestamp(),
       },

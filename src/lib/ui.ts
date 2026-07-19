@@ -1,17 +1,77 @@
 import type { UploadStatus } from "./types";
 
-/** Cor da nota conforme faixa (padrão do design). */
+/**
+ * Faixa de desempenho de uma nota (0–100). As faixas são as MESMAS que a IA
+ * usa para calibrar as notas no prompt (85+ excelente, 70–84 bom, 50–69
+ * regular, <50 fraco), para a cor na tela contar a mesma história da nota.
+ *
+ * `icon` existe de propósito: a cor nunca é o único sinal (daltonismo).
+ */
+export interface ScoreBand {
+  key: "excelente" | "bom" | "regular" | "fraco";
+  label: string;
+  icon: string;
+  color: string;
+  bg: string;
+  border: string;
+  fill: string;
+}
+
+const BANDS: ScoreBand[] = [
+  {
+    key: "excelente",
+    label: "excelente",
+    icon: "✓",
+    color: "#25d97d",
+    bg: "rgba(37,217,125,.1)",
+    border: "rgba(37,217,125,.34)",
+    fill: "linear-gradient(90deg,#12a86a,#25d97d)",
+  },
+  {
+    key: "bom",
+    label: "bom",
+    icon: "✓",
+    color: "#00cbff",
+    bg: "rgba(0,203,255,.1)",
+    border: "rgba(0,203,255,.32)",
+    fill: "linear-gradient(90deg,#0052b9,#00cbff)",
+  },
+  {
+    key: "regular",
+    label: "regular",
+    icon: "!",
+    color: "#ffb020",
+    bg: "rgba(255,176,32,.1)",
+    border: "rgba(255,176,32,.34)",
+    fill: "linear-gradient(90deg,#c77b00,#ffb020)",
+  },
+  {
+    key: "fraco",
+    label: "fraco",
+    icon: "!",
+    color: "#ff8d85",
+    bg: "rgba(255,90,80,.1)",
+    border: "rgba(255,90,80,.34)",
+    fill: "linear-gradient(90deg,#c0392f,#ff8d85)",
+  },
+];
+
+/** Faixa (cor + ícone + rótulo) correspondente à nota. */
+export function scoreBand(v: number): ScoreBand {
+  if (v >= 85) return BANDS[0];
+  if (v >= 70) return BANDS[1];
+  if (v >= 50) return BANDS[2];
+  return BANDS[3];
+}
+
+/** Cor da nota conforme faixa. */
 export function scoreColor(v: number): string {
-  if (v >= 85) return "#00e3ff"; // cyan-light
-  if (v >= 70) return "#ffffff"; // foreground
-  return "#9db2c3"; // muted
+  return scoreBand(v).color;
 }
 
 /** Preenchimento da barra de critério conforme faixa. */
 export function criteriaFill(score: number): string {
-  if (score >= 85) return "linear-gradient(90deg,#0087f8,#00e3ff)";
-  if (score >= 70) return "linear-gradient(90deg,#0052b9,#0087f8)";
-  return "#0052b9";
+  return scoreBand(score).fill;
 }
 
 export interface StatusPill {
@@ -48,9 +108,9 @@ export function statusPill(status: UploadStatus): StatusPill {
     default:
       return {
         label: "concluído",
-        color: "#00cbff",
-        bg: "rgba(0,203,255,.07)",
-        border: "rgba(0,203,255,.25)",
+        color: "#25d97d",
+        bg: "rgba(37,217,125,.1)",
+        border: "rgba(37,217,125,.32)",
       };
   }
 }

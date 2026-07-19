@@ -11,7 +11,7 @@ import ScoreRing from "@/components/ScoreRing";
 import Spinner from "@/components/Spinner";
 import { CRITERIA, IDEAL_SCORE_THRESHOLD } from "@/lib/constants";
 import { shortDate } from "@/lib/training";
-import { criteriaFill, scoreColor } from "@/lib/ui";
+import { criteriaFill, scoreBand } from "@/lib/ui";
 import type { Analysis } from "@/lib/types";
 
 function AnalysisView() {
@@ -81,11 +81,20 @@ function AnalysisView() {
           <div className="mono-label">Resumo do atendimento</div>
           <p className="mt-2.5 text-[14px] leading-[1.65] text-foreground">{analysis.summary}</p>
           <div className="mt-3.5 flex flex-wrap gap-2">
-            {delta !== null && (
-              <span className="rounded-full border border-[rgba(0,203,255,.22)] px-[11px] py-[5px] font-mono text-[11.5px] text-cyan" style={{ background: "rgba(0,203,255,.08)" }}>
-                {delta >= 0 ? "+" : ""}{delta} vs. envio anterior
-              </span>
-            )}
+            {delta !== null && (() => {
+              // Evoluiu = verde com seta pra cima; caiu = vermelho pra baixo.
+              const up = delta > 0;
+              const flat = delta === 0;
+              const c = flat ? "#9db2c3" : up ? "#25d97d" : "#ff8d85";
+              const bg = flat ? "#152946" : up ? "rgba(37,217,125,.1)" : "rgba(255,90,80,.1)";
+              const bd = flat ? "rgba(0,45,115,.5)" : up ? "rgba(37,217,125,.34)" : "rgba(255,90,80,.34)";
+              return (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-[11px] py-[5px] font-mono text-[11.5px] font-semibold" style={{ color: c, background: bg, border: `1px solid ${bd}` }}>
+                  <span>{flat ? "=" : up ? "▲" : "▼"}</span>
+                  {delta > 0 ? "+" : ""}{delta} vs. envio anterior
+                </span>
+              );
+            })()}
             <span className="rounded-full border border-[rgba(0,45,115,.5)] bg-indicator px-[11px] py-[5px] font-mono text-[11.5px] text-muted">Meta: {IDEAL_SCORE_THRESHOLD}</span>
           </div>
         </div>
@@ -97,17 +106,30 @@ function AnalysisView() {
         <div className="grid gap-x-7 gap-y-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
           {CRITERIA.map((c) => {
             const score = analysis.criteriaScores[c.key] ?? 0;
+            const band = scoreBand(score);
             return (
               <div key={c.key}>
                 <div className="mb-[7px] flex items-baseline justify-between gap-2.5">
-                  <span className="text-[13px] text-foreground">{c.label}</span>
-                  <span className="flex items-baseline gap-1.5">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span
+                      className="flex h-[17px] w-[17px] flex-none items-center justify-center rounded-full text-[10px] font-bold"
+                      style={{ color: band.color, background: band.bg, border: `1px solid ${band.border}` }}
+                      aria-hidden
+                    >
+                      {band.icon}
+                    </span>
+                    <span className="text-[13px] leading-snug text-foreground">{c.label}</span>
+                  </span>
+                  <span className="flex flex-none items-baseline gap-1.5">
                     <span className="font-mono text-[10.5px] text-muted">peso {c.weight}</span>
-                    <span className="font-mono text-[14px] font-semibold" style={{ color: scoreColor(score) }}>{score}</span>
+                    <span className="font-mono text-[14px] font-semibold" style={{ color: band.color }}>{score}</span>
                   </span>
                 </div>
                 <div className="h-[5px] overflow-hidden rounded-full bg-indicator">
                   <div className="h-full rounded-full" style={{ width: `${score}%`, background: criteriaFill(score) }} />
+                </div>
+                <div className="mt-[5px] text-[10.5px] font-semibold uppercase tracking-[0.1em]" style={{ color: band.color }}>
+                  {band.label}
                 </div>
               </div>
             );
@@ -117,24 +139,32 @@ function AnalysisView() {
 
       {/* Pontos fortes / atenção / melhorias */}
       <div className="mb-3.5 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <div className="dc-card p-6">
-          <div className="mono-label mb-3.5 text-cyan">O que você fez bem</div>
+        <div className="dc-card overflow-hidden p-6" style={{ borderTop: "2px solid rgba(37,217,125,.55)" }}>
+          <div className="mb-3.5 flex items-center gap-2">
+            <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full text-[12px] font-bold text-success" style={{ background: "rgba(37,217,125,.12)", border: "1px solid rgba(37,217,125,.34)" }} aria-hidden>✓</span>
+            <span className="mono-label text-success">O que você fez bem</span>
+            <span className="ml-auto rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold text-success" style={{ background: "rgba(37,217,125,.1)" }}>{analysis.strengths.length}</span>
+          </div>
           <div className="flex flex-col gap-3">
             {analysis.strengths.map((s, i) => (
               <div key={i} className="flex gap-[11px] text-[13.5px] leading-[1.55] text-foreground">
-                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(0,203,255,.3)] text-[10px] font-semibold text-cyan" style={{ background: "rgba(0,203,255,.1)" }}>✓</span>
+                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(37,217,125,.34)] text-[10px] font-bold text-success" style={{ background: "rgba(37,217,125,.12)" }} aria-hidden>✓</span>
                 <span>{s}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="dc-card p-6">
-          <div className="mono-label mb-3.5 text-danger">O que deixou passar</div>
+        <div className="dc-card overflow-hidden p-6" style={{ borderTop: "2px solid rgba(255,90,80,.55)" }}>
+          <div className="mb-3.5 flex items-center gap-2">
+            <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full text-[12px] font-bold text-danger" style={{ background: "rgba(255,90,80,.12)", border: "1px solid rgba(255,90,80,.34)" }} aria-hidden>!</span>
+            <span className="mono-label text-danger">O que deixou passar</span>
+            <span className="ml-auto rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold text-danger" style={{ background: "rgba(255,90,80,.1)" }}>{analysis.mistakes.length}</span>
+          </div>
           <div className="flex flex-col gap-3">
             {analysis.mistakes.map((m, i) => (
               <div key={i} className="flex gap-[11px] text-[13.5px] leading-[1.55] text-foreground">
-                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(255,90,80,.3)] text-[10px] font-semibold text-danger" style={{ background: "rgba(255,90,80,.1)" }}>!</span>
+                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(255,90,80,.34)] text-[10px] font-bold text-danger" style={{ background: "rgba(255,90,80,.12)" }} aria-hidden>!</span>
                 <span>{m}</span>
               </div>
             ))}

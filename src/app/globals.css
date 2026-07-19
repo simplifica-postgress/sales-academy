@@ -14,6 +14,10 @@
   --cyan-light: #00e3ff;
   --foreground: #ffffff;
   --muted: #9db2c3;
+  /* Cores semânticas de desempenho (verde bom → vermelho ruim).
+     Sempre acompanhadas de um ícone (✓ / !) para não depender só da cor. */
+  --success: #25d97d;
+  --warning: #ffb020;
   --danger: #ff8d85;
 }
 
@@ -30,6 +34,8 @@
   --color-cyan-light: var(--cyan-light);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-danger: var(--danger);
   /* Fonte única Sora; font-mono mapeado para Sora para compatibilidade. */
   --font-sans: var(--font-sora);

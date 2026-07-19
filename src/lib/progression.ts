@@ -1,24 +1,26 @@
 import {
   IDEAL_SCORE_THRESHOLD,
   IDEAL_STREAK_REQUIRED,
-  TRAINING_TOTAL_DAYS,
+  idealProgress,
 } from "./constants";
 
 export interface ProgressionInput {
   /** Todas as notas gerais do vendedor, da mais antiga para a mais recente. */
   scores: number[];
-  /** Chaves de dia distintas em que houve envio (ex.: "2026-07-14"). */
-  distinctUploadDays: number;
-  /** Sequência atual de notas > 85 (calculada por dia). */
+  /** Sequência atual de dias seguidos com envio (hábito). */
+  sendStreak: number;
+  /** Sequência atual de dias com melhor nota > 85 (para o nível ideal). */
   highScoreStreak: number;
 }
 
 export interface ProgressionResult {
+  /** Progresso até o atendimento ideal: quão perto a média está da meta (85). */
   progressPercent: number;
   averageScore: number;
   bestScore: number;
   currentLevel: number;
   idealAttendanceReached: boolean;
+  sendStreak: number;
   highScoreStreak: number;
 }
 
@@ -35,20 +37,20 @@ function mean(values: number[]): number {
 }
 
 /**
- * Recalcula o progresso do vendedor combinando consistência (envios diários)
- * e qualidade (média das notas). Regra do escopo: barra avança 50% por
- * consistência + 50% por qualidade; nível 5 exige atendimento ideal
- * (nota > 85 por 3 dias seguidos).
+ * Recalcula o progresso do vendedor. Sem prazo fixo (a ferramenta é usada
+ * quando o vendedor precisa): o progresso mede QUALIDADE — quão perto a média
+ * está do atendimento ideal (meta 85). Nível 5 exige atendimento ideal
+ * (nota > 85 por 3 dias seguidos). Hábito (dias e sequência de envios) é
+ * acompanhado à parte, sem afetar a nota.
  */
 export function computeProgression(input: ProgressionInput): ProgressionResult {
-  const { scores, distinctUploadDays, highScoreStreak } = input;
+  const { scores, sendStreak, highScoreStreak } = input;
 
   const averageScore = Math.round(mean(scores));
   const bestScore = scores.length ? Math.round(Math.max(...scores)) : 0;
 
-  const consistency = Math.min(distinctUploadDays / TRAINING_TOTAL_DAYS, 1);
-  const quality = Math.min(mean(scores) / 100, 1);
-  const progressPercent = Math.round((0.5 * consistency + 0.5 * quality) * 100);
+  // Barra "rumo ao atendimento ideal": média ÷ meta (85), teto de 100%.
+  const progressPercent = idealProgress(averageScore);
 
   const idealAttendanceReached = highScoreStreak >= IDEAL_STREAK_REQUIRED;
 
@@ -70,6 +72,7 @@ export function computeProgression(input: ProgressionInput): ProgressionResult {
     bestScore,
     currentLevel,
     idealAttendanceReached,
+    sendStreak,
     highScoreStreak,
   };
 }

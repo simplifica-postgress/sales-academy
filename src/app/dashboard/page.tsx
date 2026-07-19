@@ -6,35 +6,12 @@ import { useSellerData } from "@/hooks/useSellerData";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import ScoreRing from "@/components/ScoreRing";
-import Journey from "@/components/Journey";
-import { ATTENDANCE_TYPES, LEVELS, TRAINING_TOTAL_DAYS, weekForDay } from "@/lib/constants";
-import { computeTrainingDay, isToday, shortDate } from "@/lib/training";
-import { scoreColor, statusPill } from "@/lib/ui";
+import { ATTENDANCE_TYPES, LEVELS, idealProgress } from "@/lib/constants";
+import { isToday, shortDate } from "@/lib/training";
+import { scoreBand, scoreColor, statusPill } from "@/lib/ui";
 
 function attendanceLabel(value: string): string {
   return ATTENDANCE_TYPES.find((t) => t.value === value)?.label ?? value;
-}
-
-const WEEK_DEFS = [
-  { label: "Sem 1", name: "Diagnóstico", end: 7 },
-  { label: "Sem 2", name: "Comercial", end: 14 },
-  { label: "Sem 3", name: "Objeções", end: 21 },
-  { label: "Sem 4", name: "Ideal", end: 30 },
-];
-
-function buildWeekNodes(day: number) {
-  return WEEK_DEFS.map((w, i) => {
-    const prevEnd = i === 0 ? 0 : WEEK_DEFS[i - 1].end;
-    const done = day > w.end;
-    const current = day > prevEnd && day <= w.end;
-    return {
-      ...w,
-      pos: `${((w.end / 30) * 100).toFixed(1)}%`,
-      done,
-      current,
-      future: !done && !current,
-    };
-  });
 }
 
 export default function DashboardPage() {
@@ -52,24 +29,27 @@ function DashboardContent() {
   const { progress, uploads, analyses } = useSellerData(user?.uid);
 
   const firstName = profile?.name?.split(" ")[0] ?? "";
-  const day = computeTrainingDay(profile?.trainingStartDate ?? null) || 1;
-  const week = weekForDay(day);
-  const progressPct = profile?.progressPercent ?? 0;
+  const avgScore = Math.round(progress?.averageScore ?? 0);
+  // Barra derivada da média ao vivo — sempre bate com a média exibida.
+  const progressPct = idealProgress(avgScore);
   const level = progress?.currentLevel ?? profile?.currentLevel ?? 1;
   const levelInfo = LEVELS[Math.max(0, Math.min(level - 1, LEVELS.length - 1))];
   const lastAnalysis = analyses[0] ?? null;
   const hasData = analyses.length > 0;
   const sentToday = uploads.some((u) => isToday(u.createdAt));
   const analysisByUpload = new Map(analyses.map((a) => [a.uploadId, a]));
-  const streak = progress?.highScoreStreak ?? 0;
-  const weekNodes = buildWeekNodes(day);
+
+  const bestScore = Math.round(progress?.bestScore ?? 0);
+  const sendStreak = progress?.sendStreak ?? 0;
+  const daysActive = progress?.completedDays ?? 0;
+  const totalSends = progress?.totalUploads ?? uploads.length;
 
   return (
     <div className="fade-up">
       {/* Cabeçalho */}
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Treinamento comercial · 30 dias</div>
+          <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Treinamento comercial · Simplifica</div>
           <h1 className="mt-[7px] text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
             Olá, {firstName} 👋
           </h1>
@@ -80,54 +60,42 @@ function DashboardContent() {
         </span>
       </div>
 
-      {/* Hero: barra de progresso (centro da página) */}
+      {/* Hero: sequência de envios + progresso até o atendimento ideal */}
       <section className="relative mb-4 overflow-hidden rounded-[22px] p-px" style={{ background: "linear-gradient(150deg, rgba(0,135,248,.55), rgba(0,45,115,.4) 45%, rgba(0,203,255,.3))", boxShadow: "0 22px 60px rgba(0,2,12,.5)" }}>
         <div className="relative rounded-[21px]" style={{ padding: "clamp(24px,4vw,40px) clamp(22px,4vw,44px)", background: "radial-gradient(760px 340px at 82% -30%, rgba(0,135,248,.22), transparent 62%), linear-gradient(120deg, #00173d 0%, #03112d 60%)" }}>
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div>
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-cyan">Sua jornada até o atendimento ideal</div>
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-cyan">Sua sequência de envios</div>
               <div className="mt-3.5 flex items-baseline gap-3">
                 <span className="font-semibold leading-none text-foreground" style={{ fontSize: "clamp(56px,10vw,92px)", letterSpacing: "-0.04em", textShadow: "0 4px 40px rgba(0,135,248,.4)" }}>
-                  {progressPct}<span className="text-muted" style={{ fontSize: "0.42em" }}>%</span>
+                  {sendStreak}<span className="text-muted" style={{ fontSize: "0.34em" }}> {sendStreak === 1 ? "dia" : "dias"}</span>
                 </span>
                 <div className="pb-2.5">
-                  <div className="text-[22px] font-semibold leading-none text-foreground">concluído</div>
+                  <div className="text-[22px] font-semibold leading-none text-foreground">{sendStreak > 0 ? "seguidos 🔥" : "vamos começar"}</div>
                   <div className="mt-2 inline-flex items-baseline gap-1.5 rounded-lg border border-[rgba(0,203,255,.28)] px-3 py-1.5" style={{ background: "rgba(0,203,255,.08)" }}>
-                    <span className="text-[12px] font-medium uppercase tracking-[0.1em] text-muted">Dia</span>
-                    <span className="text-[22px] font-semibold leading-none text-cyan">{day}</span>
-                    <span className="text-[13px] font-medium text-muted">de {TRAINING_TOTAL_DAYS}</span>
+                    <span className="text-[12px] font-medium uppercase tracking-[0.1em] text-muted">Dias enviados</span>
+                    <span className="text-[22px] font-semibold leading-none text-cyan">{daysActive}</span>
                   </div>
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Semana atual</div>
-              <div className="mt-1.5 text-[17px] font-semibold text-foreground">Semana {week.week}</div>
-              <div className="mt-0.5 text-[12.5px] font-medium text-cyan">{week.name}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Rumo ao ideal</div>
+              <div className="mt-1.5 text-[26px] font-semibold text-foreground">{progressPct}<span className="text-[16px] text-muted">%</span></div>
+              <div className="mt-0.5 text-[12.5px] font-medium text-cyan">meta 85</div>
             </div>
           </div>
 
-          {/* Barra com thumb e marcadores */}
+          {/* Barra: quão perto a média está do atendimento ideal */}
           <div className="relative mb-2 mt-[38px] px-0.5">
             <div className="relative h-4 overflow-hidden rounded-full border border-[rgba(0,45,115,.7)]" style={{ background: "#0a1c38" }}>
               <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progressPct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8 55%,#00e3ff)", boxShadow: "0 0 24px rgba(0,203,255,.5)" }} />
             </div>
             <div className="absolute top-1/2 h-[30px] w-[30px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-cyan bg-white" style={{ left: `${progressPct}%`, boxShadow: "0 0 0 6px rgba(0,203,255,.18), 0 6px 18px rgba(0,2,12,.6)", zIndex: 3 }} />
-            {weekNodes.map((w) => (
-              <div key={w.label} className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ left: w.pos, zIndex: 2 }}>
-                <span className="block h-2.5 w-2.5 rounded-full border-2 border-card" style={{ background: w.done ? "#00e3ff" : w.current ? "#0087f8" : "#0a1c38", boxShadow: w.current ? "0 0 0 5px rgba(0,135,248,.22)" : w.done ? "0 0 10px rgba(0,227,255,.6)" : "none" }} />
-              </div>
-            ))}
           </div>
-
-          {/* Labels das semanas */}
-          <div className="relative mt-3 flex justify-between">
-            {weekNodes.map((w) => (
-              <div key={w.label} className="flex-1 px-0.5 text-center">
-                <div className="text-[9.5px] font-semibold uppercase tracking-[0.12em]" style={{ color: w.future ? "#5f778a" : "#00cbff" }}>{w.label}</div>
-                <div className="mt-[3px] truncate text-[11px] font-medium" style={{ color: w.future ? "#5f778a" : "#ffffff" }}>{w.name}</div>
-              </div>
-            ))}
+          <div className="relative mt-3 flex justify-between text-[11px] font-medium text-muted">
+            <span>Começo</span>
+            <span className="text-cyan">Atendimento ideal · nota 85</span>
           </div>
 
           {/* Stats compactos */}
@@ -143,15 +111,20 @@ function DashboardContent() {
             </div>
             <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média</div>
-              <div className="mt-1.5 text-[24px] font-semibold text-foreground">{Math.round(progress?.averageScore ?? 0)}</div>
+              <div className="mt-1.5 flex items-baseline gap-2">
+                <span className="text-[24px] font-semibold" style={{ color: avgScore ? scoreColor(avgScore) : "#9db2c3" }}>{avgScore}</span>
+                {avgScore > 0 && (
+                  <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em]" style={{ color: scoreColor(avgScore) }}>{scoreBand(avgScore).label}</span>
+                )}
+              </div>
             </div>
             <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Melhor nota</div>
-              <div className="mt-1.5 text-[24px] font-semibold text-cyan">{Math.round(progress?.bestScore ?? 0)}</div>
+              <div className="mt-1.5 text-[24px] font-semibold" style={{ color: bestScore ? scoreColor(bestScore) : "#9db2c3" }}>{bestScore}</div>
             </div>
             <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Sequência</div>
-              <div className="mt-1.5 flex items-baseline gap-1.5"><span className="text-[24px] font-semibold text-foreground">{streak}</span><span className="text-[12px] font-medium text-muted">dias 🔥</span></div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Total de envios</div>
+              <div className="mt-1.5 flex items-baseline gap-1.5"><span className="text-[24px] font-semibold text-foreground">{totalSends}</span><span className="text-[12px] font-medium text-muted">atend.</span></div>
             </div>
           </div>
         </div>
@@ -175,7 +148,7 @@ function DashboardContent() {
           </span>
           <div>
             <div className="text-[15.5px] font-semibold text-foreground">
-              {sentToday ? "Atendimento de hoje enviado ✓" : "Enviar atendimento de hoje"}
+              {sentToday ? "Atendimento de hoje enviado ✓" : "Enviar um atendimento"}
             </div>
             <div className="mt-1 text-[13px] text-muted">
               {sentToday ? "Você pode enviar mais atendimentos se quiser." : "Áudio ou vídeo do seu atendimento real — a IA analisa e te devolve o plano."}
@@ -196,9 +169,8 @@ function DashboardContent() {
             <span className="mono-label text-cyan">Próxima missão</span>
           </div>
           <p className="mt-3 text-[14.5px] font-medium leading-[1.6] text-foreground">
-            {lastAnalysis?.nextMission ?? "Envie seu primeiro atendimento de hoje. A IA vai analisar sua conversa e te passar a primeira missão prática."}
+            {lastAnalysis?.nextMission ?? "Envie seu primeiro atendimento. A IA vai analisar sua conversa e te passar a primeira missão prática."}
           </p>
-          <div className="mt-3.5 text-[12px] text-muted">Foco da semana: {week.focus}</div>
         </div>
 
         <div className="dc-card p-[22px]">
@@ -207,11 +179,11 @@ function DashboardContent() {
             <>
               <p className="mt-3 text-[13.5px] leading-[1.6] text-foreground">{lastAnalysis.summary}</p>
               <div className="mt-3.5 flex flex-wrap gap-2">
-                <span className="rounded-full border border-[rgba(0,203,255,.22)] px-[11px] py-[5px] text-[11.5px] font-medium text-cyan" style={{ background: "rgba(0,203,255,.08)" }}>
-                  {lastAnalysis.strengths.length} pontos fortes
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(37,217,125,.34)] px-[11px] py-[5px] text-[11.5px] font-semibold text-success" style={{ background: "rgba(37,217,125,.1)" }}>
+                  <span aria-hidden>✓</span> {lastAnalysis.strengths.length} pontos fortes
                 </span>
-                <span className="rounded-full border border-[rgba(255,90,80,.22)] px-[11px] py-[5px] text-[11.5px] font-medium text-danger" style={{ background: "rgba(255,90,80,.08)" }}>
-                  {lastAnalysis.mistakes.length} pontos de atenção
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,90,80,.34)] px-[11px] py-[5px] text-[11.5px] font-semibold text-danger" style={{ background: "rgba(255,90,80,.1)" }}>
+                  <span aria-hidden>!</span> {lastAnalysis.mistakes.length} pontos de atenção
                 </span>
               </div>
               <Link href={`/analise/${lastAnalysis.id}`} className="mt-3.5 inline-block text-[13px] font-semibold text-cyan hover:text-cyan-light">
@@ -222,15 +194,6 @@ function DashboardContent() {
             <p className="mt-3 text-[13.5px] leading-[1.6] text-muted">Nenhuma análise ainda. Assim que você enviar um atendimento, o resultado aparece aqui.</p>
           )}
         </div>
-      </div>
-
-      {/* Jornada */}
-      <div className="dc-card mb-3.5 p-[22px]">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="mono-label">Jornada de 30 dias</span>
-          <span className="font-mono text-[12px] text-muted">Dia {day}/{TRAINING_TOTAL_DAYS}</span>
-        </div>
-        <Journey currentDay={day} />
       </div>
 
       {/* Envios recentes */}

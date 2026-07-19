@@ -117,6 +117,7 @@ export async function POST(req: Request) {
     bestScore: 0,
     averageScore: 0,
     idealAttendanceReached: false,
+    sendStreak: 0,
     highScoreStreak: 0,
     lastAnalysisDate: null,
   });

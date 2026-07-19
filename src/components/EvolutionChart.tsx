@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { scoreColor } from "@/lib/ui";
 
 interface Point {
   score: number;
@@ -52,15 +53,18 @@ export default function EvolutionChart({ points }: { points: Point[] }) {
           </linearGradient>
         </defs>
 
-        {/* Linhas de referência 50 e 85 */}
-        {[50, 85].map((ref) => (
+        {/* Referências: 85 = meta (verde), 50 = piso de atenção (âmbar) */}
+        {[
+          { ref: 85, stroke: "rgba(37,217,125,.5)" },
+          { ref: 50, stroke: "rgba(255,176,32,.35)" },
+        ].map(({ ref, stroke }) => (
           <line
             key={ref}
             x1={padX}
             x2={width - padX}
             y1={yFor(ref)}
             y2={yFor(ref)}
-            stroke="var(--card-border)"
+            stroke={stroke}
             strokeDasharray="4 4"
           />
         ))}
@@ -74,19 +78,25 @@ export default function EvolutionChart({ points }: { points: Point[] }) {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {points.map((p, i) => (
-          <g key={i}>
-            <circle cx={xFor(i)} cy={yFor(p.score)} r={4} fill="var(--cyan-light)" />
-            <text
-              x={xFor(i)}
-              y={yFor(p.score) - 10}
-              textAnchor="middle"
-              className="fill-white text-[11px] font-semibold"
-            >
-              {Math.round(p.score)}
-            </text>
-          </g>
-        ))}
+        {points.map((p, i) => {
+          // Cada ponto assume a cor da sua faixa: dá pra ver num relance
+          // quais atendimentos foram bons e quais foram fracos.
+          const c = scoreColor(p.score);
+          return (
+            <g key={i}>
+              <circle cx={xFor(i)} cy={yFor(p.score)} r={4.5} fill={c} />
+              <text
+                x={xFor(i)}
+                y={yFor(p.score) - 10}
+                textAnchor="middle"
+                className="text-[11px] font-semibold"
+                fill={c}
+              >
+                {Math.round(p.score)}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );

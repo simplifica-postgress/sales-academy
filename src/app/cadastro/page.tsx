@@ -134,7 +134,7 @@ function ProfileForm() {
           {error && <p className="mt-4 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
           <button type="submit" disabled={submitting} className="btn-primary mt-6 w-full rounded-[11px] px-4 py-[13px] text-sm font-semibold disabled:opacity-50">
-            {submitting ? "Salvando…" : "Começar meu treinamento de 30 dias"}
+            {submitting ? "Salvando…" : "Começar meu treinamento"}
           </button>
         </form>
       </div>

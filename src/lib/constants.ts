@@ -10,6 +10,16 @@ export const IDEAL_SCORE_THRESHOLD = 85;
 /** Dias seguidos acima do threshold para atingir o nível 5. */
 export const IDEAL_STREAK_REQUIRED = 3;
 
+/**
+ * Progresso até o atendimento ideal: quão perto a média (0–100) está da meta
+ * (85), com teto de 100%. Fonte única usada no backend e nas telas, para a
+ * barra sempre bater com a média exibida.
+ */
+export function idealProgress(averageScore: number): number {
+  if (!averageScore) return 0;
+  return Math.min(Math.round((averageScore / IDEAL_SCORE_THRESHOLD) * 100), 100);
+}
+
 // ---------- Critérios de avaliação (pesos somam 100) ----------
 
 export const CRITERIA: {

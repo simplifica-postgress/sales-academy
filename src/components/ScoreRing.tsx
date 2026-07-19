@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { scoreBand } from "@/lib/ui";
 
 /** Indicador circular de nota (0–100), estilo donut do dashboard. */
 export default function ScoreRing({
@@ -19,6 +20,9 @@ export default function ScoreRing({
   const circumference = 2 * Math.PI * radius;
   const pct = Math.max(0, Math.min(100, value ?? 0));
   const dash = (pct / 100) * circumference;
+  // O anel assume a cor da faixa da nota: verde (excelente), ciano (bom),
+  // âmbar (regular), vermelho (fraco).
+  const band = scoreBand(value ?? 0);
 
   return (
     <div
@@ -28,8 +32,8 @@ export default function ScoreRing({
       <svg width={size} height={size} className="-rotate-90">
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--primary)" />
-            <stop offset="100%" stopColor="var(--cyan-light)" />
+            <stop offset="0%" stopColor={band.color} stopOpacity="0.55" />
+            <stop offset="100%" stopColor={band.color} />
           </linearGradient>
         </defs>
         <circle

@@ -96,11 +96,12 @@ export interface Analysis {
 
 export interface Progress {
   totalUploads: number;
-  completedDays: number;
+  completedDays: number; // dias distintos em que houve envio
   currentLevel: number;
   bestScore: number;
   averageScore: number;
   idealAttendanceReached: boolean;
-  highScoreStreak: number; // dias seguidos com nota > 85
+  sendStreak: number; // dias seguidos com envio (hábito)
+  highScoreStreak: number; // dias seguidos com nota > 85 (para o nível ideal)
   lastAnalysisDate: Timestamp | null;
 }

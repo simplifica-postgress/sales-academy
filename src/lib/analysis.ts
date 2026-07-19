@@ -1,4 +1,4 @@
-import { CRITERIA, weekForDay } from "./constants";
+import { CRITERIA } from "./constants";
 import type { CriteriaScores, UserProfile } from "./types";
 
 /** Resposta estruturada que a IA devolve (a nota geral é calculada no backend). */
@@ -95,6 +95,7 @@ Diretrizes:
 - Considere o perfil e a dificuldade principal do vendedor ao priorizar o que apontar.
 - Notas de 0 a 100 por critério, calibradas: 85+ é excelente, 70-84 bom, 50-69 regular, abaixo de 50 fraco.
 - A "próxima missão" deve ser uma única tarefa objetiva e mensurável (ex.: "faça pelo menos 3 perguntas de diagnóstico antes de apresentar preço").
+- Seja conciso: de 3 a 5 itens em cada lista (pontos fortes, erros e melhorias), cada item em 1 ou 2 frases diretas — sem parágrafos longos.
 - Responda SEMPRE em português do Brasil e APENAS no formato JSON solicitado.`;
 }
 
@@ -112,7 +113,6 @@ export function buildUserPrompt(
   observation: string,
   transcript: string
 ): string {
-  const week = weekForDay(trainingDay || 1);
   return `PERFIL DO VENDEDOR
 - Nome: ${profile.name}
 - Empresa: ${profile.company}
@@ -120,10 +120,7 @@ export function buildUserPrompt(
 - Experiência: ${profile.experience}
 - Principal dificuldade: ${profile.mainDifficulty}
 - Objetivo no treinamento: ${profile.goal}
-
-CONTEXTO DO TREINAMENTO
-- Dia ${trainingDay || 1} de 30 — Semana ${week.week} (${week.name})
-- Foco da semana: ${week.focus}
+- Dia de prática (uso contínuo, sem prazo fixo): ${trainingDay || 1}
 
 OBSERVAÇÃO DO VENDEDOR SOBRE ESTE ATENDIMENTO
 ${observation.trim() || "(nenhuma)"}

@@ -32,6 +32,7 @@ function SellerDetail() {
   const params = useParams<{ sellerId: string }>();
   const uid = params.sellerId;
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [daysActive, setDaysActive] = useState(0);
   const [analyses, setAnalyses] = useState<AnalysisRow[]>([]);
   const [uploads, setUploads] = useState<UploadRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,10 @@ function SellerDetail() {
         const userSnap = await getDoc(doc(db, "users", uid));
         if (!userSnap.exists()) return setNotFound(true);
         setProfile(userSnap.data() as UserProfile);
+        // Mesma fonte da lista de vendedores (progress.completedDays), para os
+        // dois painéis mostrarem sempre a mesma contagem de dias enviados.
+        const progSnap = await getDoc(doc(db, "progress", uid));
+        setDaysActive((progSnap.data()?.completedDays as number) ?? 0);
         const snap = await getDocs(query(collection(db, "analyses"), where("userId", "==", uid)));
         setAnalyses(
           snap.docs
@@ -116,7 +121,7 @@ function SellerDetail() {
           <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.015em] text-foreground">{profile.name}</h1>
           <div className="mt-[5px] text-[13px] text-muted">{profile.salesRole} · {profile.company}</div>
           <div className="mt-3.5 flex flex-wrap gap-2">
-            <span className={`${badge} text-cyan`} style={{ background: "rgba(0,203,255,.07)", border: "1px solid rgba(0,203,255,.22)" }}>Dia {profile.currentDay || 0} de 30</span>
+            <span className={`${badge} text-cyan`} style={{ background: "rgba(0,203,255,.07)", border: "1px solid rgba(0,203,255,.22)" }}>{daysActive} {daysActive === 1 ? "dia enviado" : "dias enviados"}</span>
             <span className={`${badge} text-cyan`} style={{ background: "rgba(0,203,255,.07)", border: "1px solid rgba(0,203,255,.22)" }}>Nível {level} · {levelName}</span>
             <span className={`${badge} text-foreground`} style={{ background: "#152946", border: "1px solid rgba(0,45,115,.5)" }}>Média {Math.round(profile.averageScore ?? 0)}</span>
           </div>
@@ -139,7 +144,7 @@ function SellerDetail() {
           <span className="mono-label">Evolução das notas</span>
           <span className="flex gap-3.5 font-mono text-[10.5px] text-muted">
             <span><span className="mr-1.5 inline-block h-[2px] w-3.5 align-middle" style={{ background: "#00cbff" }} />nota</span>
-            <span><span className="mr-1.5 inline-block w-3.5 align-middle" style={{ borderTop: "1px dashed #9db2c3", height: 0 }} />meta 85</span>
+            <span style={{ color: "#25d97d" }}><span className="mr-1.5 inline-block w-3.5 align-middle" style={{ borderTop: "1px dashed #25d97d", height: 0 }} />meta 85</span>
           </span>
         </div>
         {analyses.length > 0 ? (
@@ -206,7 +211,7 @@ function SellerDetail() {
           [...analyses].reverse().map((a) => (
             <div key={a.id} className="flex items-center gap-3.5 border-b border-[rgba(0,45,115,.28)] px-0.5 py-3 last:border-0">
               <span className="w-12 flex-none font-mono text-[12px] text-muted">{shortDate(a.createdAt)}</span>
-              <span className="flex-1 text-[13.5px] text-foreground">Dia {a.trainingDay}</span>
+              <span className="flex-1 truncate text-[13.5px] text-muted">{a.summary}</span>
               <span className="font-mono text-[14px] font-semibold" style={{ color: scoreColor(a.generalScore) }}>{Math.round(a.generalScore)}</span>
               <Link href={`/analise/${a.id}`} className="flex-none text-[12px] font-semibold text-cyan hover:text-cyan-light">Ver</Link>
             </div>
