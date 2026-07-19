@@ -216,12 +216,6 @@ export async function POST(req: Request) {
       adminDb.collection("analyses").where("userId", "==", uid).get(),
     ]);
 
-    const uploadDays = new Set<string>();
-    uploadsSnap.forEach((d) => {
-      const ts = d.get("createdAt") as Timestamp | null;
-      if (ts) uploadDays.add(dayKey(ts.toDate()));
-    });
-
     const analyses = analysesSnap.docs
       .map((d) => ({
         score: d.get("generalScore") as number,
@@ -232,6 +226,13 @@ export async function POST(req: Request) {
         (a, b) => a.createdAt!.toMillis() - b.createdAt!.toMillis()
       );
 
+    // Dias de treino contam pelas ANÁLISES, não pelos uploads: só existe
+    // análise quando o pipeline deu certo. Se contássemos uploads, um envio
+    // que falhou (arquivo mudo, corrompido) valeria dia — daria para farmar
+    // os dias exigidos pelo nível e manter a sequência sem treinar nada.
+    const analysisDays = new Set<string>();
+    for (const a of analyses) analysisDays.add(dayKey(a.createdAt!.toDate()));
+
     const bestByDay = new Map<string, number>();
     for (const a of analyses) {
       const key = dayKey(a.createdAt!.toDate());
@@ -240,15 +241,15 @@ export async function POST(req: Request) {
 
     const progression = computeProgression({
       scores: analyses.map((a) => a.score),
-      completedDays: uploadDays.size,
-      sendStreak: sendStreakFrom(uploadDays),
+      completedDays: analysisDays.size,
+      sendStreak: sendStreakFrom(analysisDays),
       highScoreStreak: currentStreak(bestByDay),
     });
 
     await adminDb.collection("progress").doc(uid).set(
       {
         totalUploads: uploadsSnap.size,
-        completedDays: uploadDays.size,
+        completedDays: analysisDays.size,
         currentLevel: progression.currentLevel,
         bestScore: progression.bestScore,
         averageScore: progression.averageScore,

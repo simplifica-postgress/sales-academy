@@ -69,7 +69,7 @@ function AnalysisView() {
       {/* O botão de voltar fica no AppShell (vale para todas as telas). */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Análise do atendimento</h1>
-        <span className="font-mono text-[12px] text-muted">Dia {analysis.trainingDay} · {shortDate(analysis.createdAt)}</span>
+        <span className="font-mono text-[12px] text-muted">{shortDate(analysis.createdAt)}</span>
       </div>
 
       {/* Ring + resumo */}

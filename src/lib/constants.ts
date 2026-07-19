@@ -2,8 +2,6 @@ import type { AttendanceType, CriterionKey } from "./types";
 
 // ---------- Treinamento ----------
 
-export const TRAINING_TOTAL_DAYS = 30;
-
 /** Nota mínima para contar como "atendimento ideal". */
 export const IDEAL_SCORE_THRESHOLD = 85;
 
@@ -78,46 +76,6 @@ export const LEVELS = [
   },
 ] as const;
 
-// ---------- Jornada de 30 dias (fases semanais) ----------
-
-export const TRAINING_WEEKS = [
-  {
-    week: 1,
-    days: [1, 7],
-    name: "Diagnóstico e base",
-    focus:
-      "Criar hábito de envio diário; avaliar clareza, abordagem e escuta.",
-  },
-  {
-    week: 2,
-    days: [8, 14],
-    name: "Diagnóstico comercial",
-    focus:
-      "Fazer perguntas melhores, entender a dor, não apresentar solução cedo demais.",
-  },
-  {
-    week: 3,
-    days: [15, 21],
-    name: "Objeções e condução",
-    focus:
-      "Lidar com 'vou pensar', preço e demora; conduzir sem pressionar; próximo passo claro.",
-  },
-  {
-    week: 4,
-    days: [22, 30],
-    name: "Atendimento ideal",
-    focus:
-      "Manter nota alta, reduzir erros repetidos, consistência final.",
-  },
-] as const;
-
-/** Retorna a fase semanal correspondente ao dia do treinamento (1–30). */
-export function weekForDay(day: number) {
-  return (
-    TRAINING_WEEKS.find((w) => day >= w.days[0] && day <= w.days[1]) ??
-    TRAINING_WEEKS[TRAINING_WEEKS.length - 1]
-  );
-}
 
 // ---------- Tipos de atendimento ----------
 

@@ -1,8 +1,4 @@
-import {
-  IDEAL_SCORE_THRESHOLD,
-  IDEAL_STREAK_REQUIRED,
-  idealProgress,
-} from "./constants";
+import { IDEAL_STREAK_REQUIRED, idealProgress } from "./constants";
 
 /**
  * Quantos envios recentes entram na média. A média mede o nível ATUAL do
@@ -120,15 +116,4 @@ export function nextLevelNeed(
     averageMissing: Math.max(0, target.minAverage - averageScore),
     needsIdeal: target.requiresIdeal && !idealAttendanceReached,
   };
-}
-
-/**
- * Atualiza a sequência de "notas altas" quando um novo dia recebe sua
- * primeira nota. Só conta uma vez por dia (a maior do dia).
- */
-export function nextHighScoreStreak(
-  currentStreak: number,
-  dayBestScore: number
-): number {
-  return dayBestScore > IDEAL_SCORE_THRESHOLD ? currentStreak + 1 : 0;
 }

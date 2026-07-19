@@ -86,7 +86,9 @@ function History() {
               </div>
             </div>
           </div>
-          <p className="mt-3.5 text-center text-[12px] text-muted">{uploads.length} envios no total{avg > 0 && <> · média <span className="font-semibold text-foreground">{avg}</span></>}</p>
+          {/* "média geral" de propósito: o dashboard mostra a média dos
+              últimos 5 envios. Nomes diferentes para números diferentes. */}
+          <p className="mt-3.5 text-center text-[12px] text-muted">{uploads.length} envios no total{avg > 0 && <> · média geral <span className="font-semibold" style={{ color: scoreColor(avg) }}>{avg}</span></>}</p>
         </>
       )}
     </div>
