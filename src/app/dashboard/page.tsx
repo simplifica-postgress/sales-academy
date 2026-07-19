@@ -7,11 +7,24 @@ import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import ScoreRing from "@/components/ScoreRing";
 import { ATTENDANCE_TYPES, LEVELS, idealProgress } from "@/lib/constants";
+import { RECENT_WINDOW, nextLevelNeed, type NextLevelNeed } from "@/lib/progression";
 import { isToday, shortDate } from "@/lib/training";
 import { scoreBand, scoreColor, statusPill } from "@/lib/ui";
 
 function attendanceLabel(value: string): string {
   return ATTENDANCE_TYPES.find((t) => t.value === value)?.label ?? value;
+}
+
+/** "Falta X e Y para o Nível N" — deixa claro o que trava a subida. */
+function needText(n: NextLevelNeed): string | null {
+  const parts: string[] = [];
+  if (n.daysMissing > 0) {
+    parts.push(`${n.daysMissing} ${n.daysMissing === 1 ? "dia enviado" : "dias enviados"}`);
+  }
+  if (n.averageMissing > 0) parts.push(`+${n.averageMissing} de média`);
+  if (n.needsIdeal) parts.push("3 dias seguidos acima de 85");
+  if (parts.length === 0) return null;
+  return `Falta ${parts.join(" e ")} para o Nível ${n.level}`;
 }
 
 export default function DashboardPage() {
@@ -41,6 +54,13 @@ function DashboardContent() {
 
   const bestScore = Math.round(progress?.bestScore ?? 0);
   const sendStreak = progress?.sendStreak ?? 0;
+  const need = nextLevelNeed(
+    level,
+    avgScore,
+    progress?.completedDays ?? 0,
+    progress?.idealAttendanceReached ?? false
+  );
+  const levelNeedText = need ? needText(need) : null;
   const daysActive = progress?.completedDays ?? 0;
   const totalSends = progress?.totalUploads ?? uploads.length;
 
@@ -54,10 +74,15 @@ function DashboardContent() {
             Olá, {firstName} 👋
           </h1>
         </div>
-        <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,203,255,.28)] px-3.5 py-2 text-[12px] font-semibold text-cyan" style={{ background: "rgba(0,203,255,.08)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l2.4 6.3L21 9.6l-5 4.3 1.6 6.5L12 16.9 6.4 20.4 8 13.9l-5-4.3 6.6-.3z" /></svg>
-          Nível {level} de 5 · {levelInfo.name}
-        </span>
+        <div className="flex flex-col items-end gap-1.5">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,203,255,.28)] px-3.5 py-2 text-[12px] font-semibold text-cyan" style={{ background: "rgba(0,203,255,.08)" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l2.4 6.3L21 9.6l-5 4.3 1.6 6.5L12 16.9 6.4 20.4 8 13.9l-5-4.3 6.6-.3z" /></svg>
+            Nível {level} de 5 · {levelInfo.name}
+          </span>
+          {levelNeedText && (
+            <span className="text-[11.5px] font-medium text-muted">{levelNeedText}</span>
+          )}
+        </div>
       </div>
 
       {/* Hero: sequência de envios + progresso até o atendimento ideal */}
@@ -110,13 +135,16 @@ function DashboardContent() {
               </div>
             </div>
             <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média · últimos {RECENT_WINDOW}</div>
               <div className="mt-1.5 flex items-baseline gap-2">
                 <span className="text-[24px] font-semibold" style={{ color: avgScore ? scoreColor(avgScore) : "#9db2c3" }}>{avgScore}</span>
                 {avgScore > 0 && (
                   <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em]" style={{ color: scoreColor(avgScore) }}>{scoreBand(avgScore).label}</span>
                 )}
               </div>
+              {totalSends > 0 && totalSends < RECENT_WINDOW && (
+                <div className="mt-1 text-[10.5px] text-muted">provisória · {totalSends} de {RECENT_WINDOW} envios</div>
+              )}
             </div>
             <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Melhor nota</div>

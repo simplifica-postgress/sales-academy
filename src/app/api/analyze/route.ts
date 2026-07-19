@@ -240,6 +240,7 @@ export async function POST(req: Request) {
 
     const progression = computeProgression({
       scores: analyses.map((a) => a.score),
+      completedDays: uploadDays.size,
       sendStreak: sendStreakFrom(uploadDays),
       highScoreStreak: currentStreak(bestByDay),
     });
