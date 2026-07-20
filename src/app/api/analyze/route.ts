@@ -226,30 +226,32 @@ export async function POST(req: Request) {
         (a, b) => a.createdAt!.toMillis() - b.createdAt!.toMillis()
       );
 
-    // Dias de treino contam pelas ANÁLISES, não pelos uploads: só existe
-    // análise quando o pipeline deu certo. Se contássemos uploads, um envio
-    // que falhou (arquivo mudo, corrompido) valeria dia — daria para farmar
-    // os dias exigidos pelo nível e manter a sequência sem treinar nada.
-    const analysisDays = new Set<string>();
-    for (const a of analyses) analysisDays.add(dayKey(a.createdAt!.toDate()));
-
-    const bestByDay = new Map<string, number>();
+    // UMA NOTA POR DIA: vale a PRIMEIRA análise do dia. Enviar mais
+    // atendimentos no mesmo dia continua gerando análise e feedback completo,
+    // mas não mexe na média nem na barra. Sem isso, o vendedor empurra o
+    // progresso numa tarde só, em vez de evoluir ao longo dos dias.
+    //
+    // Os dias saem das ANÁLISES (não dos uploads) porque só existe análise
+    // quando o pipeline deu certo: um envio que falhou (arquivo mudo ou
+    // corrompido) não pode valer dia de treino nem segurar a sequência.
+    const officialByDay = new Map<string, number>();
     for (const a of analyses) {
       const key = dayKey(a.createdAt!.toDate());
-      bestByDay.set(key, Math.max(bestByDay.get(key) ?? 0, a.score));
+      if (!officialByDay.has(key)) officialByDay.set(key, a.score);
     }
+    const trainedDays = [...officialByDay.keys()].sort();
 
     const progression = computeProgression({
-      scores: analyses.map((a) => a.score),
-      completedDays: analysisDays.size,
-      sendStreak: sendStreakFrom(analysisDays),
-      highScoreStreak: currentStreak(bestByDay),
+      scores: trainedDays.map((k) => officialByDay.get(k)!),
+      completedDays: trainedDays.length,
+      sendStreak: sendStreakFrom(new Set(trainedDays)),
+      highScoreStreak: currentStreak(officialByDay),
     });
 
     await adminDb.collection("progress").doc(uid).set(
       {
         totalUploads: uploadsSnap.size,
-        completedDays: analysisDays.size,
+        completedDays: trainedDays.length,
         currentLevel: progression.currentLevel,
         bestScore: progression.bestScore,
         averageScore: progression.averageScore,

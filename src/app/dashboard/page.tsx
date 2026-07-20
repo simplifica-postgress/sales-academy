@@ -54,15 +54,17 @@ function DashboardContent() {
 
   const bestScore = Math.round(progress?.bestScore ?? 0);
   const sendStreak = progress?.sendStreak ?? 0;
+  const daysActive = progress?.completedDays ?? 0;
+  const totalSends = progress?.totalUploads ?? uploads.length;
   const need = nextLevelNeed(
     level,
     avgScore,
-    progress?.completedDays ?? 0,
+    daysActive,
     progress?.idealAttendanceReached ?? false
   );
   const levelNeedText = need ? needText(need) : null;
-  const daysActive = progress?.completedDays ?? 0;
-  const totalSends = progress?.totalUploads ?? uploads.length;
+  // Menos de 5 dias de treino: a média ainda não é um retrato confiável.
+  const provisional = daysActive > 0 && daysActive < RECENT_WINDOW;
 
   return (
     <div className="fade-up">
@@ -107,14 +109,19 @@ function DashboardContent() {
             <div className="text-right">
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Rumo ao ideal</div>
               <div className="mt-1.5 text-[26px] font-semibold text-foreground">{progressPct}<span className="text-[16px] text-muted">%</span></div>
-              <div className="mt-0.5 text-[12.5px] font-medium text-cyan">meta 85</div>
+              <div className="mt-0.5 text-[12.5px] font-medium text-cyan">
+                meta 85{provisional && <span className="text-muted"> · provisório</span>}
+              </div>
             </div>
           </div>
 
           {/* Barra: quão perto a média está do atendimento ideal */}
           <div className="relative mb-2 mt-[38px] px-0.5">
             <div className="relative h-4 overflow-hidden rounded-full border border-[rgba(0,45,115,.7)]" style={{ background: "#0a1c38" }}>
-              <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progressPct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8 55%,#00e3ff)", boxShadow: "0 0 24px rgba(0,203,255,.5)" }} />
+              {/* Enquanto não há dias suficientes, a barra fica esmaecida:
+                  a conta continua honesta (média ÷ 85), mas sinaliza que
+                  ainda não é um retrato consolidado. */}
+              <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progressPct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8 55%,#00e3ff)", boxShadow: "0 0 24px rgba(0,203,255,.5)", opacity: provisional ? 0.5 : 1 }} />
             </div>
             <div className="absolute top-1/2 h-[30px] w-[30px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-cyan bg-white" style={{ left: `${progressPct}%`, boxShadow: "0 0 0 6px rgba(0,203,255,.18), 0 6px 18px rgba(0,2,12,.6)", zIndex: 3 }} />
           </div>
@@ -128,22 +135,22 @@ function DashboardContent() {
             <div className="flex items-center gap-3.5">
               <ScoreRing value={lastAnalysis?.generalScore ?? null} size={56} strokeWidth={6} />
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Nota atual</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Último envio</div>
                 {hasData && lastAnalysis && (
                   <Link href={`/analise/${lastAnalysis.id}`} className="mt-1.5 inline-block text-[12px] font-semibold text-cyan hover:text-cyan-light">Ver análise →</Link>
                 )}
               </div>
             </div>
             <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média · últimos {RECENT_WINDOW}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média · últimos {RECENT_WINDOW} dias</div>
               <div className="mt-1.5 flex items-baseline gap-2">
                 <span className="text-[24px] font-semibold" style={{ color: avgScore ? scoreColor(avgScore) : "#9db2c3" }}>{avgScore}</span>
                 {avgScore > 0 && (
                   <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em]" style={{ color: scoreColor(avgScore) }}>{scoreBand(avgScore).label}</span>
                 )}
               </div>
-              {totalSends > 0 && totalSends < RECENT_WINDOW && (
-                <div className="mt-1 text-[10.5px] text-muted">provisória · {totalSends} de {RECENT_WINDOW} envios</div>
+              {daysActive > 0 && daysActive < RECENT_WINDOW && (
+                <div className="mt-1 text-[10.5px] text-muted">provisória · {daysActive} de {RECENT_WINDOW} dias</div>
               )}
             </div>
             <div className="border-l border-[rgba(0,45,115,.45)] pl-3.5">
@@ -179,7 +186,9 @@ function DashboardContent() {
               {sentToday ? "Atendimento de hoje enviado ✓" : "Enviar um atendimento"}
             </div>
             <div className="mt-1 text-[13px] text-muted">
-              {sentToday ? "Você pode enviar mais atendimentos se quiser." : "Áudio ou vídeo do seu atendimento real — a IA analisa e te devolve o plano."}
+              {sentToday
+                ? "Pode enviar mais: a IA analisa todos. A nota do dia continua sendo a do primeiro."
+                : "Áudio ou vídeo do seu atendimento real — a IA analisa e te devolve o plano."}
             </div>
           </div>
         </div>

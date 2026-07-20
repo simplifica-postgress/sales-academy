@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { ref, uploadBytesResumable } from "firebase/storage";
 import { auth, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSellerData } from "@/hooks/useSellerData";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import { ACCEPTED_AUDIO_TYPES, ACCEPTED_VIDEO_TYPES, ATTENDANCE_TYPES, CONSENT_TEXT, MAX_UPLOAD_BYTES } from "@/lib/constants";
+import { isToday } from "@/lib/training";
 
 const ACCEPT = [...ACCEPTED_AUDIO_TYPES, ...ACCEPTED_VIDEO_TYPES].join(",");
 const PROCESSING_STEPS = ["Enviando seu atendimento", "Transcrevendo a conversa", "Analisando sua performance comercial", "Montando seu plano de melhoria"];
@@ -24,6 +26,10 @@ function humanSize(bytes: number): string {
 function UploadForm() {
   const { user, profile } = useAuth();
   const router = useRouter();
+  // Pelas ANÁLISES, não pelos uploads: se o primeiro envio do dia falhou,
+  // ainda não existe nota de hoje e o próximo é que vai valer.
+  const { analyses } = useSellerData(user?.uid);
+  const analyzedToday = analyses.some((a) => isToday(a.createdAt));
 
   const [file, setFile] = useState<File | null>(null);
   const [attendanceType, setAttendanceType] = useState("");
@@ -167,6 +173,17 @@ function UploadForm() {
         <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Enviar atendimento</h1>
         <p className="mt-2 text-[13.5px] leading-[1.6] text-muted">Áudio ou vídeo de um atendimento real. A IA transcreve, analisa e devolve seu plano de melhoria em minutos.</p>
       </div>
+
+      {/* Já tem nota hoje: avisa antes de enviar, para o vendedor não achar
+          que a barra travou quando o segundo envio não mexer nela. */}
+      {analyzedToday && (
+        <div className="mb-3.5 flex gap-3 rounded-2xl border border-[rgba(0,135,248,.35)] px-[18px] py-3.5" style={{ background: "rgba(0,135,248,.06)" }}>
+          <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(0,203,255,.4)] text-[11px] font-bold text-cyan" aria-hidden>i</span>
+          <p className="text-[12.5px] leading-[1.6] text-muted">
+            <strong className="text-foreground">Você já tem a nota de hoje.</strong> Pode enviar mais atendimentos e a IA analisa todos com o mesmo cuidado — mas a nota que entra na sua média e na barra é a do <strong className="text-foreground">primeiro do dia</strong>. Assim a evolução é medida ao longo dos dias, não pelo volume de envios.
+          </p>
+        </div>
+      )}
 
       <label htmlFor="up-file" className="mb-3.5 flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl px-5 py-[38px] text-center transition hover:border-[rgba(0,135,248,.65)]" style={{ border: `1.5px dashed ${file ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.7)"}`, background: file ? "rgba(0,135,248,.05)" : "rgba(2,13,35,.5)" }}>
         <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] border border-[rgba(0,135,248,.35)] text-cyan" style={{ background: "rgba(0,135,248,.1)" }}>

@@ -1,9 +1,10 @@
 import { IDEAL_STREAK_REQUIRED, idealProgress } from "./constants";
 
 /**
- * Quantos envios recentes entram na média. A média mede o nível ATUAL do
- * vendedor, não o histórico: um bom atendimento antigo não sustenta a nota
- * para sempre, e quem evolui vê a média subir de verdade.
+ * Quantos DIAS recentes entram na média (cada dia vale uma nota — a do
+ * primeiro atendimento do dia). A média mede o nível ATUAL do vendedor, não o
+ * histórico: um bom atendimento antigo não sustenta a nota para sempre, e
+ * quem evolui vê a média subir de verdade.
  */
 export const RECENT_WINDOW = 5;
 
