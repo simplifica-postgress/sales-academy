@@ -1,8 +1,13 @@
 rules_version = '2';
 
-// PRINCÍPIO: o cliente nunca escreve nada que afete avaliação, progresso ou
+// PRINCÍPIO 1: o cliente nunca escreve nada que afete avaliação, progresso ou
 // permissão. Tudo isso é gravado só pelo backend (Admin SDK, que ignora estas
 // regras). O cliente só edita os campos do próprio perfil.
+//
+// PRINCÍPIO 2 (multi-empresa): o gestor só enxerga a PRÓPRIA empresa. Como as
+// regras do Firestore não fazem join, cada documento de vendedor (uploads,
+// analyses, progress) carrega uma cópia do companyId do dono. A comparação é
+// sempre contra o companyId do próprio solicitante, lido do doc dele.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -14,14 +19,27 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
+    function me() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isMaster() {
+      return isSignedIn() && me().role == 'master';
+    }
+
+    // Gestor da empresa `cid`. O `cid != null` é essencial: sem ele, um gestor
+    // sem empresa passaria a enxergar todo mundo que também está sem empresa.
+    function isManagerOf(cid) {
       return isSignedIn()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && me().role == 'manager'
+        && cid != null
+        && me().companyId == cid;
     }
 
     // Campos que o vendedor pode editar no próprio perfil.
-    // Fora desta lista (role, profileCompleted, trainingStartDate, currentDay,
-    // progressPercent, averageScore, currentLevel) só o backend grava.
+    // Fora desta lista (role, companyId, profileCompleted, trainingStartDate,
+    // currentDay, progressPercent, averageScore, currentLevel) só o backend
+    // grava — inclusive companyId, para ninguém se mudar de empresa sozinho.
     function editableProfileKeys() {
       return [
         'name', 'company', 'salesRole', 'experience',
@@ -29,13 +47,24 @@ service cloud.firestore {
       ];
     }
 
-    // Usuários: cada um lê/edita o próprio; admin lê todos.
-    match /users/{userId} {
-      allow read: if isSelf(userId) || isAdmin();
+    // Empresas: leitura para master e para o gestor da própria empresa.
+    // Escrita só pelo backend (endpoint protegido por papel master).
+    match /companies/{companyId} {
+      allow read: if isMaster() || isManagerOf(companyId);
+      allow write: if false;
+    }
 
-      // Criação no primeiro login: sempre como vendedor, sem progresso.
+    // Usuários: cada um lê o próprio; master lê todos; gestor lê só quem
+    // está na empresa dele.
+    match /users/{userId} {
+      allow read: if isSelf(userId)
+        || isMaster()
+        || isManagerOf(resource.data.companyId);
+
+      // Criação no primeiro login: sempre vendedor, sem empresa e sem progresso.
       allow create: if isSelf(userId)
         && request.resource.data.role == 'seller'
+        && request.resource.data.companyId == null
         && request.resource.data.profileCompleted == false
         && request.resource.data.progressPercent == 0
         && request.resource.data.averageScore == 0
@@ -44,7 +73,7 @@ service cloud.firestore {
         && request.resource.data.trainingStartDate == null;
 
       // Edição pelo cliente: apenas campos de perfil.
-      // Impede forjar progresso/nível/dia e escalada de privilégio.
+      // Impede forjar progresso/nível e escalada de privilégio (role/companyId).
       allow update: if isSelf(userId)
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(editableProfileKeys());
@@ -52,32 +81,38 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Progresso: leitura própria/admin. Escrita 100% pelo backend.
+    // Progresso: dono, master ou gestor da empresa do dono. Escrita só backend.
     match /progress/{userId} {
-      allow read: if isSelf(userId) || isAdmin();
+      allow read: if isSelf(userId)
+        || isMaster()
+        || isManagerOf(resource.data.companyId);
       allow write: if false;
     }
 
-    // Envios: leitura própria/admin. Criados pelo backend após o arquivo
-    // chegar ao Storage (o cliente não registra envio direto no banco).
+    // Envios: dono, master ou gestor da empresa do dono. Criados pelo backend
+    // após o arquivo chegar ao Storage.
     match /uploads/{uploadId} {
       allow read: if isSignedIn()
-        && (resource.data.userId == request.auth.uid || isAdmin());
+        && (resource.data.userId == request.auth.uid
+            || isMaster()
+            || isManagerOf(resource.data.companyId));
       allow write: if false;
     }
 
-    // Análises: geradas apenas pelo backend; leitura própria/admin.
+    // Análises: geradas apenas pelo backend; mesma visibilidade dos envios.
     match /analyses/{analysisId} {
       allow read: if isSignedIn()
-        && (resource.data.userId == request.auth.uid || isAdmin());
+        && (resource.data.userId == request.auth.uid
+            || isMaster()
+            || isManagerOf(resource.data.companyId));
       allow write: if false;
     }
 
-    // Base de conhecimento que alimenta a IA: só o gestor.
+    // Base de conhecimento que alimenta a IA: só o master.
     // O vendedor não precisa ler (minimização de dados).
     match /knowledge/{docId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read: if isMaster();
+      allow write: if isMaster();
     }
 
     // Nega qualquer coleção não declarada acima.

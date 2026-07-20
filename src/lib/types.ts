@@ -2,7 +2,20 @@ import type { Timestamp } from "firebase/firestore";
 
 // ---------- Usuários ----------
 
-export type UserRole = "seller" | "admin";
+/**
+ * seller  — vendedor: só enxerga o próprio treinamento.
+ * manager — gestor da empresa: vê os vendedores DA SUA empresa e testa a IA.
+ *           Não adiciona pessoas nem muda papéis.
+ * master  — Simplifica: organiza empresas, vincula pessoas e muda papéis.
+ */
+export type UserRole = "seller" | "manager" | "master";
+
+/** Empresa (a "pasta" do painel master). */
+export interface Company {
+  name: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp | null;
+}
 
 export type AttendanceType =
   | "ligacao"
@@ -16,7 +29,14 @@ export interface UserProfile {
   name: string;
   email: string;
   role: UserRole;
+  /** Empresa declarada pelo próprio vendedor no cadastro (texto livre). */
   company: string;
+  /**
+   * Empresa de verdade: a pasta em que o master colocou esta pessoa.
+   * null = ainda não vinculada. É este campo (nunca o texto livre) que
+   * decide o que o gestor enxerga.
+   */
+  companyId: string | null;
   salesRole: string;
   experience: string;
   attendanceTypes: AttendanceType[];
@@ -37,6 +57,8 @@ export type UploadStatus = "pending" | "processing" | "done" | "error";
 
 export interface Upload {
   userId: string;
+  /** Cópia do companyId do dono, para as regras filtrarem sem fazer join. */
+  companyId?: string | null;
   fileUrl: string;
   filePath: string; // caminho no Storage: uploads/{userId}/{data}/{arquivo}
   fileType: "audio" | "video";
@@ -79,6 +101,8 @@ export type CriteriaScores = Record<CriterionKey, number>;
 
 export interface Analysis {
   userId: string;
+  /** Cópia do companyId do dono, para as regras filtrarem sem fazer join. */
+  companyId?: string | null;
   uploadId: string;
   transcript: string;
   summary: string;
@@ -95,6 +119,8 @@ export interface Analysis {
 // ---------- Progresso ----------
 
 export interface Progress {
+  /** Cópia do companyId do dono, para as regras filtrarem sem fazer join. */
+  companyId?: string | null;
   totalUploads: number;
   completedDays: number; // dias distintos em que houve envio
   currentLevel: number;

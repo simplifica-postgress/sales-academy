@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/server/adminAuth";
+import { requireMaster } from "@/lib/server/adminAuth";
 import { runRetentionCleanup } from "@/lib/server/recordings";
 import { RETENTION_DAYS } from "@/lib/constants";
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
   if (!isCron) {
     try {
-      await requireAdmin(req);
+      await requireMaster(req);
     } catch {
       return NextResponse.json(
         { error: "Acesso restrito a gestores." },
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 /** Prévia: quantas gravações seriam apagadas agora (não apaga nada). */
 export async function GET(req: Request) {
   try {
-    await requireAdmin(req);
+    await requireMaster(req);
   } catch {
     return NextResponse.json(
       { error: "Acesso restrito a gestores." },

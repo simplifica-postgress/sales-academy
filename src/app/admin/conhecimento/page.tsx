@@ -247,7 +247,7 @@ function Knowledge() {
 
 export default function KnowledgePage() {
   return (
-    <AuthGate requireAdmin>
+    <AuthGate allow={["master"]}>
       <AppShell>
         <Knowledge />
       </AppShell>

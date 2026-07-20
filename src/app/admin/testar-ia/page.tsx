@@ -183,7 +183,7 @@ function TestLab() {
 
 export default function TestLabPage() {
   return (
-    <AuthGate requireAdmin>
+    <AuthGate allow={["manager", "master"]}>
       <AppShell>
         <TestLab />
       </AppShell>

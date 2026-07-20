@@ -6,6 +6,7 @@ import {
   onSnapshot,
   query,
   where,
+  type Query,
   type Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -28,35 +29,64 @@ export interface AdminData {
   sentTodayCount: number;
 }
 
-/** Agrega, em tempo real, os dados de todos os vendedores para o gestor. */
-export function useAdminData(enabled: boolean): AdminData {
+export interface TeamScope {
+  /** null = todas as empresas (só o master consegue ler assim). */
+  companyId: string | null;
+  /** Master lê tudo; gestor só a própria empresa. */
+  isMaster: boolean;
+}
+
+/**
+ * Agrega em tempo real os dados da equipe.
+ *
+ * As consultas são escopadas por empresa de propósito: o gestor não pode
+ * assinar a coleção inteira (as Rules negam), e escopar aqui evita pedir
+ * dados que não são dele. Só o master lê sem filtro.
+ */
+export function useAdminData(scope: TeamScope | null): AdminData {
   const [sellers, setSellers] = useState<Record<string, UserProfile>>({});
   const [progress, setProgress] = useState<Record<string, Progress>>({});
   const [uploadsByUser, setUploadsByUser] = useState<
     Record<string, Timestamp[]>
   >({});
-  const [ready, setReady] = useState(false);
+  // Guarda QUAL escopo já chegou, em vez de um booleano: ao trocar de
+  // empresa, `ready` volta a ser falso sozinho, sem setState dentro do efeito
+  // (que dispara renders em cascata).
+  const [readyKey, setReadyKey] = useState<string | null>(null);
+
+  const companyId = scope?.companyId ?? null;
+  const isMaster = scope?.isMaster ?? false;
+  const enabled = Boolean(scope) && (isMaster || companyId !== null);
+  const scopeKey = companyId ?? "__todas__";
+  const ready = readyKey === scopeKey;
 
   useEffect(() => {
     if (!enabled) return;
 
-    const unsubUsers = onSnapshot(
-      query(collection(db, "users"), where("role", "==", "seller")),
-      (snap) => {
-        const map: Record<string, UserProfile> = {};
-        snap.forEach((d) => (map[d.id] = d.data() as UserProfile));
-        setSellers(map);
-        setReady(true);
-      }
-    );
+    // Sem empresa definida só o master chega aqui (visão "todas").
+    const byCompany = <T>(col: string): Query<T> =>
+      (companyId === null
+        ? query(collection(db, col))
+        : query(collection(db, col), where("companyId", "==", companyId))) as Query<T>;
 
-    const unsubProgress = onSnapshot(collection(db, "progress"), (snap) => {
+    const unsubUsers = onSnapshot(byCompany("users"), (snap) => {
+      const map: Record<string, UserProfile> = {};
+      snap.forEach((d) => {
+        const data = d.data() as UserProfile;
+        // Filtro de papel no cliente para dispensar índice composto.
+        if (data.role === "seller") map[d.id] = data;
+      });
+      setSellers(map);
+      setReadyKey(scopeKey);
+    });
+
+    const unsubProgress = onSnapshot(byCompany("progress"), (snap) => {
       const map: Record<string, Progress> = {};
       snap.forEach((d) => (map[d.id] = d.data() as Progress));
       setProgress(map);
     });
 
-    const unsubUploads = onSnapshot(collection(db, "uploads"), (snap) => {
+    const unsubUploads = onSnapshot(byCompany("uploads"), (snap) => {
       const map: Record<string, Timestamp[]> = {};
       snap.forEach((d) => {
         const uid = d.get("userId") as string;
@@ -72,7 +102,7 @@ export function useAdminData(enabled: boolean): AdminData {
       unsubProgress();
       unsubUploads();
     };
-  }, [enabled]);
+  }, [enabled, companyId, scopeKey]);
 
   const rows: SellerRow[] = Object.entries(sellers)
     .map(([uid, profile]) => {
@@ -104,5 +134,5 @@ export function useAdminData(enabled: boolean): AdminData {
     : 0;
   const sentTodayCount = rows.filter((r) => r.sentToday).length;
 
-  return { sellers: rows, loading: !ready, teamAverage, sentTodayCount };
+  return { sellers: rows, loading: enabled && !ready, teamAverage, sentTodayCount };
 }

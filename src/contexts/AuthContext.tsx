@@ -52,6 +52,8 @@ async function ensureUserDoc(user: User, name?: string): Promise<UserProfile> {
     email: user.email ?? "",
     role: "seller" as const,
     company: "",
+    // Nasce sem empresa: quem vincula é o master (as Rules exigem null aqui).
+    companyId: null,
     salesRole: "",
     experience: "",
     attendanceTypes: [],

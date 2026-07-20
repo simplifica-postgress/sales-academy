@@ -224,7 +224,7 @@ function SellerDetail() {
 
 export default function SellerDetailPage() {
   return (
-    <AuthGate requireAdmin>
+    <AuthGate allow={["manager", "master"]}>
       <AppShell>
         <SellerDetail />
       </AppShell>

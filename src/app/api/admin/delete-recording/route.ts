@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AuthError, requireAdmin } from "@/lib/server/adminAuth";
+import { AuthError, requireMaster } from "@/lib/server/adminAuth";
 import { deleteRecordingFile } from "@/lib/server/recordings";
 
 export const runtime = "nodejs";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   let caller;
   try {
-    caller = await requireAdmin(req);
+    caller = await requireMaster(req);
   } catch (err) {
     const e = err as AuthError;
     return NextResponse.json({ error: e.message }, { status: e.status ?? 401 });

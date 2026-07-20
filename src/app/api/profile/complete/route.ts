@@ -96,7 +96,10 @@ export async function POST(req: Request) {
     {
       ...profileFields,
       email: email ?? snap.get("email") ?? "",
-      role: "seller",
+      // Nunca rebaixa quem já é gestor/master: só define o papel de quem
+      // ainda não tem. Papel é assunto do endpoint de master.
+      role: snap.get("role") ?? "seller",
+      companyId: snap.get("companyId") ?? null,
       profileCompleted: true,
       trainingStartDate: FieldValue.serverTimestamp(),
       currentDay: 1,

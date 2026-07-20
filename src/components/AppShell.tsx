@@ -67,34 +67,49 @@ const iconLab = (
   </svg>
 );
 
-// Seções fixas do admin; o resto de /admin/* é o detalhe de um vendedor.
-const ADMIN_SECTIONS = ["usuarios", "conhecimento", "testar-ia"];
+// Seções fixas do admin; o resto de /admin/* é detalhe de vendedor ou empresa.
+const ADMIN_SECTIONS = ["usuarios", "conhecimento", "testar-ia", "empresa"];
 
-const ADMIN_NAV: NavItem[] = [
-  {
-    label: "Equipe",
-    href: "/admin",
-    icon: iconTeam,
-    active: (p) =>
-      p === "/admin" ||
-      (p.startsWith("/admin/") && !ADMIN_SECTIONS.includes(p.split("/")[2])),
-  },
+const homeItem = (label: string): NavItem => ({
+  label,
+  href: "/admin",
+  icon: iconTeam,
+  active: (p) =>
+    p === "/admin" ||
+    (p.startsWith("/admin/") && !ADMIN_SECTIONS.includes(p.split("/")[2])),
+});
+
+const testItem: NavItem = {
+  label: "Testar IA",
+  href: "/admin/testar-ia",
+  icon: iconLab,
+  active: (p) => p.startsWith("/admin/testar-ia"),
+};
+
+/** Master: organiza empresas, pessoas e a base da IA. */
+const MASTER_NAV: NavItem[] = [
+  homeItem("Empresas"),
   { label: "Usuários", href: "/admin/usuarios", icon: iconUsers, active: (p) => p.startsWith("/admin/usuarios") },
   { label: "Conhecimento", href: "/admin/conhecimento", icon: iconBook, active: (p) => p.startsWith("/admin/conhecimento") },
-  { label: "Testar IA", href: "/admin/testar-ia", icon: iconLab, active: (p) => p.startsWith("/admin/testar-ia") },
+  testItem,
 ];
+
+/** Gestor: vê a própria equipe e testa a IA. Não administra pessoas. */
+const MANAGER_NAV: NavItem[] = [homeItem("Equipe"), testItem];
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAdmin = profile?.role === "admin";
-  const nav = isAdmin ? ADMIN_NAV : SELLER_NAV;
-  const roleLabel = isAdmin ? "Gestor" : "Vendedor";
+  const role = profile?.role ?? "seller";
+  const isMaster = role === "master";
+  const isStaff = isMaster || role === "manager";
+  const nav = isMaster ? MASTER_NAV : role === "manager" ? MANAGER_NAV : SELLER_NAV;
+  const roleLabel = isMaster ? "Simplifica" : role === "manager" ? "Gestor" : "Vendedor";
 
   const go = (href: string) => router.push(href);
-  const home = isAdmin ? "/admin" : "/dashboard";
+  const home = isStaff ? "/admin" : "/dashboard";
 
   // Botão de voltar: aparece em toda página que não é a inicial do papel.
   const showBack = pathname !== home;

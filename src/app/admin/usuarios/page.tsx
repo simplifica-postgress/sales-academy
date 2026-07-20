@@ -28,6 +28,19 @@ function Users() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("seller");
   const [creating, setCreating] = useState(false);
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+  const [newCompany, setNewCompany] = useState("");
+
+  useEffect(() => {
+    const unsubC = onSnapshot(collection(db, "companies"), (snap) =>
+      setCompanies(
+        snap.docs
+          .map((d) => ({ id: d.id, name: (d.data() as { name: string }).name }))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      )
+    );
+    return unsubC;
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -37,8 +50,9 @@ function Users() {
           snap.docs
             .map((d) => ({ uid: d.id, ...(d.data() as UserProfile) }))
             .sort((a, b) => {
-              // Gestores primeiro, depois por nome.
-              if (a.role !== b.role) return a.role === "admin" ? -1 : 1;
+              // Master, gestor e depois vendedor; dentro do papel, por nome.
+              const rank = { master: 0, manager: 1, seller: 2 } as const;
+              if (a.role !== b.role) return rank[a.role] - rank[b.role];
               return (a.name || "").localeCompare(b.name || "");
             })
         );
@@ -53,19 +67,26 @@ function Users() {
     return unsub;
   }, []);
 
-  async function changeRole(uid: string, next: UserRole) {
+  const ROLE_LABEL: Record<UserRole, string> = {
+    seller: "Vendedor",
+    manager: "Gestor",
+    master: "Simplifica",
+  };
+
+  /** Muda papel e/ou empresa. Só o master chega nesta tela. */
+  async function patchUser(
+    uid: string,
+    body: { role?: UserRole; companyId?: string | null },
+    msg: string
+  ) {
     setError("");
     setNotice("");
     setBusyUid(uid);
     try {
-      await adminPost("/api/admin/set-role", { uid, role: next });
-      setNotice(
-        next === "admin"
-          ? "Acesso de gestor concedido."
-          : "Usuário voltou a ser vendedor."
-      );
+      await adminPost("/api/admin/set-role", { uid, ...body });
+      setNotice(msg);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao alterar o papel.");
+      setError(err instanceof Error ? err.message : "Falha ao alterar o acesso.");
     } finally {
       setBusyUid(null);
     }
@@ -77,7 +98,13 @@ function Users() {
     setNotice("");
     setCreating(true);
     try {
-      await adminPost("/api/admin/create-user", { name, email, password, role });
+      await adminPost("/api/admin/create-user", {
+        name,
+        email,
+        password,
+        role,
+        companyId: newCompany || null,
+      });
       setNotice(`Conta criada para ${email}.`);
       setName("");
       setEmail("");
@@ -91,7 +118,7 @@ function Users() {
     }
   }
 
-  const admins = rows.filter((r) => r.role === "admin").length;
+  const admins = rows.filter((r) => r.role !== "seller").length;
 
   return (
     <div className="fade-up">
@@ -120,7 +147,14 @@ function Users() {
             <input value={password} onChange={(e) => setPassword(e.target.value)} type="text" className="field" placeholder="Senha (mín. 6 caracteres)" minLength={6} required />
             <select value={role} onChange={(e) => setRole(e.target.value as UserRole)} className="field" style={{ cursor: "pointer" }}>
               <option value="seller">Vendedor</option>
-              <option value="admin">Gestor (admin)</option>
+              <option value="manager">Gestor da empresa</option>
+              <option value="master">Simplifica (master)</option>
+            </select>
+            <select value={newCompany} onChange={(e) => setNewCompany(e.target.value)} className="field" style={{ cursor: "pointer" }}>
+              <option value="">Sem empresa</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
           </div>
           <p className="mt-3 text-[12px] text-muted">
@@ -140,43 +174,57 @@ function Users() {
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[640px]">
-              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "1.6fr 1.4fr 110px 150px" }}>
-                <span>Nome</span><span>E-mail</span><span>Papel</span><span className="text-right">Ação</span>
+              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "1.5fr 1.3fr 150px 170px" }}>
+                <span>Nome</span><span>E-mail</span><span>Papel</span><span>Empresa</span>
               </div>
               {rows.map((r) => {
-                const isAdmin = r.role === "admin";
                 const isSelf = r.uid === user?.uid;
+                const staff = r.role !== "seller";
                 return (
-                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "1.6fr 1.4fr 110px 150px" }}>
+                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "1.5fr 1.3fr 150px 170px" }}>
                     <span className="flex min-w-0 items-center gap-[11px]">
-                      <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>{initials(r.name)}</span>
+                      <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(74,110,220,.35), rgba(127,155,255,.14))" }}>{initials(r.name)}</span>
                       <span className="min-w-0 truncate text-[13.5px] font-semibold text-foreground">
                         {r.name || "—"}{isSelf && <span className="ml-1.5 text-[11px] font-normal text-muted">(você)</span>}
                       </span>
                     </span>
                     <span className="truncate text-[12.5px] text-muted">{r.email}</span>
+
+                    {/* Papel: o master não pode se rebaixar (o backend também barra). */}
                     <span>
-                      <span className="inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[10.5px] font-semibold" style={isAdmin
-                        ? { color: "#7f9bff", background: "rgba(127,155,255,.07)", border: "1px solid rgba(127,155,255,.25)" }
-                        : { color: "#79839c", background: "#1b2440", border: "1px solid rgba(120,150,210,.14)" }}>
-                        {isAdmin ? "Gestor" : "Vendedor"}
-                      </span>
-                    </span>
-                    <span className="text-right">
                       {isSelf ? (
-                        <span className="text-[11.5px] text-muted">—</span>
+                        <span className="inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[10.5px] font-semibold" style={{ color: "#7f9bff", background: "rgba(127,155,255,.07)", border: "1px solid rgba(127,155,255,.25)" }}>
+                          {ROLE_LABEL[r.role]}
+                        </span>
                       ) : (
-                        <button
-                          onClick={() => changeRole(r.uid, isAdmin ? "seller" : "admin")}
+                        <select
+                          value={r.role}
                           disabled={busyUid === r.uid}
-                          className="rounded-lg border px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-50"
-                          style={isAdmin
-                            ? { borderColor: "rgba(244,114,106,.35)", color: "#f4726a", background: "rgba(244,114,106,.06)" }
-                            : { borderColor: "rgba(90,124,255,.5)", color: "#7f9bff", background: "rgba(90,124,255,.08)" }}
+                          onChange={(e) => patchUser(r.uid, { role: e.target.value as UserRole }, `${(r.name || r.email).split(" ")[0]} agora é ${ROLE_LABEL[e.target.value as UserRole].toLowerCase()}.`)}
+                          className="w-full rounded-lg border px-2.5 py-1.5 text-[12px] font-medium disabled:opacity-50"
+                          style={{ cursor: "pointer", background: "rgba(11,17,36,.55)", borderColor: staff ? "rgba(90,124,255,.4)" : "rgba(120,150,210,.16)", color: staff ? "#7f9bff" : "#cdd5e6" }}
                         >
-                          {busyUid === r.uid ? "…" : isAdmin ? "Remover gestor" : "Tornar gestor"}
-                        </button>
+                          <option value="seller">Vendedor</option>
+                          <option value="manager">Gestor</option>
+                          <option value="master">Simplifica</option>
+                        </select>
                       )}
+                    </span>
+
+                    {/* Empresa: é isto que decide o que o gestor enxerga. */}
+                    <span>
+                      <select
+                        value={r.companyId ?? ""}
+                        disabled={busyUid === r.uid}
+                        onChange={(e) => patchUser(r.uid, { companyId: e.target.value || null }, e.target.value ? "Pessoa vinculada à empresa." : "Pessoa desvinculada da empresa.")}
+                        className="w-full rounded-lg border px-2.5 py-1.5 text-[12px] font-medium disabled:opacity-50"
+                        style={{ cursor: "pointer", background: "rgba(11,17,36,.55)", borderColor: r.companyId ? "rgba(120,150,210,.16)" : "rgba(245,182,97,.35)", color: r.companyId ? "#cdd5e6" : "#f5b661" }}
+                      >
+                        <option value="">Sem empresa</option>
+                        {companies.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
                     </span>
                   </div>
                 );
@@ -187,7 +235,7 @@ function Users() {
       </div>
 
       <p className="mt-3.5 text-center text-[12px] text-muted">
-        Gestores veem toda a equipe e a base de conhecimento. Você não pode remover o próprio acesso.
+        O <strong className="text-foreground">gestor</strong> vê apenas os vendedores da empresa dele e pode testar a IA — não adiciona pessoas nem muda papéis. Só o <strong className="text-foreground">master</strong> faz isso. Você não pode remover o próprio acesso.
       </p>
     </div>
   );
@@ -195,7 +243,7 @@ function Users() {
 
 export default function UsersPage() {
   return (
-    <AuthGate requireAdmin>
+    <AuthGate allow={["master"]}>
       <AppShell>
         <Users />
       </AppShell>

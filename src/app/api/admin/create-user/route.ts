@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { AuthError, requireAdmin } from "@/lib/server/adminAuth";
+import { AuthError, requireMaster } from "@/lib/server/adminAuth";
 import { adminAuth, adminDb } from "@/lib/server/firebaseAdmin";
 import type { UserRole } from "@/lib/types";
 
@@ -10,17 +10,18 @@ export const dynamic = "force-dynamic";
 /** Cria uma conta (vendedor ou gestor) a partir do painel do admin. */
 export async function POST(req: Request) {
   try {
-    await requireAdmin(req);
+    await requireMaster(req);
   } catch (err) {
     const e = err as AuthError;
     return NextResponse.json({ error: e.message }, { status: e.status ?? 401 });
   }
 
-  const { name, email, password, role } = (await req.json()) as {
+  const { name, email, password, role, companyId } = (await req.json()) as {
     name?: string;
     email?: string;
     password?: string;
     role?: UserRole;
+    companyId?: string | null;
   };
 
   if (!name?.trim() || !email?.trim() || !password) {
@@ -35,7 +36,9 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  const finalRole: UserRole = role === "admin" ? "admin" : "seller";
+  const finalRole: UserRole =
+    role === "master" || role === "manager" ? role : "seller";
+  const finalCompany = companyId ?? null;
 
   let uid: string;
   try {
@@ -64,7 +67,13 @@ export async function POST(req: Request) {
       email: email.trim(),
       role: finalRole,
       company: "",
-      salesRole: finalRole === "admin" ? "Gestor" : "",
+      companyId: finalCompany,
+      salesRole:
+        finalRole === "master"
+          ? "Simplifica"
+          : finalRole === "manager"
+            ? "Gestor"
+            : "",
       experience: "",
       attendanceTypes: [],
       mainDifficulty: "",
@@ -74,8 +83,8 @@ export async function POST(req: Request) {
       progressPercent: 0,
       averageScore: 0,
       currentLevel: 1,
-      // Gestor não passa pelo onboarding; vendedor preenche no 1º acesso.
-      profileCompleted: finalRole === "admin",
+      // Gestor/master não passam pelo onboarding; vendedor preenche no 1º acesso.
+      profileCompleted: finalRole !== "seller",
       createdAt: FieldValue.serverTimestamp(),
     });
 

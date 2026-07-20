@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AuthError, requireAdmin } from "@/lib/server/adminAuth";
+import { AuthError, requireStaff } from "@/lib/server/adminAuth";
 import { analyze } from "@/lib/server/openai";
 import { getKnowledgeText } from "@/lib/server/knowledge";
 
@@ -13,7 +13,7 @@ export const maxDuration = 120;
  */
 export async function POST(req: Request) {
   try {
-    await requireAdmin(req);
+    await requireStaff(req);
   } catch (err) {
     const e = err as AuthError;
     return NextResponse.json({ error: e.message }, { status: e.status ?? 401 });

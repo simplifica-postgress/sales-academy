@@ -153,9 +153,14 @@ export async function POST(req: Request) {
     : 1;
 
   // 4. Registra o upload como "processing", já apontando para o arquivo.
+  // Cópia da empresa do vendedor: é por ela que as regras deixam o gestor
+  // ler os documentos da própria equipe (o Firestore não faz join).
+  const companyId = (profile.companyId as string | null) ?? null;
+
   const uploadRef = adminDb.collection("uploads").doc();
   await uploadRef.set({
     userId: uid,
+    companyId,
     fileUrl: "",
     filePath,
     fileType: isVideo ? "video" : "audio",
@@ -196,6 +201,7 @@ export async function POST(req: Request) {
     const analysisRef = adminDb.collection("analyses").doc();
     await analysisRef.set({
       userId: uid,
+      companyId,
       uploadId: uploadRef.id,
       transcript,
       summary: result.summary,
@@ -250,6 +256,7 @@ export async function POST(req: Request) {
 
     await adminDb.collection("progress").doc(uid).set(
       {
+        companyId,
         totalUploads: uploadsSnap.size,
         completedDays: trainedDays.length,
         currentLevel: progression.currentLevel,

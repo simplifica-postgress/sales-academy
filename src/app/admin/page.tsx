@@ -1,69 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdminData, type SellerRow } from "@/hooks/useAdminData";
 import { adminPost } from "@/lib/adminApi";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import Spinner from "@/components/Spinner";
-import { LEVELS, RETENTION_DAYS, idealProgress } from "@/lib/constants";
-import { shortDate } from "@/lib/training";
-import { criteriaFill, initials, scoreBand, scoreColor } from "@/lib/ui";
+import TeamPanel from "@/components/TeamPanel";
+import { RETENTION_DAYS } from "@/lib/constants";
+import type { Company, UserProfile } from "@/lib/types";
 
-const GRID = "1.6fr 54px 54px 1fr 64px 1.2fr 90px";
-
-function levelName(level: number): string {
-  return LEVELS[Math.max(0, Math.min(level - 1, LEVELS.length - 1))].name;
-}
-
-function Row({ row, onOpen }: { row: SellerRow; onOpen: () => void }) {
-  const avg = row.progress?.averageScore ?? 0;
-  const level = row.progress?.currentLevel ?? row.profile.currentLevel ?? 1;
-  const pct = idealProgress(Math.round(avg));
-  return (
-    <button onClick={onOpen} className="grid w-full items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-[13px] text-left transition last:border-0 hover:bg-[rgba(90,124,255,.05)]" style={{ gridTemplateColumns: GRID }}>
-      <span className="flex min-w-0 items-center gap-[11px]">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>{initials(row.profile.name)}</span>
-        <span className="min-w-0">
-          <span className="block truncate text-[13.5px] font-semibold text-foreground">{row.profile.name || "—"}</span>
-          <span className="block text-[11px] text-muted">{row.profile.salesRole || "Vendedor"}</span>
-        </span>
-      </span>
-      <span className="flex justify-center">
-        <span
-          className="flex h-[19px] w-[19px] items-center justify-center rounded-full text-[11px] font-bold"
-          title={row.sentToday ? "Enviou hoje" : "Não enviou hoje"}
-          style={
-            row.sentToday
-              ? { color: "#57c98a", background: "rgba(87,201,138,.12)", border: "1px solid rgba(87,201,138,.34)" }
-              : { color: "#f4726a", background: "rgba(244,114,106,.1)", border: "1px solid rgba(244,114,106,.3)" }
-          }
-        >
-          {row.sentToday ? "✓" : "✗"}
-        </span>
-      </span>
-      <span className="text-center font-mono text-[13px] text-foreground">{row.progress?.completedDays ?? 0}</span>
-      <span className="flex items-center gap-[9px]">
-        <span className="h-1 flex-1 overflow-hidden rounded-full bg-indicator"><span className="block h-full rounded-full" style={{ width: `${pct}%`, background: criteriaFill(avg) }} /></span>
-        <span className="w-8 text-right font-mono text-[11.5px]" style={{ color: avg > 0 ? scoreColor(avg) : "#79839c" }}>{pct}%</span>
-      </span>
-      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: avg > 0 ? scoreColor(avg) : "#79839c" }}>{avg > 0 ? Math.round(avg) : "—"}</span>
-      <span><span className="inline-block whitespace-nowrap rounded-full border border-[rgba(127,155,255,.22)] px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.04em] text-cyan" style={{ background: "rgba(127,155,255,.07)" }}>{level} · {levelName(level)}</span></span>
-      <span className="text-right font-mono text-[11.5px] text-muted">{shortDate(row.lastUpload)}</span>
-    </button>
-  );
-}
-
-function Kpi({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="dc-card px-[22px] py-5">
-      <div className="mono-label">{label}</div>
-      {children}
-    </div>
-  );
-}
+type CompanyRow = Company & { id: string };
 
 function RetentionCard() {
   const [running, setRunning] = useState(false);
@@ -75,10 +25,7 @@ function RetentionCard() {
     setResult("");
     setRunning(true);
     try {
-      const r = await adminPost<{ deleted: number; scanned: number }>(
-        "/api/admin/retention",
-        {}
-      );
+      const r = await adminPost<{ deleted: number; scanned: number }>("/api/admin/retention", {});
       setResult(
         r.deleted === 0
           ? "Nenhuma gravação venceu o prazo — nada a apagar."
@@ -100,11 +47,7 @@ function RetentionCard() {
             As gravações são apagadas após <strong className="text-foreground">{RETENTION_DAYS} dias</strong>, cumprida a finalidade de gerar a análise. <strong className="text-foreground">As análises são preservadas</strong> — o histórico do vendedor não perde nada.
           </p>
         </div>
-        <button
-          onClick={run}
-          disabled={running}
-          className="flex-none rounded-lg border border-[rgba(120,150,210,.16)] bg-card-alt px-3.5 py-2 text-[12px] font-medium text-muted transition hover:border-[rgba(90,124,255,.5)] hover:text-foreground disabled:opacity-50"
-        >
+        <button onClick={run} disabled={running} className="flex-none rounded-lg border border-[rgba(120,150,210,.16)] bg-card-alt px-3.5 py-2 text-[12px] font-medium text-muted transition hover:border-[rgba(90,124,255,.5)] hover:text-foreground disabled:opacity-50">
           {running ? "Executando…" : "Executar limpeza agora"}
         </button>
       </div>
@@ -114,11 +57,131 @@ function RetentionCard() {
   );
 }
 
-function AdminPanel() {
-  const { profile } = useAuth();
+/** Painel do master: as empresas como pastas. */
+function MasterPanel() {
   const router = useRouter();
-  const { sellers, loading, teamAverage, sentTodayCount } = useAdminData(profile?.role === "admin");
-  const sentPct = sellers.length ? Math.round((sentTodayCount / sellers.length) * 100) : 0;
+  const [companies, setCompanies] = useState<CompanyRow[]>([]);
+  const [users, setUsers] = useState<(UserProfile & { id: string })[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const unsubC = onSnapshot(collection(db, "companies"), (snap) => {
+      setCompanies(
+        snap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as Company) }))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
+      setLoading(false);
+    });
+    const unsubU = onSnapshot(collection(db, "users"), (snap) => {
+      setUsers(snap.docs.map((d) => ({ id: d.id, ...(d.data() as UserProfile) })));
+    });
+    return () => {
+      unsubC();
+      unsubU();
+    };
+  }, []);
+
+  async function createCompany() {
+    if (!newName.trim()) return;
+    setError("");
+    setBusy(true);
+    try {
+      await adminPost("/api/admin/companies", { action: "create", name: newName });
+      setNewName("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao criar empresa.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const unassigned = users.filter((u) => !u.companyId && u.role === "seller");
+
+  return (
+    <div className="fade-up">
+      <div className="mb-6">
+        <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Painel Simplifica</div>
+        <h1 className="mt-2 text-[27px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Empresas</h1>
+        <p className="mt-2 text-[13px] text-muted">Cada empresa é uma pasta: o gestor dela vê só os vendedores que estão aqui dentro.</p>
+      </div>
+
+      <div className="dc-card mb-3.5 flex flex-wrap items-end gap-3 p-5">
+        <div className="min-w-[240px] flex-1">
+          <label className="mono-label mb-2 block" htmlFor="nova-empresa">Nova empresa</label>
+          <input id="nova-empresa" className="field" placeholder="Ex.: Construtora Alfa" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && createCompany()} />
+        </div>
+        <button onClick={createCompany} disabled={busy || !newName.trim()} className="btn-primary rounded-[11px] px-5 py-[12px] text-[13.5px] font-semibold disabled:opacity-50">
+          {busy ? "Criando…" : "Criar pasta"}
+        </button>
+      </div>
+      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-2.5 text-[12.5px] text-danger">{error}</p>}
+
+      {loading ? (
+        <div className="dc-card flex justify-center py-12"><Spinner /></div>
+      ) : (
+        <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+          {companies.map((c) => {
+            const members = users.filter((u) => u.companyId === c.id);
+            const sellers = members.filter((u) => u.role === "seller");
+            const manager = members.find((u) => u.role === "manager");
+            return (
+              <button key={c.id} onClick={() => router.push(`/admin/empresa/${c.id}`)} className="dc-card p-5 text-left transition hover:border-[rgba(90,124,255,.45)]">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] text-cyan" style={{ background: "rgba(90,124,255,.12)", border: "1px solid rgba(90,124,255,.3)" }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-foreground">{c.name}</span>
+                </div>
+                <div className="mt-3.5 flex flex-wrap gap-2 text-[11.5px]">
+                  <span className="rounded-full px-2.5 py-1 text-cyan" style={{ background: "rgba(127,155,255,.08)", border: "1px solid rgba(127,155,255,.22)" }}>{sellers.length} vendedor(es)</span>
+                  <span className="rounded-full px-2.5 py-1" style={manager ? { color: "#57c98a", background: "rgba(87,201,138,.1)", border: "1px solid rgba(87,201,138,.3)" } : { color: "#f4726a", background: "rgba(244,114,106,.1)", border: "1px solid rgba(244,114,106,.3)" }}>
+                    {manager ? `Gestor: ${manager.name.split(" ")[0]}` : "Sem gestor"}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+
+          {companies.length === 0 && (
+            <p className="dc-card px-6 py-10 text-center text-sm text-muted">Nenhuma empresa ainda. Crie a primeira pasta acima.</p>
+          )}
+        </div>
+      )}
+
+      {unassigned.length > 0 && (
+        <div className="dc-card mt-3.5 p-5">
+          <div className="mono-label mb-2" style={{ color: "#f5b661" }}>Sem empresa</div>
+          <p className="text-[12.5px] leading-[1.6] text-muted">
+            <strong className="text-foreground">{unassigned.length} vendedor(es)</strong> se cadastraram e ainda não estão em nenhuma pasta. Enquanto isso, nenhum gestor os enxerga.{" "}
+            <button onClick={() => router.push("/admin/usuarios")} className="font-semibold text-cyan hover:text-cyan-light">Vincular agora →</button>
+          </p>
+        </div>
+      )}
+
+      <RetentionCard />
+    </div>
+  );
+}
+
+/** Painel do gestor: só a própria empresa. */
+function ManagerPanel() {
+  const { profile } = useAuth();
+  const companyId = profile?.companyId ?? null;
+
+  if (!companyId) {
+    return (
+      <div className="fade-up dc-card p-6">
+        <div className="mono-label mb-2" style={{ color: "#f5b661" }}>Sem empresa vinculada</div>
+        <p className="text-[13.5px] leading-[1.6] text-muted">
+          Sua conta de gestor ainda não está ligada a nenhuma empresa. Peça à Simplifica para vincular você a uma pasta — só depois disso a sua equipe aparece aqui.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="fade-up">
@@ -126,65 +189,21 @@ function AdminPanel() {
         <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Painel do gestor</div>
         <h1 className="mt-2 text-[27px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Acompanhamento da equipe</h1>
       </div>
-
-      <div className="mb-3.5 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
-        <Kpi label="Vendedores ativos">
-          <div className="mt-2.5 font-mono text-[32px] font-semibold tracking-[-0.02em] text-foreground">{sellers.length}</div>
-          <div className="mt-2 text-[11.5px] text-muted">em treinamento comercial</div>
-        </Kpi>
-        <Kpi label="Enviaram hoje">
-          <div className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="font-mono text-[32px] font-semibold tracking-[-0.02em] text-foreground">{sentTodayCount}</span>
-            <span className="font-mono text-[15px] text-muted">/ {sellers.length}</span>
-          </div>
-          <div className="mt-3 h-[5px] overflow-hidden rounded-full bg-indicator"><div className="h-full rounded-full" style={{ width: `${sentPct}%`, background: "linear-gradient(90deg,#5a7cff,#7f9bff)" }} /></div>
-        </Kpi>
-        <Kpi label="Nota média da equipe">
-          <div className="mt-2.5 flex items-baseline gap-2.5">
-            <span className="font-mono text-[32px] font-semibold tracking-[-0.02em]" style={{ color: teamAverage ? scoreColor(teamAverage) : "#ffffff" }}>{teamAverage || "—"}</span>
-            {teamAverage > 0 && (
-              <span className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.1em]" style={{ color: scoreColor(teamAverage), background: scoreBand(teamAverage).bg, border: `1px solid ${scoreBand(teamAverage).border}` }}>
-                {scoreBand(teamAverage).label}
-              </span>
-            )}
-          </div>
-          <div className="mt-2 text-[11.5px] text-muted">meta de atendimento ideal: 85</div>
-        </Kpi>
-      </div>
-
-      <div className="dc-card overflow-hidden">
-        <div className="flex items-center justify-between px-[22px] pb-3.5 pt-[18px]">
-          <span className="mono-label">Vendedores</span>
-          <span className="text-[11.5px] text-muted">clique para ver o detalhe</span>
-        </div>
-        {loading ? (
-          <div className="flex justify-center py-10"><Spinner /></div>
-        ) : sellers.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted">Nenhum vendedor cadastrado ainda.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <div className="min-w-[760px]">
-              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: GRID }}>
-                <span>Vendedor</span><span className="text-center">Hoje</span><span className="text-center">Dias</span><span>Rumo ao ideal</span><span className="text-right">Média</span><span>Nível</span><span className="text-right">Último envio</span>
-              </div>
-              {sellers.map((row) => (
-                <Row key={row.uid} row={row} onOpen={() => router.push(`/admin/${row.uid}`)} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <RetentionCard />
+      <TeamPanel scope={{ companyId, isMaster: false }} emptyLabel="Nenhum vendedor na sua empresa ainda." />
     </div>
   );
 }
 
+function AdminHome() {
+  const { profile } = useAuth();
+  return profile?.role === "master" ? <MasterPanel /> : <ManagerPanel />;
+}
+
 export default function AdminPage() {
   return (
-    <AuthGate requireAdmin>
+    <AuthGate allow={["manager", "master"]}>
       <AppShell>
-        <AdminPanel />
+        <AdminHome />
       </AppShell>
     </AuthGate>
   );
