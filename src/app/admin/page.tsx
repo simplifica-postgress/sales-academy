@@ -23,9 +23,9 @@ function Row({ row, onOpen }: { row: SellerRow; onOpen: () => void }) {
   const level = row.progress?.currentLevel ?? row.profile.currentLevel ?? 1;
   const pct = idealProgress(Math.round(avg));
   return (
-    <button onClick={onOpen} className="grid w-full items-center gap-3 border-b border-[rgba(0,45,115,.25)] px-[22px] py-[13px] text-left transition last:border-0 hover:bg-[rgba(0,135,248,.05)]" style={{ gridTemplateColumns: GRID }}>
+    <button onClick={onOpen} className="grid w-full items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-[13px] text-left transition last:border-0 hover:bg-[rgba(90,124,255,.05)]" style={{ gridTemplateColumns: GRID }}>
       <span className="flex min-w-0 items-center gap-[11px]">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(0,135,248,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(0,203,255,.14))" }}>{initials(row.profile.name)}</span>
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>{initials(row.profile.name)}</span>
         <span className="min-w-0">
           <span className="block truncate text-[13.5px] font-semibold text-foreground">{row.profile.name || "—"}</span>
           <span className="block text-[11px] text-muted">{row.profile.salesRole || "Vendedor"}</span>
@@ -37,8 +37,8 @@ function Row({ row, onOpen }: { row: SellerRow; onOpen: () => void }) {
           title={row.sentToday ? "Enviou hoje" : "Não enviou hoje"}
           style={
             row.sentToday
-              ? { color: "#25d97d", background: "rgba(37,217,125,.12)", border: "1px solid rgba(37,217,125,.34)" }
-              : { color: "#ff8d85", background: "rgba(255,90,80,.1)", border: "1px solid rgba(255,90,80,.3)" }
+              ? { color: "#57c98a", background: "rgba(87,201,138,.12)", border: "1px solid rgba(87,201,138,.34)" }
+              : { color: "#f4726a", background: "rgba(244,114,106,.1)", border: "1px solid rgba(244,114,106,.3)" }
           }
         >
           {row.sentToday ? "✓" : "✗"}
@@ -47,10 +47,10 @@ function Row({ row, onOpen }: { row: SellerRow; onOpen: () => void }) {
       <span className="text-center font-mono text-[13px] text-foreground">{row.progress?.completedDays ?? 0}</span>
       <span className="flex items-center gap-[9px]">
         <span className="h-1 flex-1 overflow-hidden rounded-full bg-indicator"><span className="block h-full rounded-full" style={{ width: `${pct}%`, background: criteriaFill(avg) }} /></span>
-        <span className="w-8 text-right font-mono text-[11.5px]" style={{ color: avg > 0 ? scoreColor(avg) : "#9db2c3" }}>{pct}%</span>
+        <span className="w-8 text-right font-mono text-[11.5px]" style={{ color: avg > 0 ? scoreColor(avg) : "#79839c" }}>{pct}%</span>
       </span>
-      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: avg > 0 ? scoreColor(avg) : "#9db2c3" }}>{avg > 0 ? Math.round(avg) : "—"}</span>
-      <span><span className="inline-block whitespace-nowrap rounded-full border border-[rgba(0,203,255,.22)] px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.04em] text-cyan" style={{ background: "rgba(0,203,255,.07)" }}>{level} · {levelName(level)}</span></span>
+      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: avg > 0 ? scoreColor(avg) : "#79839c" }}>{avg > 0 ? Math.round(avg) : "—"}</span>
+      <span><span className="inline-block whitespace-nowrap rounded-full border border-[rgba(127,155,255,.22)] px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.04em] text-cyan" style={{ background: "rgba(127,155,255,.07)" }}>{level} · {levelName(level)}</span></span>
       <span className="text-right font-mono text-[11.5px] text-muted">{shortDate(row.lastUpload)}</span>
     </button>
   );
@@ -103,13 +103,13 @@ function RetentionCard() {
         <button
           onClick={run}
           disabled={running}
-          className="flex-none rounded-lg border border-[rgba(0,45,115,.6)] bg-card-alt px-3.5 py-2 text-[12px] font-medium text-muted transition hover:border-[rgba(0,135,248,.5)] hover:text-foreground disabled:opacity-50"
+          className="flex-none rounded-lg border border-[rgba(120,150,210,.16)] bg-card-alt px-3.5 py-2 text-[12px] font-medium text-muted transition hover:border-[rgba(90,124,255,.5)] hover:text-foreground disabled:opacity-50"
         >
           {running ? "Executando…" : "Executar limpeza agora"}
         </button>
       </div>
-      {result && <p className="mt-3 rounded-[10px] border border-[rgba(0,203,255,.3)] bg-[rgba(0,203,255,.08)] px-3.5 py-2.5 text-[12.5px] text-cyan">{result}</p>}
-      {error && <p className="mt-3 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-2.5 text-[12.5px] text-danger">{error}</p>}
+      {result && <p className="mt-3 rounded-[10px] border border-[rgba(127,155,255,.3)] bg-[rgba(127,155,255,.08)] px-3.5 py-2.5 text-[12.5px] text-cyan">{result}</p>}
+      {error && <p className="mt-3 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-2.5 text-[12.5px] text-danger">{error}</p>}
     </div>
   );
 }
@@ -137,7 +137,7 @@ function AdminPanel() {
             <span className="font-mono text-[32px] font-semibold tracking-[-0.02em] text-foreground">{sentTodayCount}</span>
             <span className="font-mono text-[15px] text-muted">/ {sellers.length}</span>
           </div>
-          <div className="mt-3 h-[5px] overflow-hidden rounded-full bg-indicator"><div className="h-full rounded-full" style={{ width: `${sentPct}%`, background: "linear-gradient(90deg,#0087f8,#00cbff)" }} /></div>
+          <div className="mt-3 h-[5px] overflow-hidden rounded-full bg-indicator"><div className="h-full rounded-full" style={{ width: `${sentPct}%`, background: "linear-gradient(90deg,#5a7cff,#7f9bff)" }} /></div>
         </Kpi>
         <Kpi label="Nota média da equipe">
           <div className="mt-2.5 flex items-baseline gap-2.5">
@@ -164,7 +164,7 @@ function AdminPanel() {
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[760px]">
-              <div className="grid items-center gap-3 border-b border-[rgba(0,45,115,.5)] px-[22px] py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: GRID }}>
+              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: GRID }}>
                 <span>Vendedor</span><span className="text-center">Hoje</span><span className="text-center">Dias</span><span>Rumo ao ideal</span><span className="text-right">Média</span><span>Nível</span><span className="text-right">Último envio</span>
               </div>
               {sellers.map((row) => (

@@ -105,13 +105,13 @@ export default function LoginPage() {
         </div>
 
         {/* Card com borda gradiente */}
-        <div className="rounded-[18px] p-px" style={{ background: "linear-gradient(160deg, rgba(0,135,248,.4), rgba(0,45,115,.5) 40%, rgba(0,203,255,.18))" }}>
+        <div className="rounded-[18px] p-px" style={{ background: "linear-gradient(160deg, rgba(90,124,255,.4), rgba(120,150,210,.14) 40%, rgba(127,155,255,.18))" }}>
           <div className="rounded-[17px] bg-card px-7 py-[30px]" style={{ boxShadow: "0 24px 60px rgba(0,2,12,.6)" }}>
             <button
               type="button"
               onClick={handleGoogle}
               disabled={submitting}
-              className="flex w-full items-center justify-center gap-[11px] rounded-[11px] border border-[rgba(0,45,115,.65)] bg-card-alt px-4 py-[11px] text-[13.5px] font-medium text-foreground transition hover:border-[rgba(0,135,248,.6)] hover:bg-indicator disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-[11px] rounded-[11px] border border-[rgba(120,150,210,.17)] bg-card-alt px-4 py-[11px] text-[13.5px] font-medium text-foreground transition hover:border-[rgba(90,124,255,.6)] hover:bg-indicator disabled:opacity-50"
             >
               <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
                 <path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.2H12v4.1h6.5c-.1 1.1-.8 2.7-2.4 3.8l-.02.2 3.5 2.7.24.03c2.2-2.1 3.5-5.1 3.5-8.6z" />
@@ -123,9 +123,9 @@ export default function LoginPage() {
             </button>
 
             <div className="my-[22px] flex items-center gap-3">
-              <span className="h-px flex-1 bg-[rgba(0,45,115,.55)]" />
+              <span className="h-px flex-1 bg-[rgba(120,150,210,.15)]" />
               <span className="mono-label" style={{ fontSize: 9.5, letterSpacing: "0.2em" }}>ou</span>
-              <span className="h-px flex-1 bg-[rgba(0,45,115,.55)]" />
+              <span className="h-px flex-1 bg-[rgba(120,150,210,.15)]" />
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -146,8 +146,8 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {error && <p className="mb-4 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
-              {info && <p className="mb-4 rounded-[10px] border border-[rgba(0,203,255,.3)] bg-[rgba(0,203,255,.08)] px-3.5 py-[11px] text-[13px] text-cyan">{info}</p>}
+              {error && <p className="mb-4 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
+              {info && <p className="mb-4 rounded-[10px] border border-[rgba(127,155,255,.3)] bg-[rgba(127,155,255,.08)] px-3.5 py-[11px] text-[13px] text-cyan">{info}</p>}
 
               <button type="submit" disabled={submitting} className="btn-primary w-full rounded-[11px] px-4 py-3 text-sm font-semibold disabled:opacity-50">
                 {submitting ? "Aguarde…" : btnLabel}

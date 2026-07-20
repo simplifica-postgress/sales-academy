@@ -22,37 +22,37 @@ const BANDS: ScoreBand[] = [
     key: "excelente",
     label: "excelente",
     icon: "✓",
-    color: "#25d97d",
-    bg: "rgba(37,217,125,.1)",
-    border: "rgba(37,217,125,.34)",
-    fill: "linear-gradient(90deg,#12a86a,#25d97d)",
+    color: "#57c98a",
+    bg: "rgba(87,201,138,.1)",
+    border: "rgba(87,201,138,.34)",
+    fill: "linear-gradient(90deg,#2f9d68,#57c98a)",
   },
   {
     key: "bom",
     label: "bom",
     icon: "✓",
-    color: "#00cbff",
-    bg: "rgba(0,203,255,.1)",
-    border: "rgba(0,203,255,.32)",
-    fill: "linear-gradient(90deg,#0052b9,#00cbff)",
+    color: "#7f9bff",
+    bg: "rgba(127,155,255,.1)",
+    border: "rgba(127,155,255,.32)",
+    fill: "linear-gradient(90deg,#4a6edc,#7f9bff)",
   },
   {
     key: "regular",
     label: "regular",
     icon: "!",
-    color: "#ffb020",
-    bg: "rgba(255,176,32,.1)",
-    border: "rgba(255,176,32,.34)",
-    fill: "linear-gradient(90deg,#c77b00,#ffb020)",
+    color: "#f5b661",
+    bg: "rgba(245,182,97,.1)",
+    border: "rgba(245,182,97,.34)",
+    fill: "linear-gradient(90deg,#d1913f,#f5b661)",
   },
   {
     key: "fraco",
     label: "fraco",
     icon: "!",
-    color: "#ff8d85",
-    bg: "rgba(255,90,80,.1)",
-    border: "rgba(255,90,80,.34)",
-    fill: "linear-gradient(90deg,#c0392f,#ff8d85)",
+    color: "#f4726a",
+    bg: "rgba(244,114,106,.1)",
+    border: "rgba(244,114,106,.34)",
+    fill: "linear-gradient(90deg,#f4726a,#f59d78)",
   },
 ];
 
@@ -87,30 +87,30 @@ export function statusPill(status: UploadStatus): StatusPill {
     case "processing":
       return {
         label: "processando",
-        color: "#0087f8",
-        bg: "rgba(0,135,248,.1)",
-        border: "rgba(0,135,248,.35)",
+        color: "#5a7cff",
+        bg: "rgba(90,124,255,.1)",
+        border: "rgba(90,124,255,.35)",
       };
     case "pending":
       return {
         label: "na fila",
-        color: "#9db2c3",
-        bg: "#152946",
-        border: "rgba(0,45,115,.5)",
+        color: "#79839c",
+        bg: "#1b2440",
+        border: "rgba(120,150,210,.14)",
       };
     case "error":
       return {
         label: "erro",
-        color: "#ff8d85",
-        bg: "rgba(255,90,80,.08)",
-        border: "rgba(255,90,80,.3)",
+        color: "#f4726a",
+        bg: "rgba(244,114,106,.08)",
+        border: "rgba(244,114,106,.3)",
       };
     default:
       return {
         label: "concluído",
-        color: "#25d97d",
-        bg: "rgba(37,217,125,.1)",
-        border: "rgba(37,217,125,.32)",
+        color: "#57c98a",
+        bg: "rgba(87,201,138,.1)",
+        border: "rgba(87,201,138,.32)",
       };
   }
 }

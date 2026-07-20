@@ -1,24 +1,31 @@
 @import "tailwindcss";
 
-/* Paleta oficial Simplifica (dashboard comercial) */
+/* Paleta Simplifica — design "Aurora" (fundo ambiente + cards de vidro) */
 :root {
-  --background: #000414;
-  --navy: #00173d;
-  --card: #03112d;
-  --card-alt: #020d23;
-  --card-border: #002d73;
-  --indicator: #152946;
-  --blue-dark: #0052b9;
-  --primary: #0087f8;
-  --cyan: #00cbff;
-  --cyan-light: #00e3ff;
-  --foreground: #ffffff;
-  --muted: #9db2c3;
-  /* Cores semânticas de desempenho (verde bom → vermelho ruim).
+  --background: #070b16;
+  --navy: #0b1124;
+  /* Cards são de vidro: a cor real vive em .dc-card. Estes valores servem
+     para superfícies sólidas (campos, indicadores, chips). */
+  --card: rgba(21, 31, 60, 0.6);
+  --card-alt: rgba(11, 17, 36, 0.55);
+  --card-border: rgba(120, 150, 210, 0.13);
+  --indicator: rgba(255, 255, 255, 0.07);
+  --blue-dark: #4a6edc;
+  --primary: #5a7cff;
+  /* Mantidos com os nomes antigos (text-cyan etc.) para o app inteiro herdar
+     o novo acento sem renomear classe por classe. Agora é azul-periwinkle. */
+  --cyan: #7f9bff;
+  --cyan-light: #9db2ff;
+  --foreground: #f2f5fc;
+  --body: #cdd5e6;
+  --muted: #79839c;
+  --dim: #6b7690;
+  /* Cores semânticas de desempenho (verde bom → coral ruim).
      Sempre acompanhadas de um ícone (✓ / !) para não depender só da cor. */
-  --success: #25d97d;
-  --warning: #ffb020;
-  --danger: #ff8d85;
+  --success: #57c98a;
+  --warning: #f5b661;
+  --danger: #f4726a;
+  --danger-light: #f59d78;
 }
 
 @theme inline {
@@ -33,13 +40,16 @@
   --color-cyan: var(--cyan);
   --color-cyan-light: var(--cyan-light);
   --color-foreground: var(--foreground);
+  --color-body: var(--body);
   --color-muted: var(--muted);
+  --color-dim: var(--dim);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
-  /* Fonte única Sora; font-mono mapeado para Sora para compatibilidade. */
-  --font-sans: var(--font-sora);
-  --font-mono: var(--font-sora);
+  /* Manrope no corpo, Sora nos títulos. font-mono é usado para números e
+     rótulos curtos no app — mapeado para Manrope, como no design. */
+  --font-sans: var(--font-manrope);
+  --font-mono: var(--font-manrope);
 }
 
 html,
@@ -47,29 +57,74 @@ body {
   margin: 0;
   padding: 0;
   color: var(--foreground);
-  font-family: var(--font-sora), system-ui, sans-serif;
+  font-family: var(--font-manrope), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Fundo com brilho radial azul/ciano */
+/* Fundo "Aurora ambiente": camadas de luz + textura de pontos.
+   Fixo e atrás de tudo (o conteúdo do app sobe com z-index). */
 body {
+  position: relative;
+  background: var(--background);
+}
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+body::before {
   background:
     radial-gradient(
-      1100px 520px at 78% -12%,
-      rgba(0, 135, 248, 0.09),
+      1200px 620px at 14% -12%,
+      rgba(74, 110, 220, 0.24),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 720px at 102% -4%,
+      rgba(128, 96, 220, 0.17),
+      transparent 55%
+    ),
+    radial-gradient(
+      920px 520px at 50% 7%,
+      rgba(244, 114, 106, 0.1),
       transparent 62%
     ),
     radial-gradient(
-      900px 500px at -8% 108%,
-      rgba(0, 203, 255, 0.05),
+      1300px 900px at 50% 122%,
+      rgba(5, 8, 17, 0.92),
       transparent 60%
+    );
+}
+body::after {
+  background-image: radial-gradient(
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 1px
     ),
-    var(--background);
-  background-attachment: fixed;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 11%);
+  background-size:
+    24px 24px,
+    100% 100%;
+  opacity: 0.75;
+}
+/* O conteúdo precisa ficar acima das camadas do fundo. */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Títulos em Sora; números de destaque usam .font-display. */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-sora), system-ui, sans-serif;
 }
 
 ::selection {
-  background: rgba(0, 135, 248, 0.35);
+  background: rgba(90, 124, 255, 0.35);
 }
 
 ::-webkit-scrollbar {
@@ -77,7 +132,7 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--indicator);
+  background: rgba(120, 150, 210, 0.18);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-track {
@@ -85,7 +140,7 @@ body {
 }
 
 select option {
-  background: var(--card);
+  background: #10182f;
   color: var(--foreground);
 }
 
@@ -111,19 +166,27 @@ select option {
 
 /* ---------- Componentes do design ---------- */
 
-/* Card padrão (dashboard/analise/etc.) */
+/* Card de vidro: borda superior mais clara dá o brilho de topo. */
 .dc-card {
-  background: var(--card);
-  border: 1px solid rgba(0, 45, 115, 0.6);
-  border-radius: 16px;
-  box-shadow: 0 12px 32px rgba(0, 2, 12, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(21, 31, 60, 0.6),
+    rgba(11, 17, 36, 0.55)
+  );
+  border: 1px solid rgba(120, 150, 210, 0.13);
+  border-top-color: rgba(150, 175, 235, 0.22);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 26px 60px -34px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Label caixa alta espaçada (Sora) */
+/* Label caixa alta espaçada */
 .mono-label {
-  font-family: var(--font-sora), sans-serif;
-  font-weight: 600;
-  font-size: 10.5px;
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 700;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted);
@@ -133,33 +196,33 @@ select option {
 .field {
   width: 100%;
   padding: 11px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 45, 115, 0.65);
-  background: var(--card-alt);
+  border-radius: 11px;
+  border: 1px solid rgba(120, 150, 210, 0.18);
+  background: rgba(11, 17, 36, 0.55);
   color: var(--foreground);
-  font: 400 13.5px var(--font-sora), sans-serif;
+  font: 400 14px var(--font-manrope), sans-serif;
   outline: none;
   transition: all 0.15s;
 }
 .field::placeholder {
-  color: rgba(157, 178, 195, 0.55);
+  color: rgba(121, 131, 156, 0.75);
 }
 .field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0, 135, 248, 0.16);
+  box-shadow: 0 0 0 3px rgba(90, 124, 255, 0.18);
 }
 
-/* Botão primário com gradiente */
+/* Botão primário */
 .btn-primary {
   border: none;
   cursor: pointer;
   color: #fff;
   background: linear-gradient(135deg, var(--blue-dark), var(--primary));
-  box-shadow: 0 8px 24px rgba(0, 135, 248, 0.28);
+  box-shadow: 0 10px 26px -8px rgba(90, 124, 255, 0.55);
   transition: all 0.2s;
 }
 .btn-primary:hover {
-  box-shadow: 0 10px 30px rgba(0, 203, 255, 0.35);
+  box-shadow: 0 14px 32px -8px rgba(90, 124, 255, 0.7);
   transform: translateY(-1px);
 }
 

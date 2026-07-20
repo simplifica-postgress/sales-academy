@@ -107,8 +107,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen items-stretch">
       {/* Sidebar (desktop e notebook) */}
-      <aside className="sticky top-0 hidden h-screen w-[248px] flex-none flex-col gap-2 border-r border-[rgba(0,45,115,.45)] bg-[rgba(2,13,35,.72)] px-4 pb-5 pt-[26px] backdrop-blur-md min-[900px]:flex">
-        <button onClick={() => go(home)} className="border-b border-[rgba(0,45,115,.4)] px-2.5 pb-[18px] text-left">
+      <aside className="sticky top-0 hidden h-screen w-[248px] flex-none flex-col gap-2 border-r border-[rgba(120,150,210,.13)] bg-[rgba(2,13,35,.72)] px-4 pb-5 pt-[26px] backdrop-blur-md min-[900px]:flex">
+        <button onClick={() => go(home)} className="border-b border-[rgba(120,150,210,.12)] px-2.5 pb-[18px] text-left">
           <Image src="/logo.png" alt="Simplifica" width={132} height={35} style={{ width: 132, height: "auto" }} priority />
           <div className="mono-label mt-2.5" style={{ letterSpacing: "0.22em", fontSize: 10 }}>
             Sales Academy
@@ -127,13 +127,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 }`}
                 style={{
                   background: active
-                    ? "linear-gradient(90deg, rgba(0,135,248,.16), rgba(0,135,248,.03))"
+                    ? "linear-gradient(90deg, rgba(90,124,255,.16), rgba(90,124,255,.03))"
                     : "transparent",
                 }}
               >
                 <span
                   className="h-4 w-[3px] flex-none rounded-[2px]"
-                  style={{ background: active ? "linear-gradient(#0087f8,#00cbff)" : "transparent" }}
+                  style={{ background: active ? "linear-gradient(#5a7cff,#7f9bff)" : "transparent" }}
                 />
                 {item.icon}
                 {item.label}
@@ -142,15 +142,15 @@ export default function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="flex items-center gap-2.5 border-t border-[rgba(0,45,115,.4)] pt-3.5">
-          <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full border border-[rgba(0,135,248,.4)] text-xs font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(0,203,255,.14))" }}>
+        <div className="flex items-center gap-2.5 border-t border-[rgba(120,150,210,.12)] pt-3.5">
+          <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-xs font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>
             {initials(profile?.name)}
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-semibold text-foreground">{profile?.name || "—"}</div>
             <div className="mono-label mt-0.5" style={{ fontSize: 10, letterSpacing: "0.1em" }}>{roleLabel}</div>
           </div>
-          <button onClick={() => signOut()} title="Sair" className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg border border-[rgba(0,45,115,.5)] text-muted transition hover:border-[rgba(0,135,248,.55)] hover:text-foreground">
+          <button onClick={() => signOut()} title="Sair" className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg border border-[rgba(120,150,210,.14)] text-muted transition hover:border-[rgba(90,124,255,.55)] hover:text-foreground">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M9 4H5v16h4" />
               <path d="M14 8l4 4-4 4" />
@@ -163,19 +163,19 @@ export default function AppShell({ children }: { children: ReactNode }) {
       {/* Conteúdo */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar (apenas celular, abaixo de 900px) */}
-        <header className="sticky top-0 z-30 flex flex-col gap-3 border-b border-[rgba(0,45,115,.45)] bg-[rgba(0,4,20,.86)] px-[18px] pb-3 pt-3.5 backdrop-blur-lg min-[900px]:hidden">
+        <header className="sticky top-0 z-30 flex flex-col gap-3 border-b border-[rgba(120,150,210,.13)] bg-[rgba(0,4,20,.86)] px-[18px] pb-3 pt-3.5 backdrop-blur-lg min-[900px]:hidden">
           <div className="flex items-center justify-between gap-3">
             <button onClick={() => go(home)} className="flex items-center gap-2.5">
               <Image src="/logo.png" alt="Simplifica" width={112} height={30} style={{ width: 112, height: "auto" }} priority />
-              <span className="mono-label border-l border-[rgba(0,45,115,.6)] pl-2.5" style={{ fontSize: 9, letterSpacing: "0.2em" }}>
+              <span className="mono-label border-l border-[rgba(120,150,210,.16)] pl-2.5" style={{ fontSize: 9, letterSpacing: "0.2em" }}>
                 Sales Academy
               </span>
             </button>
             <div className="flex items-center gap-2">
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-[rgba(0,135,248,.4)] text-[11px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(0,203,255,.14))" }}>
+              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-[11px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>
                 {initials(profile?.name)}
               </span>
-              <button onClick={() => signOut()} className="h-[30px] rounded-lg border border-[rgba(0,45,115,.5)] px-3 text-xs font-medium text-muted transition hover:text-foreground">
+              <button onClick={() => signOut()} className="h-[30px] rounded-lg border border-[rgba(120,150,210,.14)] px-3 text-xs font-medium text-muted transition hover:text-foreground">
                 Sair
               </button>
             </div>
@@ -189,9 +189,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   onClick={() => go(item.href)}
                   className="flex-none rounded-full border px-3.5 py-[7px] text-[13px] font-medium transition"
                   style={{
-                    borderColor: active ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.55)",
-                    background: active ? "linear-gradient(90deg, rgba(0,135,248,.16), rgba(0,135,248,.03))" : "transparent",
-                    color: active ? "#ffffff" : "#9db2c3",
+                    borderColor: active ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.15)",
+                    background: active ? "linear-gradient(90deg, rgba(90,124,255,.16), rgba(90,124,255,.03))" : "transparent",
+                    color: active ? "#ffffff" : "#79839c",
                   }}
                 >
                   {item.label === "Enviar atendimento" ? "Enviar" : item.label}
@@ -205,7 +205,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           {showBack && (
             <button
               onClick={goBack}
-              className="mb-4 inline-flex items-center gap-2 rounded-lg border border-[rgba(0,45,115,.6)] bg-card-alt px-3.5 py-2 text-[12.5px] font-medium text-muted transition hover:border-[rgba(0,135,248,.5)] hover:text-foreground"
+              className="mb-4 inline-flex items-center gap-2 rounded-lg border border-[rgba(120,150,210,.16)] bg-card-alt px-3.5 py-2 text-[12.5px] font-medium text-muted transition hover:border-[rgba(90,124,255,.5)] hover:text-foreground"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 18l-6-6 6-6" />

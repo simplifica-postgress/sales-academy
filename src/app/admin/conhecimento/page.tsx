@@ -175,8 +175,8 @@ function Knowledge() {
         </div>
       </div>
 
-      {notice && <p className="mb-3.5 rounded-[10px] border border-[rgba(0,203,255,.3)] bg-[rgba(0,203,255,.08)] px-3.5 py-[11px] text-[13px] text-cyan">{notice}</p>}
-      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
+      {notice && <p className="mb-3.5 rounded-[10px] border border-[rgba(127,155,255,.3)] bg-[rgba(127,155,255,.08)] px-3.5 py-[11px] text-[13px] text-cyan">{notice}</p>}
+      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
       {showForm && (
         <form onSubmit={handleSave} className="dc-card mb-3.5 p-6">
@@ -198,7 +198,7 @@ function Knowledge() {
             <button type="submit" disabled={saving} className="btn-primary rounded-[10px] px-5 py-[11px] text-[13px] font-semibold disabled:opacity-50">
               {saving ? "Salvando…" : editingId ? "Salvar alterações" : "Adicionar"}
             </button>
-            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(empty); }} className="rounded-[10px] border border-[rgba(0,45,115,.6)] bg-card-alt px-5 py-[11px] text-[13px] font-medium text-muted transition hover:text-foreground">
+            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(empty); }} className="rounded-[10px] border border-[rgba(120,150,210,.16)] bg-card-alt px-5 py-[11px] text-[13px] font-medium text-muted transition hover:text-foreground">
               Cancelar
             </button>
           </div>
@@ -226,13 +226,13 @@ function Knowledge() {
                   <p className="mt-2 text-[13px] leading-[1.6] text-muted">{e.content}</p>
                 </div>
                 <div className="flex flex-none gap-2">
-                  <button onClick={() => toggle(e)} className="rounded-lg border border-[rgba(0,45,115,.6)] px-3 py-1.5 text-[12px] font-medium text-muted transition hover:text-foreground">
+                  <button onClick={() => toggle(e)} className="rounded-lg border border-[rgba(120,150,210,.16)] px-3 py-1.5 text-[12px] font-medium text-muted transition hover:text-foreground">
                     {e.enabled ? "Desativar" : "Ativar"}
                   </button>
-                  <button onClick={() => startEdit(e)} className="rounded-lg border border-[rgba(0,135,248,.5)] px-3 py-1.5 text-[12px] font-medium text-cyan transition hover:text-cyan-light" style={{ background: "rgba(0,135,248,.08)" }}>
+                  <button onClick={() => startEdit(e)} className="rounded-lg border border-[rgba(90,124,255,.5)] px-3 py-1.5 text-[12px] font-medium text-cyan transition hover:text-cyan-light" style={{ background: "rgba(90,124,255,.08)" }}>
                     Editar
                   </button>
-                  <button onClick={() => remove(e)} className="rounded-lg border border-[rgba(255,90,80,.35)] px-3 py-1.5 text-[12px] font-medium text-danger transition" style={{ background: "rgba(255,90,80,.06)" }}>
+                  <button onClick={() => remove(e)} className="rounded-lg border border-[rgba(244,114,106,.35)] px-3 py-1.5 text-[12px] font-medium text-danger transition" style={{ background: "rgba(244,114,106,.06)" }}>
                     Remover
                   </button>
                 </div>

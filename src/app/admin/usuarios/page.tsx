@@ -108,8 +108,8 @@ function Users() {
         </button>
       </div>
 
-      {notice && <p className="mb-3.5 rounded-[10px] border border-[rgba(0,203,255,.3)] bg-[rgba(0,203,255,.08)] px-3.5 py-[11px] text-[13px] text-cyan">{notice}</p>}
-      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
+      {notice && <p className="mb-3.5 rounded-[10px] border border-[rgba(127,155,255,.3)] bg-[rgba(127,155,255,.08)] px-3.5 py-[11px] text-[13px] text-cyan">{notice}</p>}
+      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
       {showForm && (
         <form onSubmit={handleCreate} className="dc-card mb-3.5 p-6">
@@ -140,16 +140,16 @@ function Users() {
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[640px]">
-              <div className="grid items-center gap-3 border-b border-[rgba(0,45,115,.5)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "1.6fr 1.4fr 110px 150px" }}>
+              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "1.6fr 1.4fr 110px 150px" }}>
                 <span>Nome</span><span>E-mail</span><span>Papel</span><span className="text-right">Ação</span>
               </div>
               {rows.map((r) => {
                 const isAdmin = r.role === "admin";
                 const isSelf = r.uid === user?.uid;
                 return (
-                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(0,45,115,.25)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "1.6fr 1.4fr 110px 150px" }}>
+                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "1.6fr 1.4fr 110px 150px" }}>
                     <span className="flex min-w-0 items-center gap-[11px]">
-                      <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(0,135,248,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(0,203,255,.14))" }}>{initials(r.name)}</span>
+                      <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>{initials(r.name)}</span>
                       <span className="min-w-0 truncate text-[13.5px] font-semibold text-foreground">
                         {r.name || "—"}{isSelf && <span className="ml-1.5 text-[11px] font-normal text-muted">(você)</span>}
                       </span>
@@ -157,8 +157,8 @@ function Users() {
                     <span className="truncate text-[12.5px] text-muted">{r.email}</span>
                     <span>
                       <span className="inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[10.5px] font-semibold" style={isAdmin
-                        ? { color: "#00cbff", background: "rgba(0,203,255,.07)", border: "1px solid rgba(0,203,255,.25)" }
-                        : { color: "#9db2c3", background: "#152946", border: "1px solid rgba(0,45,115,.5)" }}>
+                        ? { color: "#7f9bff", background: "rgba(127,155,255,.07)", border: "1px solid rgba(127,155,255,.25)" }
+                        : { color: "#79839c", background: "#1b2440", border: "1px solid rgba(120,150,210,.14)" }}>
                         {isAdmin ? "Gestor" : "Vendedor"}
                       </span>
                     </span>
@@ -171,8 +171,8 @@ function Users() {
                           disabled={busyUid === r.uid}
                           className="rounded-lg border px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-50"
                           style={isAdmin
-                            ? { borderColor: "rgba(255,90,80,.35)", color: "#ff8d85", background: "rgba(255,90,80,.06)" }
-                            : { borderColor: "rgba(0,135,248,.5)", color: "#00cbff", background: "rgba(0,135,248,.08)" }}
+                            ? { borderColor: "rgba(244,114,106,.35)", color: "#f4726a", background: "rgba(244,114,106,.06)" }
+                            : { borderColor: "rgba(90,124,255,.5)", color: "#7f9bff", background: "rgba(90,124,255,.08)" }}
                         >
                           {busyUid === r.uid ? "…" : isAdmin ? "Remover gestor" : "Tornar gestor"}
                         </button>

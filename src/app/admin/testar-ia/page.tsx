@@ -82,7 +82,7 @@ function TestLab() {
         </div>
         <textarea id="tr" value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={10} className="field" style={{ resize: "vertical" }} placeholder="Cole aqui o diálogo do atendimento…" required />
 
-        {error && <p className="mt-3.5 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
+        {error && <p className="mt-3.5 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
         <button type="submit" disabled={loading} className="btn-primary mt-4 rounded-[10px] px-5 py-[12px] text-[13.5px] font-semibold disabled:opacity-50">
           {loading ? "Analisando…" : "Analisar com a IA"}
@@ -99,7 +99,7 @@ function TestLab() {
       {data && (
         <div className="flex flex-col gap-3.5">
           {data.mock && (
-            <p className="rounded-[10px] border border-[rgba(0,135,248,.35)] bg-[rgba(0,135,248,.08)] px-3.5 py-[11px] text-[13px] text-primary">
+            <p className="rounded-[10px] border border-[rgba(90,124,255,.35)] bg-[rgba(90,124,255,.08)] px-3.5 py-[11px] text-[13px] text-primary">
               ⚠️ <strong>Modo simulado ativo</strong> (AI_MOCK=true): este resultado é um exemplo fixo, não veio da OpenAI. Para testar a IA de verdade, é preciso ter créditos na OpenAI e desligar o modo simulado.
             </p>
           )}
@@ -157,7 +157,7 @@ function TestLab() {
                 ))}
               </ul>
               {data.result.improvements.length > 0 && (
-                <div className="mt-4 border-t border-[rgba(0,45,115,.35)] pt-4">
+                <div className="mt-4 border-t border-[rgba(120,150,210,.11)] pt-4">
                   <div className="mono-label mb-2.5 text-primary">Onde pode melhorar</div>
                   <ul className="flex flex-col gap-2">
                     {data.result.improvements.map((im, i) => (
@@ -169,8 +169,8 @@ function TestLab() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-px" style={{ background: "linear-gradient(120deg, rgba(0,135,248,.55), rgba(0,203,255,.35), rgba(0,45,115,.4))" }}>
-            <div className="rounded-[15px] p-6" style={{ background: "linear-gradient(100deg, #00173d, #03112d)" }}>
+          <div className="rounded-2xl p-px" style={{ background: "linear-gradient(120deg, rgba(90,124,255,.55), rgba(127,155,255,.35), rgba(120,150,210,.12))" }}>
+            <div className="rounded-[15px] p-6" style={{ background: "linear-gradient(100deg, #151f3c, #0b1124)" }}>
               <div className="mono-label mb-2.5 text-cyan">🎯 Próxima missão sugerida</div>
               <p className="text-[15px] font-medium leading-[1.6] text-foreground">{data.result.nextMission}</p>
             </div>

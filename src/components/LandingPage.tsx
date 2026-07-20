@@ -9,8 +9,8 @@ const INSTAGRAM = "https://www.instagram.com/simplifica.aceleradora";
 const YOUTUBE = "https://www.youtube.com/@SimplificaMKTeVendas";
 
 const cardStyle = {
-  background: "#03112d",
-  border: "1px solid rgba(0,45,115,0.6)",
+  background: "#0b1124",
+  border: "1px solid rgba(120,150,210,.16)",
 };
 
 function Check() {
@@ -55,8 +55,8 @@ const CREDS = [
 const btnPrimary =
   "inline-flex items-center gap-2.5 rounded-xl px-7 py-3.5 text-[15px] font-semibold text-white transition hover:-translate-y-0.5";
 const btnPrimaryStyle = {
-  background: "linear-gradient(135deg,#0052b9,#0087f8)",
-  boxShadow: "0 10px 30px rgba(0,135,248,.32)",
+  background: "linear-gradient(135deg,#4a6edc,#5a7cff)",
+  boxShadow: "0 10px 30px rgba(90,124,255,.32)",
 };
 
 export default function LandingPage() {
@@ -65,16 +65,16 @@ export default function LandingPage() {
       className="min-h-screen"
       style={{
         background:
-          "radial-gradient(1200px 560px at 72% -10%, rgba(0,135,248,.13), transparent 62%), radial-gradient(900px 520px at -10% 30%, rgba(0,203,255,.05), transparent 60%), #000414",
+          "radial-gradient(1200px 560px at 72% -10%, rgba(90,124,255,.13), transparent 62%), radial-gradient(900px 520px at -10% 30%, rgba(127,155,255,.05), transparent 60%), #070b16",
         overflowX: "clip",
       }}
     >
       {/* Topbar */}
-      <header className="sticky top-0 z-50 border-b border-[rgba(0,45,115,.45)] backdrop-blur-lg" style={{ background: "rgba(0,4,20,.85)" }}>
+      <header className="sticky top-0 z-50 border-b border-[rgba(120,150,210,.13)] backdrop-blur-lg" style={{ background: "rgba(0,4,20,.85)" }}>
         <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-4 px-6 py-3.5">
           <div className="flex items-center gap-2.5">
             <Image src="/logo.png" alt="Simplifica — Aceleradora de Negócios" width={128} height={34} style={{ width: 128, height: "auto" }} priority />
-            <span className="mono-label border-l border-[rgba(0,45,115,.6)] pl-2.5" style={{ fontSize: 9, letterSpacing: "0.2em" }}>Sales Academy</span>
+            <span className="mono-label border-l border-[rgba(120,150,210,.16)] pl-2.5" style={{ fontSize: 9, letterSpacing: "0.2em" }}>Sales Academy</span>
           </div>
           <nav className="flex flex-wrap items-center gap-[22px]">
             <a href="#metodo" className="text-[13.5px] font-medium text-muted transition hover:text-foreground">Como funciona</a>
@@ -90,26 +90,26 @@ export default function LandingPage() {
       <section className="mx-auto max-w-[1140px] px-6 pb-[30px] pt-[84px] text-center">
         <div className="fade-up">
           <SectionLabel>
-            <span className="inline-block rounded-full border border-[rgba(0,203,255,.25)] px-4 py-[7px]" style={{ background: "rgba(0,203,255,.07)" }}>Treinamento comercial · 30 dias</span>
+            <span className="inline-block rounded-full border border-[rgba(127,155,255,.25)] px-4 py-[7px]" style={{ background: "rgba(127,155,255,.07)" }}>Treinamento comercial · 30 dias</span>
           </SectionLabel>
         </div>
         <h1 className="mx-auto mt-[26px] max-w-[860px] font-semibold leading-[1.12] tracking-[-0.025em] text-white" style={{ fontSize: "clamp(32px,5vw,56px)", textWrap: "balance" }}>
           Transforme seu time comercial em uma{" "}
-          <span style={{ background: "linear-gradient(90deg,#0087f8,#00e3ff)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>máquina de vendas</span> em 30 dias.
+          <span style={{ background: "linear-gradient(90deg,#5a7cff,#9db2ff)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>máquina de vendas</span> em 30 dias.
         </h1>
         <p className="mx-auto mt-[22px] max-w-[640px] leading-[1.65] text-muted" style={{ fontSize: "clamp(15px,1.6vw,17px)" }}>
           O vendedor envia o áudio do atendimento real, a IA analisa a conversa e devolve nota, plano de melhoria e a missão do dia. Todos os dias, por 30 dias — com o gestor acompanhando tudo.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/login" className={btnPrimary} style={btnPrimaryStyle}>Começar meu treinamento →</Link>
-          <a href="#metodo" className="inline-flex items-center gap-2.5 rounded-xl border border-[rgba(0,45,115,.65)] bg-card-alt px-7 py-3.5 text-[15px] font-semibold text-white transition hover:border-[rgba(0,135,248,.6)]">Ver como funciona</a>
+          <a href="#metodo" className="inline-flex items-center gap-2.5 rounded-xl border border-[rgba(120,150,210,.17)] bg-card-alt px-7 py-3.5 text-[15px] font-semibold text-white transition hover:border-[rgba(90,124,255,.6)]">Ver como funciona</a>
         </div>
 
         {/* Screenshot */}
         <div className="fade-up relative mx-auto mt-16 max-w-[980px]">
-          <div className="pointer-events-none absolute inset-x-[-12%] top-[-8%] h-[70%]" style={{ background: "radial-gradient(closest-side, rgba(0,135,248,.22), transparent 70%)", filter: "blur(30px)" }} />
-          <div className="relative rounded-[18px] p-px" style={{ background: "linear-gradient(160deg, rgba(0,135,248,.55), rgba(0,45,115,.5) 35%, rgba(0,203,255,.3))" }}>
-            <Image src="/app-dashboard.png" alt="Dashboard da Sales Academy — nota, progresso e missão do dia" width={980} height={620} className="block h-auto w-full rounded-[17px]" style={{ background: "#03112d" }} />
+          <div className="pointer-events-none absolute inset-x-[-12%] top-[-8%] h-[70%]" style={{ background: "radial-gradient(closest-side, rgba(90,124,255,.22), transparent 70%)", filter: "blur(30px)" }} />
+          <div className="relative rounded-[18px] p-px" style={{ background: "linear-gradient(160deg, rgba(90,124,255,.55), rgba(120,150,210,.14) 35%, rgba(127,155,255,.3))" }}>
+            <Image src="/app-dashboard.png" alt="Dashboard da Sales Academy — nota, progresso e missão do dia" width={980} height={620} className="block h-auto w-full rounded-[17px]" style={{ background: "#0b1124" }} />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[120px] rounded-b-[17px]" style={{ background: "linear-gradient(180deg, transparent, rgba(0,4,20,.85))" }} />
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function LandingPage() {
             { t: "Para o gestor", items: ["A equipe inteira em um painel: quem enviou, quem travou, quem evoluiu.", "Notas por critério para treinar exatamente o que falta em cada um.", "Previsibilidade de resultado sem precisar cobrar um por um."] },
           ].map((b) => (
             <div key={b.t} className="relative overflow-hidden rounded-2xl p-7" style={cardStyle}>
-              <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: "linear-gradient(#0087f8,#00cbff)" }} />
+              <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: "linear-gradient(#5a7cff,#7f9bff)" }} />
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan">{b.t}</div>
               <div className="mt-5 flex flex-col gap-3.5">
                 {b.items.map((it) => (
@@ -218,8 +218,8 @@ export default function LandingPage() {
         </div>
         <div className="mt-10 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl p-px" style={{ background: "linear-gradient(160deg, rgba(0,135,248,.4), rgba(0,45,115,.5))" }}>
-              <div className="flex h-[340px] items-center justify-center rounded-[15px] px-6 text-center" style={{ background: "#03112d" }}>
+            <div key={i} className="rounded-2xl p-px" style={{ background: "linear-gradient(160deg, rgba(90,124,255,.4), rgba(120,150,210,.14))" }}>
+              <div className="flex h-[340px] items-center justify-center rounded-[15px] px-6 text-center" style={{ background: "#0b1124" }}>
                 <span className="text-[13px] text-muted">Depoimento {i}<br /><span className="text-[11.5px] text-[rgba(157,178,195,.6)]">(print em breve)</span></span>
               </div>
             </div>
@@ -242,13 +242,13 @@ export default function LandingPage() {
             <p className="mt-4 text-[15px] leading-[1.7] text-muted">
               Hoje lideramos uma <strong className="text-white">aceleradora de negócios</strong> que conecta método, tecnologia e acompanhamento real. A Sales Academy é esse método transformado em treino diário para o seu time: um passo a passo comprovado para vender com clareza, processo e constância.
             </p>
-            <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2.5 rounded-xl border border-[rgba(0,45,115,.65)] bg-card-alt px-6 py-[13px] text-[14px] font-semibold text-white transition hover:border-[rgba(0,135,248,.6)]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00cbff" strokeWidth="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L4 20l1-4.4A8.5 8.5 0 1 1 21 11.5z" /></svg>
+            <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2.5 rounded-xl border border-[rgba(120,150,210,.17)] bg-card-alt px-6 py-[13px] text-[14px] font-semibold text-white transition hover:border-[rgba(90,124,255,.6)]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7f9bff" strokeWidth="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L4 20l1-4.4A8.5 8.5 0 1 1 21 11.5z" /></svg>
               Falar com um especialista agora
             </a>
           </div>
-          <div className="rounded-[18px] p-px" style={{ background: "linear-gradient(160deg, rgba(0,135,248,.45), rgba(0,45,115,.5) 40%, rgba(0,203,255,.25))" }}>
-            <div className="flex h-[420px] items-center justify-center rounded-[17px] text-center" style={{ background: "#03112d" }}>
+          <div className="rounded-[18px] p-px" style={{ background: "linear-gradient(160deg, rgba(90,124,255,.45), rgba(120,150,210,.14) 40%, rgba(127,155,255,.25))" }}>
+            <div className="flex h-[420px] items-center justify-center rounded-[17px] text-center" style={{ background: "#0b1124" }}>
               <span className="text-[13px] text-muted">Foto do time Simplifica<br /><span className="text-[11.5px] text-[rgba(157,178,195,.6)]">(em breve)</span></span>
             </div>
           </div>
@@ -257,22 +257,22 @@ export default function LandingPage() {
 
       {/* CTA final */}
       <section className="mx-auto max-w-[1140px] px-6 pb-[90px] pt-[110px]">
-        <div className="rounded-[20px] p-px" style={{ background: "linear-gradient(120deg, rgba(0,135,248,.6), rgba(0,203,255,.35), rgba(0,45,115,.45))" }}>
-          <div className="rounded-[19px] px-7 text-center" style={{ padding: "clamp(36px,6vw,64px) 28px", background: "radial-gradient(700px 300px at 50% -20%, rgba(0,135,248,.18), transparent 70%), linear-gradient(100deg, #00173d, #03112d)" }}>
+        <div className="rounded-[20px] p-px" style={{ background: "linear-gradient(120deg, rgba(90,124,255,.6), rgba(127,155,255,.35), rgba(120,150,210,.13))" }}>
+          <div className="rounded-[19px] px-7 text-center" style={{ padding: "clamp(36px,6vw,64px) 28px", background: "radial-gradient(700px 300px at 50% -20%, rgba(90,124,255,.18), transparent 70%), linear-gradient(100deg, #151f3c, #0b1124)" }}>
             <h2 className="mx-auto max-w-[640px] font-semibold leading-[1.15] tracking-[-0.02em] text-white" style={{ fontSize: "clamp(26px,3.6vw,42px)", textWrap: "balance" }}>Pronto para colocar seu comercial em outro nível?</h2>
             <p className="mx-auto mt-4 max-w-[520px] text-[15px] leading-[1.65] text-muted">
               Em 30 dias seu time sai do improviso para um método de atendimento com nota, missão diária e evolução medida. Fale com a gente e comece o treinamento.
             </p>
             <div className="mt-[30px] flex flex-wrap justify-center gap-3">
-              <Link href="/login" className="inline-flex items-center gap-2.5 rounded-xl px-[30px] py-[15px] text-[15px] font-semibold text-white transition hover:-translate-y-0.5" style={{ background: "linear-gradient(135deg,#0052b9,#0087f8)", boxShadow: "0 12px 34px rgba(0,135,248,.38)" }}>Começar meu treinamento de 30 dias →</Link>
-              <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2.5 rounded-xl border border-[rgba(0,45,115,.65)] px-[30px] py-[15px] text-[15px] font-semibold text-white transition hover:border-[rgba(0,135,248,.6)]" style={{ background: "rgba(0,4,20,.85)" }}>Agendar diagnóstico</a>
+              <Link href="/login" className="inline-flex items-center gap-2.5 rounded-xl px-[30px] py-[15px] text-[15px] font-semibold text-white transition hover:-translate-y-0.5" style={{ background: "linear-gradient(135deg,#4a6edc,#5a7cff)", boxShadow: "0 12px 34px rgba(90,124,255,.38)" }}>Começar meu treinamento de 30 dias →</Link>
+              <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2.5 rounded-xl border border-[rgba(120,150,210,.17)] px-[30px] py-[15px] text-[15px] font-semibold text-white transition hover:border-[rgba(90,124,255,.6)]" style={{ background: "rgba(0,4,20,.85)" }}>Agendar diagnóstico</a>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[rgba(0,45,115,.45)]" style={{ background: "rgba(2,13,35,.72)" }}>
+      <footer className="border-t border-[rgba(120,150,210,.13)]" style={{ background: "rgba(2,13,35,.72)" }}>
         <div className="mx-auto grid max-w-[1140px] gap-9 px-6 pb-7 pt-[52px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           <div>
             <Image src="/logo.png" alt="Simplifica" width={150} height={40} style={{ width: 150, height: "auto" }} />
@@ -301,7 +301,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        <div className="border-t border-[rgba(0,45,115,.35)]">
+        <div className="border-t border-[rgba(120,150,210,.11)]">
           <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-3 px-6 py-[18px]">
             <span className="text-[11.5px] text-[rgba(157,178,195,.7)]">Simplifica MKT Digital 2026© Todos os direitos reservados</span>
             <span className="text-[11.5px] text-[rgba(157,178,195,.7)]">simplificaaceleradora.com.br</span>

@@ -74,7 +74,7 @@ function ProfileForm() {
           Essas informações personalizam a análise da IA para o seu contexto de vendas. Leva menos de 2 minutos.
         </p>
 
-        <form onSubmit={handleSubmit} className="rounded-[18px] bg-card px-7 py-[30px]" style={{ border: "1px solid rgba(0,45,115,.6)", boxShadow: "0 24px 60px rgba(0,2,12,.5)" }}>
+        <form onSubmit={handleSubmit} className="rounded-[18px] bg-card px-7 py-[30px]" style={{ border: "1px solid rgba(120,150,210,.16)", boxShadow: "0 24px 60px rgba(0,2,12,.5)" }}>
           <div className="grid gap-[18px] sm:grid-cols-2">
             <div>
               <label htmlFor="name" className={labelCls} style={labelStyle}>Nome</label>
@@ -109,9 +109,9 @@ function ProfileForm() {
                     onClick={() => toggleType(value)}
                     className="rounded-full px-4 py-2 text-[13px] font-medium transition"
                     style={{
-                      border: `1px solid ${active ? "rgba(0,135,248,.55)" : "rgba(0,45,115,.55)"}`,
-                      background: active ? "rgba(0,135,248,.14)" : "#020d23",
-                      color: active ? "#00cbff" : "#9db2c3",
+                      border: `1px solid ${active ? "rgba(90,124,255,.55)" : "rgba(120,150,210,.15)"}`,
+                      background: active ? "rgba(90,124,255,.14)" : "#070b16",
+                      color: active ? "#7f9bff" : "#79839c",
                     }}
                   >
                     {label}
@@ -131,7 +131,7 @@ function ProfileForm() {
             <textarea id="goal" required rows={3} value={goal} onChange={(e) => setGoal(e.target.value)} className="field" style={{ resize: "vertical" }} placeholder="Ex.: fechar mais reuniões, melhorar meu diagnóstico, vender com mais segurança…" />
           </div>
 
-          {error && <p className="mt-4 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
+          {error && <p className="mt-4 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
           <button type="submit" disabled={submitting} className="btn-primary mt-6 w-full rounded-[11px] px-4 py-[13px] text-sm font-semibold disabled:opacity-50">
             {submitting ? "Salvando…" : "Começar meu treinamento"}

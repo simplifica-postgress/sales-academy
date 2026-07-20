@@ -55,8 +55,8 @@ export default function EvolutionChart({ points }: { points: Point[] }) {
 
         {/* Referências: 85 = meta (verde), 50 = piso de atenção (âmbar) */}
         {[
-          { ref: 85, stroke: "rgba(37,217,125,.5)" },
-          { ref: 50, stroke: "rgba(255,176,32,.35)" },
+          { ref: 85, stroke: "rgba(87,201,138,.5)" },
+          { ref: 50, stroke: "rgba(245,182,97,.35)" },
         ].map(({ ref, stroke }) => (
           <line
             key={ref}

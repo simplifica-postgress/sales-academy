@@ -132,14 +132,14 @@ function UploadForm() {
     return (
       <div className="fade-up mx-auto max-w-[660px]">
         <div className="dc-card mt-10 px-8 py-11 text-center">
-          <div className="mx-auto h-[52px] w-[52px] rounded-full border-[3px] border-indicator" style={{ borderTopColor: "#00cbff", animation: "spin .9s linear infinite" }} />
+          <div className="mx-auto h-[52px] w-[52px] rounded-full border-[3px] border-indicator" style={{ borderTopColor: "#7f9bff", animation: "spin .9s linear infinite" }} />
           <div className="mt-[22px] text-base font-semibold text-foreground">
             {uploadPct !== null ? `Enviando seu atendimento… ${uploadPct}%` : `${PROCESSING_STEPS[stepIndex]}…`}
           </div>
 
           {uploadPct !== null && (
             <div className="mx-auto mt-4 h-2 max-w-[330px] overflow-hidden rounded-full bg-indicator">
-              <div className="h-full rounded-full transition-all" style={{ width: `${uploadPct}%`, background: "linear-gradient(90deg,#0052b9,#0087f8,#00cbff)" }} />
+              <div className="h-full rounded-full transition-all" style={{ width: `${uploadPct}%`, background: "linear-gradient(90deg,#4a6edc,#5a7cff,#7f9bff)" }} />
             </div>
           )}
 
@@ -153,11 +153,11 @@ function UploadForm() {
               return (
                 <div key={i} className="flex items-center gap-[11px]">
                   <span className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full text-[9.5px] font-semibold" style={{
-                    color: done ? "#00cbff" : current ? "#0087f8" : "#9db2c3",
-                    background: done ? "rgba(0,203,255,.1)" : current ? "rgba(0,135,248,.12)" : "#152946",
-                    border: `1px solid ${done ? "rgba(0,203,255,.35)" : current ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.5)"}`,
+                    color: done ? "#7f9bff" : current ? "#5a7cff" : "#79839c",
+                    background: done ? "rgba(127,155,255,.1)" : current ? "rgba(90,124,255,.12)" : "#1b2440",
+                    border: `1px solid ${done ? "rgba(127,155,255,.35)" : current ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.14)"}`,
                   }}>{done ? "✓" : i + 1}</span>
-                  <span className="text-[13px] font-medium" style={{ color: done ? "#9db2c3" : current ? "#ffffff" : "rgba(157,178,195,.6)" }}>{label}{current ? "…" : ""}</span>
+                  <span className="text-[13px] font-medium" style={{ color: done ? "#79839c" : current ? "#ffffff" : "rgba(157,178,195,.6)" }}>{label}{current ? "…" : ""}</span>
                 </div>
               );
             })}
@@ -177,16 +177,16 @@ function UploadForm() {
       {/* Já tem nota hoje: avisa antes de enviar, para o vendedor não achar
           que a barra travou quando o segundo envio não mexer nela. */}
       {analyzedToday && (
-        <div className="mb-3.5 flex gap-3 rounded-2xl border border-[rgba(0,135,248,.35)] px-[18px] py-3.5" style={{ background: "rgba(0,135,248,.06)" }}>
-          <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(0,203,255,.4)] text-[11px] font-bold text-cyan" aria-hidden>i</span>
+        <div className="mb-3.5 flex gap-3 rounded-2xl border border-[rgba(90,124,255,.35)] px-[18px] py-3.5" style={{ background: "rgba(90,124,255,.06)" }}>
+          <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(127,155,255,.4)] text-[11px] font-bold text-cyan" aria-hidden>i</span>
           <p className="text-[12.5px] leading-[1.6] text-muted">
             <strong className="text-foreground">Você já tem a nota de hoje.</strong> Pode enviar mais atendimentos e a IA analisa todos com o mesmo cuidado — mas a nota que entra na sua média e na barra é a do <strong className="text-foreground">primeiro do dia</strong>. Assim a evolução é medida ao longo dos dias, não pelo volume de envios.
           </p>
         </div>
       )}
 
-      <label htmlFor="up-file" className="mb-3.5 flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl px-5 py-[38px] text-center transition hover:border-[rgba(0,135,248,.65)]" style={{ border: `1.5px dashed ${file ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.7)"}`, background: file ? "rgba(0,135,248,.05)" : "rgba(2,13,35,.5)" }}>
-        <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] border border-[rgba(0,135,248,.35)] text-cyan" style={{ background: "rgba(0,135,248,.1)" }}>
+      <label htmlFor="up-file" className="mb-3.5 flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl px-5 py-[38px] text-center transition hover:border-[rgba(90,124,255,.65)]" style={{ border: `1.5px dashed ${file ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.18)"}`, background: file ? "rgba(90,124,255,.05)" : "rgba(2,13,35,.5)" }}>
+        <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] border border-[rgba(90,124,255,.35)] text-cyan" style={{ background: "rgba(90,124,255,.1)" }}>
           {file ? (
             <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 18V6l10-2v11" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="15" r="2.5" /></svg>
           ) : (
@@ -205,9 +205,9 @@ function UploadForm() {
             const active = attendanceType === t.value;
             return (
               <button key={t.value} type="button" onClick={() => setAttendanceType(t.value)} className="rounded-full px-4 py-2 text-[13px] font-medium transition" style={{
-                border: `1px solid ${active ? "rgba(0,135,248,.55)" : "rgba(0,45,115,.55)"}`,
-                background: active ? "rgba(0,135,248,.14)" : "#020d23",
-                color: active ? "#00cbff" : "#9db2c3",
+                border: `1px solid ${active ? "rgba(90,124,255,.55)" : "rgba(120,150,210,.15)"}`,
+                background: active ? "rgba(90,124,255,.14)" : "#070b16",
+                color: active ? "#7f9bff" : "#79839c",
               }}>{t.label}</button>
             );
           })}
@@ -220,8 +220,8 @@ function UploadForm() {
       <div className="dc-card mb-3.5 p-6">
         <div className="mono-label mb-3">Privacidade e consentimento</div>
 
-        <div className="mb-4 flex gap-3 rounded-xl border border-[rgba(0,45,115,.6)] bg-card-alt p-4">
-          <span className="mt-0.5 flex h-[22px] w-[22px] flex-none items-center justify-center rounded-md border border-[rgba(0,135,248,.35)] text-cyan" style={{ background: "rgba(0,135,248,.1)" }}>
+        <div className="mb-4 flex gap-3 rounded-xl border border-[rgba(120,150,210,.16)] bg-card-alt p-4">
+          <span className="mt-0.5 flex h-[22px] w-[22px] flex-none items-center justify-center rounded-md border border-[rgba(90,124,255,.35)] text-cyan" style={{ background: "rgba(90,124,255,.1)" }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
           </span>
           <div className="text-[12.5px] leading-[1.6] text-muted">
@@ -235,17 +235,17 @@ function UploadForm() {
             type="checkbox"
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
-            className="mt-0.5 h-[18px] w-[18px] flex-none cursor-pointer accent-[#0087f8]"
+            className="mt-0.5 h-[18px] w-[18px] flex-none cursor-pointer accent-[#5a7cff]"
           />
           <span className="text-[12.5px] leading-[1.6] text-muted">{CONSENT_TEXT}</span>
         </label>
       </div>
 
-      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
+      {error && <p className="mb-3.5 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-[11px] text-[13px] text-danger">{error}</p>}
 
       <div className="flex gap-2.5">
         <button type="submit" disabled={!consent} className="btn-primary flex-1 rounded-[11px] px-5 py-[13px] text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Enviar para análise</button>
-        <button type="button" onClick={() => router.push("/dashboard")} className="rounded-[11px] border border-[rgba(0,45,115,.6)] bg-card-alt px-5 py-[13px] text-sm font-medium text-muted transition hover:text-foreground">Cancelar</button>
+        <button type="button" onClick={() => router.push("/dashboard")} className="rounded-[11px] border border-[rgba(120,150,210,.16)] bg-card-alt px-5 py-[13px] text-sm font-medium text-muted transition hover:text-foreground">Cancelar</button>
       </div>
     </form>
   );

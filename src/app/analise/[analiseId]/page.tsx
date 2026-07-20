@@ -85,9 +85,9 @@ function AnalysisView() {
               // Evoluiu = verde com seta pra cima; caiu = vermelho pra baixo.
               const up = delta > 0;
               const flat = delta === 0;
-              const c = flat ? "#9db2c3" : up ? "#25d97d" : "#ff8d85";
-              const bg = flat ? "#152946" : up ? "rgba(37,217,125,.1)" : "rgba(255,90,80,.1)";
-              const bd = flat ? "rgba(0,45,115,.5)" : up ? "rgba(37,217,125,.34)" : "rgba(255,90,80,.34)";
+              const c = flat ? "#79839c" : up ? "#57c98a" : "#f4726a";
+              const bg = flat ? "#1b2440" : up ? "rgba(87,201,138,.1)" : "rgba(244,114,106,.1)";
+              const bd = flat ? "rgba(120,150,210,.14)" : up ? "rgba(87,201,138,.34)" : "rgba(244,114,106,.34)";
               return (
                 <span className="inline-flex items-center gap-1.5 rounded-full px-[11px] py-[5px] font-mono text-[11.5px] font-semibold" style={{ color: c, background: bg, border: `1px solid ${bd}` }}>
                   <span>{flat ? "=" : up ? "▲" : "▼"}</span>
@@ -95,7 +95,7 @@ function AnalysisView() {
                 </span>
               );
             })()}
-            <span className="rounded-full border border-[rgba(0,45,115,.5)] bg-indicator px-[11px] py-[5px] font-mono text-[11.5px] text-muted">Meta: {IDEAL_SCORE_THRESHOLD}</span>
+            <span className="rounded-full border border-[rgba(120,150,210,.14)] bg-indicator px-[11px] py-[5px] font-mono text-[11.5px] text-muted">Meta: {IDEAL_SCORE_THRESHOLD}</span>
           </div>
         </div>
       </div>
@@ -103,7 +103,7 @@ function AnalysisView() {
       {/* Notas por critério */}
       <div className="dc-card mb-3.5 p-6">
         <div className="mono-label mb-[18px]">Nota por critério</div>
-        <div className="grid gap-x-7 gap-y-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+        <div className="grid gap-x-11 gap-y-[26px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
           {CRITERIA.map((c) => {
             const score = analysis.criteriaScores[c.key] ?? 0;
             const band = scoreBand(score);
@@ -139,38 +139,38 @@ function AnalysisView() {
 
       {/* Pontos fortes / atenção / melhorias */}
       <div className="mb-3.5 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        <div className="dc-card overflow-hidden p-6" style={{ borderTop: "2px solid rgba(37,217,125,.55)" }}>
+        <div className="dc-card overflow-hidden p-6" style={{ borderTop: "1.5px solid rgba(87,201,138,.5)", background: "linear-gradient(180deg, rgba(20,34,42,.55), rgba(11,20,30,.5))" }}>
           <div className="mb-3.5 flex items-center gap-2">
-            <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full text-[12px] font-bold text-success" style={{ background: "rgba(37,217,125,.12)", border: "1px solid rgba(37,217,125,.34)" }} aria-hidden>✓</span>
+            <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full text-[12px] font-bold text-success" style={{ background: "rgba(87,201,138,.12)", border: "1px solid rgba(87,201,138,.34)" }} aria-hidden>✓</span>
             <span className="mono-label text-success">O que você fez bem</span>
-            <span className="ml-auto rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold text-success" style={{ background: "rgba(37,217,125,.1)" }}>{analysis.strengths.length}</span>
+            <span className="ml-auto rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold text-success" style={{ background: "rgba(87,201,138,.1)" }}>{analysis.strengths.length}</span>
           </div>
           <div className="flex flex-col gap-3">
             {analysis.strengths.map((s, i) => (
               <div key={i} className="flex gap-[11px] text-[13.5px] leading-[1.55] text-foreground">
-                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(37,217,125,.34)] text-[10px] font-bold text-success" style={{ background: "rgba(37,217,125,.12)" }} aria-hidden>✓</span>
+                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(87,201,138,.34)] text-[10px] font-bold text-success" style={{ background: "rgba(87,201,138,.12)" }} aria-hidden>✓</span>
                 <span>{s}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="dc-card overflow-hidden p-6" style={{ borderTop: "2px solid rgba(255,90,80,.55)" }}>
+        <div className="dc-card overflow-hidden p-6" style={{ borderTop: "1.5px solid rgba(244,114,106,.5)", background: "linear-gradient(180deg, rgba(38,24,30,.55), rgba(20,12,17,.5))" }}>
           <div className="mb-3.5 flex items-center gap-2">
-            <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full text-[12px] font-bold text-danger" style={{ background: "rgba(255,90,80,.12)", border: "1px solid rgba(255,90,80,.34)" }} aria-hidden>!</span>
+            <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full text-[12px] font-bold text-danger" style={{ background: "rgba(244,114,106,.12)", border: "1px solid rgba(244,114,106,.34)" }} aria-hidden>!</span>
             <span className="mono-label text-danger">O que deixou passar</span>
-            <span className="ml-auto rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold text-danger" style={{ background: "rgba(255,90,80,.1)" }}>{analysis.mistakes.length}</span>
+            <span className="ml-auto rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold text-danger" style={{ background: "rgba(244,114,106,.1)" }}>{analysis.mistakes.length}</span>
           </div>
           <div className="flex flex-col gap-3">
             {analysis.mistakes.map((m, i) => (
               <div key={i} className="flex gap-[11px] text-[13.5px] leading-[1.55] text-foreground">
-                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(255,90,80,.34)] text-[10px] font-bold text-danger" style={{ background: "rgba(255,90,80,.12)" }} aria-hidden>!</span>
+                <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(244,114,106,.34)] text-[10px] font-bold text-danger" style={{ background: "rgba(244,114,106,.12)" }} aria-hidden>!</span>
                 <span>{m}</span>
               </div>
             ))}
           </div>
           {analysis.improvements.length > 0 && (
-            <div className="mt-[18px] border-t border-[rgba(0,45,115,.35)] pt-4">
+            <div className="mt-[18px] border-t border-[rgba(120,150,210,.11)] pt-4">
               <div className="mb-3 font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] text-primary">Onde pode melhorar</div>
               <div className="flex flex-col gap-2.5">
                 {analysis.improvements.map((im, i) => (
@@ -186,10 +186,10 @@ function AnalysisView() {
       </div>
 
       {/* Próxima missão */}
-      <div className="mb-3.5 rounded-2xl p-px" style={{ background: "linear-gradient(120deg, rgba(0,135,248,.55), rgba(0,203,255,.35), rgba(0,45,115,.4))" }}>
-        <div className="rounded-[15px] p-6" style={{ background: "linear-gradient(100deg, #00173d, #03112d)" }}>
+      <div className="mb-3.5 rounded-2xl p-px" style={{ background: "linear-gradient(120deg, rgba(90,124,255,.55), rgba(127,155,255,.35), rgba(120,150,210,.12))" }}>
+        <div className="rounded-[15px] p-6" style={{ background: "linear-gradient(100deg, #151f3c, #0b1124)" }}>
           <div className="flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00cbff" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" fill="#00cbff" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7f9bff" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" fill="#7f9bff" /></svg>
             <span className="mono-label text-cyan">Próxima missão</span>
           </div>
           <p className="mt-3 max-w-[760px] text-[15.5px] font-medium leading-[1.6] text-foreground">{analysis.nextMission}</p>

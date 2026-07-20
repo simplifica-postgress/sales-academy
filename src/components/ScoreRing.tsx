@@ -60,8 +60,8 @@ export default function ScoreRing({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span
-          className="font-mono font-semibold text-foreground"
-          style={{ fontSize: Math.round(size * 0.26), letterSpacing: "-0.02em" }}
+          className="font-display font-extrabold text-foreground"
+          style={{ fontSize: Math.round(size * 0.3), letterSpacing: "-0.02em", lineHeight: 1 }}
         >
           {value === null ? "–" : Math.round(value)}
         </span>

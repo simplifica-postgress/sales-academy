@@ -45,9 +45,9 @@ function History() {
             const active = filter === f;
             return (
               <button key={f} onClick={() => setFilter(f)} className="rounded-full px-3.5 py-[7px] text-[12.5px] font-medium transition" style={{
-                border: `1px solid ${active ? "rgba(0,135,248,.5)" : "rgba(0,45,115,.55)"}`,
-                background: active ? "rgba(0,135,248,.12)" : "#020d23",
-                color: active ? "#00cbff" : "#9db2c3",
+                border: `1px solid ${active ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.15)"}`,
+                background: active ? "rgba(90,124,255,.12)" : "#070b16",
+                color: active ? "#7f9bff" : "#79839c",
               }}>{f}</button>
             );
           })}
@@ -66,18 +66,18 @@ function History() {
           <div className="dc-card overflow-hidden">
             <div className="overflow-x-auto">
               <div className="min-w-[640px]">
-                <div className="grid items-center gap-3 border-b border-[rgba(0,45,115,.5)] px-[22px] py-3.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: GRID }}>
+                <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: GRID }}>
                   <span>Data</span><span>Atendimento</span><span>Formato</span><span className="text-right">Nota</span><span className="text-center">Status</span><span />
                 </div>
                 {rows.map((u) => {
                   const a = analysisByUpload.get(u.id);
                   const pill = statusPill(u.status);
                   return (
-                    <div key={u.id} className="grid items-center gap-3 border-b border-[rgba(0,45,115,.25)] px-[22px] py-[13px] transition last:border-0 hover:bg-[rgba(0,135,248,.04)]" style={{ gridTemplateColumns: GRID }}>
+                    <div key={u.id} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-[13px] transition last:border-0 hover:bg-[rgba(90,124,255,.04)]" style={{ gridTemplateColumns: GRID }}>
                       <span className="font-mono text-[12px] text-muted">{shortDate(u.createdAt)}</span>
                       <span className="text-[13.5px] text-foreground">{attendanceLabel(u.attendanceType)}</span>
                       <span className="text-[12.5px] text-muted">{u.fileType === "video" ? "Vídeo" : "Áudio"}</span>
-                      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: a ? scoreColor(a.generalScore) : "#9db2c3" }}>{a ? Math.round(a.generalScore) : "—"}</span>
+                      <span className="text-right font-mono text-[14px] font-semibold" style={{ color: a ? scoreColor(a.generalScore) : "#79839c" }}>{a ? Math.round(a.generalScore) : "—"}</span>
                       <span className="text-center"><span className="inline-block rounded-full px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.06em]" style={{ color: pill.color, background: pill.bg, border: `1px solid ${pill.border}` }}>{pill.label}</span></span>
                       <span className="text-right">{a && <Link href={`/analise/${a.id}`} className="text-[12px] font-semibold text-cyan hover:text-cyan-light">Ver análise</Link>}</span>
                     </div>

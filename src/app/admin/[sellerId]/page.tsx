@@ -121,9 +121,9 @@ function SellerDetail() {
           <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.015em] text-foreground">{profile.name}</h1>
           <div className="mt-[5px] text-[13px] text-muted">{profile.salesRole} · {profile.company}</div>
           <div className="mt-3.5 flex flex-wrap gap-2">
-            <span className={`${badge} text-cyan`} style={{ background: "rgba(0,203,255,.07)", border: "1px solid rgba(0,203,255,.22)" }}>{daysActive} {daysActive === 1 ? "dia enviado" : "dias enviados"}</span>
-            <span className={`${badge} text-cyan`} style={{ background: "rgba(0,203,255,.07)", border: "1px solid rgba(0,203,255,.22)" }}>Nível {level} · {levelName}</span>
-            <span className={`${badge} text-foreground`} style={{ background: "#152946", border: "1px solid rgba(0,45,115,.5)" }}>Média {Math.round(profile.averageScore ?? 0)}</span>
+            <span className={`${badge} text-cyan`} style={{ background: "rgba(127,155,255,.07)", border: "1px solid rgba(127,155,255,.22)" }}>{daysActive} {daysActive === 1 ? "dia enviado" : "dias enviados"}</span>
+            <span className={`${badge} text-cyan`} style={{ background: "rgba(127,155,255,.07)", border: "1px solid rgba(127,155,255,.22)" }}>Nível {level} · {levelName}</span>
+            <span className={`${badge} text-foreground`} style={{ background: "#1b2440", border: "1px solid rgba(120,150,210,.14)" }}>Média {Math.round(profile.averageScore ?? 0)}</span>
           </div>
         </div>
       </div>
@@ -143,8 +143,8 @@ function SellerDetail() {
         <div className="mb-4 flex items-center justify-between">
           <span className="mono-label">Evolução das notas</span>
           <span className="flex gap-3.5 font-mono text-[10.5px] text-muted">
-            <span><span className="mr-1.5 inline-block h-[2px] w-3.5 align-middle" style={{ background: "#00cbff" }} />nota</span>
-            <span style={{ color: "#25d97d" }}><span className="mr-1.5 inline-block w-3.5 align-middle" style={{ borderTop: "1px dashed #25d97d", height: 0 }} />meta 85</span>
+            <span><span className="mr-1.5 inline-block h-[2px] w-3.5 align-middle" style={{ background: "#7f9bff" }} />nota</span>
+            <span style={{ color: "#57c98a" }}><span className="mr-1.5 inline-block w-3.5 align-middle" style={{ borderTop: "1px dashed #57c98a", height: 0 }} />meta 85</span>
           </span>
         </div>
         {analyses.length > 0 ? (
@@ -166,21 +166,21 @@ function SellerDetail() {
           Excluir a gravação apaga o áudio/vídeo em definitivo, mas <strong className="text-foreground">mantém a análise da IA</strong> (notas, pontos e transcrição). Use para atender a pedido de exclusão do cliente.
         </p>
 
-        {notice && <p className="mb-3 rounded-[10px] border border-[rgba(0,203,255,.3)] bg-[rgba(0,203,255,.08)] px-3.5 py-2.5 text-[12.5px] text-cyan">{notice}</p>}
-        {error && <p className="mb-3 rounded-[10px] border border-[rgba(255,90,80,.28)] bg-[rgba(255,90,80,.08)] px-3.5 py-2.5 text-[12.5px] text-danger">{error}</p>}
+        {notice && <p className="mb-3 rounded-[10px] border border-[rgba(127,155,255,.3)] bg-[rgba(127,155,255,.08)] px-3.5 py-2.5 text-[12.5px] text-cyan">{notice}</p>}
+        {error && <p className="mb-3 rounded-[10px] border border-[rgba(244,114,106,.28)] bg-[rgba(244,114,106,.08)] px-3.5 py-2.5 text-[12.5px] text-danger">{error}</p>}
 
         {uploads.length === 0 ? (
           <p className="py-4 text-sm text-muted">Nenhum envio ainda.</p>
         ) : (
           uploads.map((u) => (
-            <div key={u.id} className="flex flex-wrap items-center gap-3 border-b border-[rgba(0,45,115,.28)] px-0.5 py-3 last:border-0">
+            <div key={u.id} className="flex flex-wrap items-center gap-3 border-b border-[rgba(120,150,210,.10)] px-0.5 py-3 last:border-0">
               <span className="w-12 flex-none font-mono text-[12px] text-muted">{shortDate(u.createdAt)}</span>
               <span className="flex-1 text-[13px] text-foreground">
                 {u.fileType === "video" ? "Vídeo" : "Áudio"} · {attendanceLabel(u.attendanceType)}
                 <span className="ml-2 font-mono text-[11px] text-muted">{humanSize(u.fileSize)}</span>
               </span>
               {u.consentVersion && (
-                <span className="rounded-full border border-[rgba(0,203,255,.22)] px-2.5 py-0.5 text-[10.5px] text-cyan" style={{ background: "rgba(0,203,255,.07)" }} title={`Termo aceito em ${shortDate(u.consentAt)}`}>
+                <span className="rounded-full border border-[rgba(127,155,255,.22)] px-2.5 py-0.5 text-[10.5px] text-cyan" style={{ background: "rgba(127,155,255,.07)" }} title={`Termo aceito em ${shortDate(u.consentAt)}`}>
                   consentido v{u.consentVersion}
                 </span>
               )}
@@ -192,8 +192,8 @@ function SellerDetail() {
                 <button
                   onClick={() => deleteRecording(u)}
                   disabled={busyId === u.id}
-                  className="rounded-lg border border-[rgba(255,90,80,.35)] px-3 py-1.5 text-[12px] font-medium text-danger transition disabled:opacity-50"
-                  style={{ background: "rgba(255,90,80,.06)" }}
+                  className="rounded-lg border border-[rgba(244,114,106,.35)] px-3 py-1.5 text-[12px] font-medium text-danger transition disabled:opacity-50"
+                  style={{ background: "rgba(244,114,106,.06)" }}
                 >
                   {busyId === u.id ? "Excluindo…" : "Excluir gravação"}
                 </button>
@@ -209,7 +209,7 @@ function SellerDetail() {
           <p className="py-4 text-sm text-muted">Nenhuma análise ainda.</p>
         ) : (
           [...analyses].reverse().map((a) => (
-            <div key={a.id} className="flex items-center gap-3.5 border-b border-[rgba(0,45,115,.28)] px-0.5 py-3 last:border-0">
+            <div key={a.id} className="flex items-center gap-3.5 border-b border-[rgba(120,150,210,.10)] px-0.5 py-3 last:border-0">
               <span className="w-12 flex-none font-mono text-[12px] text-muted">{shortDate(a.createdAt)}</span>
               <span className="flex-1 truncate text-[13.5px] text-muted">{a.summary}</span>
               <span className="font-mono text-[14px] font-semibold" style={{ color: scoreColor(a.generalScore) }}>{Math.round(a.generalScore)}</span>
