@@ -162,19 +162,31 @@ function DashboardContent() {
               />
             </div>
 
-            {/* Marcador da meta da semana, com o rótulo logo abaixo dele —
-                assim fica claro o que aquele traço significa. */}
+            {/* Marcador da meta: haste atravessando a trilha + etiqueta.
+                O anel escuro em volta da haste faz ela continuar legível tanto
+                sobre a parte preenchida quanto sobre a vazia da barra. */}
             {avgScore > 0 && (
-              <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ left: `${goalMarkPct}%`, zIndex: 2 }}>
+              <div
+                className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${goalMarkPct}%`, zIndex: 2 }}
+              >
                 <span
-                  className="block h-[22px] w-[3px] rounded-full"
-                  style={{ background: goalReached ? "#57c98a" : "#ffffff" }}
+                  className="mx-auto block h-[24px] w-[2px] rounded-full"
+                  style={{
+                    background: goalReached ? "#57c98a" : "#ffffff",
+                    boxShadow: `0 0 0 2.5px ${goalReached ? "rgba(7,11,22,.6)" : "rgba(7,11,22,.6)"}`,
+                  }}
                 />
                 <span
-                  className="absolute left-1/2 top-[15px] -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold"
-                  style={{ color: goalReached ? "#57c98a" : "#ffffff" }}
+                  className="absolute left-1/2 top-[30px] -translate-x-1/2 inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-[3px] text-[10px] font-semibold"
+                  style={
+                    goalReached
+                      ? { color: "#57c98a", background: "rgba(87,201,138,.13)", border: "1px solid rgba(87,201,138,.4)" }
+                      : { color: "#cdd5e6", background: "rgba(11,17,36,.85)", border: "1px solid rgba(120,150,210,.28)" }
+                  }
                 >
-                  {goalReached ? "✓" : ""} meta {goal}
+                  {goalReached && <span aria-hidden>✓</span>}
+                  meta {goal}
                 </span>
               </div>
             )}
@@ -185,7 +197,7 @@ function DashboardContent() {
             />
           </div>
 
-          <div className="relative mt-[22px] flex items-center justify-between text-[11px] font-medium text-muted">
+          <div className="relative mt-[34px] flex items-center justify-between text-[11px] font-medium text-muted">
             <span>
               Sua média:{" "}
               <span className="font-semibold" style={{ color: avgScore ? scoreColor(avgScore) : undefined }}>
