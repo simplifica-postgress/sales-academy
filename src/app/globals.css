@@ -182,14 +182,21 @@ select option {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Label caixa alta espaçada */
-.mono-label {
-  font-family: var(--font-manrope), sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
+/* Label caixa alta espaçada.
+   Fica na camada `components` de propósito: o Tailwind v4 organiza os
+   utilitários na camada `utilities`, que vem DEPOIS — e regras fora de
+   camada venceriam os utilitários independentemente de especificidade.
+   Sem isso, `.mono-label` sobrescrevia `text-success`/`text-danger` e os
+   títulos "O que fez bem" / "O que deixou passar" saíam cinza. */
+@layer components {
+  .mono-label {
+    font-family: var(--font-manrope), sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
 }
 
 /* Campo de formulário (input/select/textarea) */
