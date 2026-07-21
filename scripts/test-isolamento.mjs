@@ -13,7 +13,7 @@ import { getAuth as getAdminAuth } from "firebase-admin/auth";
 import { getFirestore as getAdminDb, FieldValue } from "firebase-admin/firestore";
 import { initializeApp as initClient } from "firebase/app";
 import { getAuth, signInWithCustomToken } from "firebase/auth";
-import { initializeFirestore, doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { initializeFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, setDoc } from "firebase/firestore";
 
 const ROOT = process.cwd();
 const env = {};
@@ -128,6 +128,11 @@ async function main() {
   check("consulta por companyId da empresa A", (await tentarLer(async () => {
     await getDocs(query(collection(cdb, "users"), where("companyId", "==", empresaA.id)));
   })) === "ok");
+  // Princípios e Casos são material de treino, não dado de empresa: todo
+  // usuário logado lê (a análise cita "Princípio N" e ele precisa consultar).
+  check("ler Principios e Casos", (await tentarLer(async () => {
+    await getDocs(collection(cdb, "knowledge"));
+  })) === "ok");
 
   console.log("\nNAO pode ler a empresa B:");
   check("perfil do vendedor da empresa B", (await tentarLer(async () => {
@@ -148,8 +153,17 @@ async function main() {
   check("varredura da colecao inteira de analises", (await tentarLer(async () => {
     await getDocs(collection(cdb, "analyses"));
   })) === "negado");
-  check("base de conhecimento (so master)", (await tentarLer(async () => {
-    await getDocs(collection(cdb, "knowledge"));
+  // Ler os Princípios é liberado; ESCREVER neles é exclusivo do master.
+  check("criar Principio (so master escreve)", (await tentarLer(async () => {
+    await addDoc(collection(cdb, "knowledge"), { title: "invasao", content: "x", order: 999 });
+  })) === "negado");
+  check("editar Principio existente", (await tentarLer(async () => {
+    const algum = (await getDocs(collection(cdb, "knowledge"))).docs[0];
+    if (!algum) throw new Error("permission-denied"); // sem base, considera bloqueado
+    await setDoc(algum.ref, { title: "adulterado" }, { merge: true });
+  })) === "negado");
+  check("promover a si mesmo a master", (await tentarLer(async () => {
+    await setDoc(doc(cdb, "users", gestorA), { role: "master" }, { merge: true });
   })) === "negado");
 
   // Limpeza.
