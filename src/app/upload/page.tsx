@@ -174,14 +174,12 @@ function UploadForm() {
         <p className="mt-2 text-[13.5px] leading-[1.6] text-muted">Áudio ou vídeo de um atendimento real. A IA transcreve, analisa e devolve seu plano de melhoria em minutos.</p>
       </div>
 
-      {/* Já tem nota hoje: avisa antes de enviar, para o vendedor não achar
-          que a barra travou quando o segundo envio não mexer nela. */}
+      {/* Já tem nota hoje: aviso curto, só para o vendedor não estranhar se a
+          barra não mexer com o segundo envio. */}
       {analyzedToday && (
-        <div className="mb-3.5 flex gap-3 rounded-2xl border border-[rgba(90,124,255,.35)] px-[18px] py-3.5" style={{ background: "rgba(90,124,255,.06)" }}>
-          <span className="mt-px flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border border-[rgba(127,155,255,.4)] text-[11px] font-bold text-cyan" aria-hidden>i</span>
-          <p className="text-[12.5px] leading-[1.6] text-muted">
-            <strong className="text-foreground">Você já tem a nota de hoje.</strong> Pode enviar mais atendimentos e a IA analisa todos com o mesmo cuidado — mas a nota que entra na sua média e na barra é a do <strong className="text-foreground">primeiro do dia</strong>. Assim a evolução é medida ao longo dos dias, não pelo volume de envios.
-          </p>
+        <div className="mb-3.5 inline-flex items-center gap-2.5 rounded-full border border-[rgba(90,124,255,.35)] px-4 py-2" style={{ background: "rgba(90,124,255,.06)" }}>
+          <span className="flex h-[17px] w-[17px] flex-none items-center justify-center rounded-full border border-[rgba(127,155,255,.4)] text-[10px] font-bold text-cyan" aria-hidden>i</span>
+          <span className="text-[12.5px] font-medium text-foreground">Você já tem a nota de hoje.</span>
         </div>
       )}
 
