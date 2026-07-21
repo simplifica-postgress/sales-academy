@@ -43,10 +43,25 @@ const iconTeam = (
   </svg>
 );
 
+const iconPrinciples = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z" />
+    <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z" />
+  </svg>
+);
+
+const principlesItem: NavItem = {
+  label: "Princípios e Casos",
+  href: "/principios",
+  icon: iconPrinciples,
+  active: (p) => p.startsWith("/principios"),
+};
+
 const SELLER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: iconDash, active: (p) => p === "/dashboard" },
   { label: "Enviar atendimento", href: "/upload", icon: iconUpload, active: (p) => p.startsWith("/upload") },
   { label: "Histórico", href: "/historico", icon: iconHist, active: (p) => p.startsWith("/historico") || p.startsWith("/analise") },
+  principlesItem,
 ];
 const iconUsers = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
@@ -94,8 +109,8 @@ const MASTER_NAV: NavItem[] = [
   testItem,
 ];
 
-/** Gestor: vê a própria equipe e testa a IA. Não administra pessoas. */
-const MANAGER_NAV: NavItem[] = [homeItem("Equipe"), testItem];
+/** Gestor: vê a própria equipe, lê o método e testa a IA. */
+const MANAGER_NAV: NavItem[] = [homeItem("Equipe"), principlesItem, testItem];
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();

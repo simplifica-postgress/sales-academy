@@ -108,10 +108,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Base de conhecimento que alimenta a IA: só o master.
-    // O vendedor não precisa ler (minimização de dados).
+    // Princípios e Casos: material de treinamento que alimenta a IA.
+    // Qualquer pessoa logada LÊ (a análise cita "Princípio N", e sem poder
+    // consultar a lista a citação seria inútil para o vendedor). Só o master
+    // escreve.
     match /knowledge/{docId} {
-      allow read: if isMaster();
+      allow read: if isSignedIn();
       allow write: if isMaster();
     }
 

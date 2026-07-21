@@ -6,7 +6,14 @@ import { useSellerData } from "@/hooks/useSellerData";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import ScoreRing from "@/components/ScoreRing";
-import { ATTENDANCE_TYPES, LEVELS, idealProgress } from "@/lib/constants";
+import {
+  ATTENDANCE_TYPES,
+  LEVELS,
+  WEEKLY_GOALS,
+  goalProgress,
+  trainingWeek,
+  weeklyGoal,
+} from "@/lib/constants";
 import { RECENT_WINDOW, nextLevelNeed, type NextLevelNeed } from "@/lib/progression";
 import { isToday, shortDate } from "@/lib/training";
 import { scoreBand, scoreColor, statusPill } from "@/lib/ui";
@@ -43,8 +50,6 @@ function DashboardContent() {
 
   const firstName = profile?.name?.split(" ")[0] ?? "";
   const avgScore = Math.round(progress?.averageScore ?? 0);
-  // Barra derivada da média ao vivo — sempre bate com a média exibida.
-  const progressPct = idealProgress(avgScore);
   const level = progress?.currentLevel ?? profile?.currentLevel ?? 1;
   const levelInfo = LEVELS[Math.max(0, Math.min(level - 1, LEVELS.length - 1))];
   const lastAnalysis = analyses[0] ?? null;
@@ -65,6 +70,15 @@ function DashboardContent() {
   const levelNeedText = need ? needText(need) : null;
   // Menos de 5 dias de treino: a média ainda não é um retrato confiável.
   const provisional = daysActive > 0 && daysActive < RECENT_WINDOW;
+
+  // Meta da semana: escada 20 → 30 → … → 85, que sobe a cada 5 dias de
+  // treino. A barra mede o caminho até ESTA meta, não até o ideal — assim o
+  // iniciante tem um alvo alcançável em vez de olhar para 85 e desanimar.
+  const week = trainingWeek(daysActive);
+  const goal = weeklyGoal(daysActive);
+  const goalPct = goalProgress(avgScore, daysActive);
+  const goalReached = avgScore >= goal;
+  const nextGoal = WEEKLY_GOALS.find((g) => g > goal) ?? null;
 
   return (
     <div className="fade-up">
@@ -107,27 +121,51 @@ function DashboardContent() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Rumo ao ideal</div>
-              <div className="mt-1.5 text-[26px] font-semibold text-foreground">{progressPct}<span className="text-[16px] text-muted">%</span></div>
-              <div className="mt-0.5 text-[12.5px] font-medium text-cyan">
-                meta 85{provisional && <span className="text-muted"> · provisório</span>}
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Meta da semana {week}</div>
+              <div className="mt-1.5 flex items-baseline justify-end gap-1.5">
+                <span className="text-[26px] font-semibold" style={{ color: goalReached ? "#57c98a" : "#f2f5fc" }}>{goal}</span>
+                <span className="text-[13px] text-muted">de nota</span>
+              </div>
+              <div className="mt-0.5 text-[12.5px] font-medium" style={{ color: goalReached ? "#57c98a" : "#7f9bff" }}>
+                {goalReached ? "batida ✓" : `faltam ${goal - avgScore} pontos`}
+                {provisional && <span className="text-muted"> · provisório</span>}
               </div>
             </div>
           </div>
 
-          {/* Barra: quão perto a média está do atendimento ideal */}
+          {/* Barra: quão perto a média está da meta DESTA semana */}
           <div className="relative mb-2 mt-[38px] px-0.5">
             <div className="relative h-4 overflow-hidden rounded-full border border-[rgba(120,150,210,.18)]" style={{ background: "#131b33" }}>
               {/* Enquanto não há dias suficientes, a barra fica esmaecida:
-                  a conta continua honesta (média ÷ 85), mas sinaliza que
-                  ainda não é um retrato consolidado. */}
-              <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${progressPct}%`, background: "linear-gradient(90deg,#4a6edc,#5a7cff 55%,#9db2ff)", boxShadow: "0 0 24px rgba(127,155,255,.5)", opacity: provisional ? 0.5 : 1 }} />
+                  a conta continua honesta, mas sinaliza que ainda não é um
+                  retrato consolidado. */}
+              <div
+                className="absolute inset-y-0 left-0 rounded-full"
+                style={{
+                  width: `${goalPct}%`,
+                  background: goalReached
+                    ? "linear-gradient(90deg,#2f9d68,#57c98a)"
+                    : "linear-gradient(90deg,#4a6edc,#5a7cff 55%,#9db2ff)",
+                  boxShadow: goalReached ? "0 0 24px rgba(87,201,138,.45)" : "0 0 24px rgba(127,155,255,.5)",
+                  opacity: provisional ? 0.5 : 1,
+                }}
+              />
             </div>
-            <div className="absolute top-1/2 h-[30px] w-[30px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-cyan bg-white" style={{ left: `${progressPct}%`, boxShadow: "0 0 0 6px rgba(127,155,255,.18), 0 6px 18px rgba(0,2,12,.6)", zIndex: 3 }} />
+            <div
+              className="absolute top-1/2 h-[30px] w-[30px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 bg-white"
+              style={{
+                left: `${goalPct}%`,
+                borderColor: goalReached ? "#57c98a" : "#7f9bff",
+                boxShadow: `0 0 0 6px ${goalReached ? "rgba(87,201,138,.18)" : "rgba(127,155,255,.18)"}, 0 6px 18px rgba(0,2,12,.6)`,
+                zIndex: 3,
+              }}
+            />
           </div>
           <div className="relative mt-3 flex justify-between text-[11px] font-medium text-muted">
-            <span>Começo</span>
-            <span className="text-cyan">Atendimento ideal · nota 85</span>
+            <span>Sua média: <span style={{ color: avgScore ? scoreColor(avgScore) : undefined }}>{avgScore || "—"}</span></span>
+            <span style={{ color: goalReached ? "#57c98a" : "#7f9bff" }}>
+              {nextGoal ? `Próxima meta: ${nextGoal}` : "Atendimento ideal · nota 85"}
+            </span>
           </div>
 
           {/* Stats compactos */}

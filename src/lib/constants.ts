@@ -5,6 +5,36 @@ import type { AttendanceType, CriterionKey } from "./types";
 /** Nota mínima para contar como "atendimento ideal". */
 export const IDEAL_SCORE_THRESHOLD = 85;
 
+/**
+ * Meta de nota por semana de treino. É uma escada: quem está começando mira
+ * 20, não 85. Olhar para 85 no primeiro dia desanima; bater 20 e depois 30 dá
+ * a sensação de avanço real. A última faixa é o atendimento ideal (85), e a
+ * meta para de subir aí.
+ */
+export const WEEKLY_GOALS = [20, 30, 40, 50, 60, 70, 80, IDEAL_SCORE_THRESHOLD];
+
+/** Semana de treino (1-based) a partir dos dias já enviados. */
+export function trainingWeek(daysActive: number): number {
+  if (daysActive <= 0) return 1;
+  return Math.floor((daysActive - 1) / 5) + 1;
+}
+
+/**
+ * Meta da semana atual. Sobe conforme o vendedor acumula dias de treino
+ * (a cada 5 dias enviados), não conforme o calendário: quem usa a ferramenta
+ * de vez em quando não é punido com uma meta que correu sem ele.
+ */
+export function weeklyGoal(daysActive: number): number {
+  const week = trainingWeek(daysActive);
+  return WEEKLY_GOALS[Math.min(week, WEEKLY_GOALS.length) - 1];
+}
+
+/** Progresso rumo à meta da semana (0–100). */
+export function goalProgress(averageScore: number, daysActive: number): number {
+  if (!averageScore) return 0;
+  return Math.min(Math.round((averageScore / weeklyGoal(daysActive)) * 100), 100);
+}
+
 /** Dias seguidos acima do threshold para atingir o nível 5. */
 export const IDEAL_STREAK_REQUIRED = 3;
 

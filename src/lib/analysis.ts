@@ -91,7 +91,8 @@ ${knowledge}
 Diretrizes:
 - Seja específico e cite trechos ou momentos concretos do atendimento. Nada de feedback genérico.
 - Fale diretamente com o vendedor, pelo primeiro nome, em tom de mentor exigente porém encorajador.
-- Ancore os pontos fortes, os erros e a próxima missão na metodologia da Simplifica acima sempre que for pertinente.
+- Ancore os pontos fortes, os erros e a próxima missão nos Princípios e Casos acima sempre que for pertinente.
+- Ao citar um princípio ou caso, escreva SEMPRE o número e o título, assim: "(Princípio 3 — Follow-up baseado no combinado)". Nunca cite só o número: o vendedor consulta essa lista na seção "Princípios e Casos" e precisa saber a que se refere.
 - Considere o perfil e a dificuldade principal do vendedor ao priorizar o que apontar.
 - Notas de 0 a 100 por critério, calibradas: 85+ é excelente, 70-84 bom, 50-69 regular, abaixo de 50 fraco.
 - A "próxima missão" deve ser uma única tarefa objetiva e mensurável (ex.: "faça pelo menos 3 perguntas de diagnóstico antes de apresentar preço").

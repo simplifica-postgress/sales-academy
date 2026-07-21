@@ -10,6 +10,8 @@
  * e o fallback caso a coleção esteja vazia. Ver `lib/server/knowledge.ts`.
  */
 
+import { kindOf, numberPrinciples, type PrincipleEntry } from "./principles";
+
 export interface KnowledgeEntry {
   /** Título curto da técnica/boa prática. */
   title: string;
@@ -108,16 +110,27 @@ export const SALES_KNOWLEDGE: KnowledgeEntry[] = [
 export const METHODOLOGY_SUMMARY =
   "O método defende um atendimento que combina empatia, personalização e firmeza. O vendedor deve ouvir, recuperar o que o cliente falou, adaptar a abordagem ao perfil comportamental, deixar próximos passos definidos e conduzir a decisão sem parecer agressivo. Falas muito incisivas não devem ser copiadas literalmente — o valor está na técnica: questionar com respeito, cobrar coerência, manter o controle da conversa e nunca deixar o atendimento sem uma definição clara.";
 
-/** Formata uma lista de entradas para injeção no prompt da IA. */
+/**
+ * Formata as entradas para injeção no prompt da IA.
+ *
+ * A numeração vem de `numberPrinciples` — a MESMA que o vendedor vê na seção
+ * "Princípios e Casos". A IA é instruída (em analysis.ts) a citar número E
+ * título, para a referência continuar compreensível mesmo se a lista mudar
+ * depois que a análise foi gerada.
+ */
 export function formatKnowledge(
   entries: KnowledgeEntry[],
   summary = METHODOLOGY_SUMMARY
 ): string {
-  if (entries.length === 0) return "";
-  const items = entries
-    .map((k, i) => `${i + 1}. ${k.title}: ${k.content}`)
+  const numbered = numberPrinciples(entries as PrincipleEntry[]);
+  if (numbered.length === 0) return "";
+  const items = numbered
+    .map((k) => {
+      const rotulo = kindOf(k) === "caso" ? "CASO" : "Princípio";
+      return `${rotulo} ${k.number} — ${k.title}: ${k.content}`;
+    })
     .join("\n");
-  return `METODOLOGIA COMERCIAL DA SIMPLIFICA (referência oficial — avalie o atendimento e escreva as recomendações à luz destes princípios):\n${items}\n\nSíntese do método: ${summary}`;
+  return `PRINCÍPIOS E CASOS DA SIMPLIFICA (referência oficial — avalie o atendimento e escreva as recomendações à luz deste material):\n${items}\n\nSíntese do método: ${summary}`;
 }
 
 /** Base versionada (seed/fallback) formatada para o prompt. */
