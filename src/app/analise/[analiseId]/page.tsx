@@ -75,6 +75,9 @@ function AnalysisView() {
   }
 
   const delta = prevScore !== null ? analysis.generalScore - prevScore : null;
+  const focusLabel = analysis.missionFocus
+    ? CRITERIA.find((c) => c.key === analysis.missionFocus)?.label
+    : null;
 
   return (
     <div className="fade-up">
@@ -203,6 +206,13 @@ function AnalysisView() {
           <div className="flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7f9bff" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" fill="#7f9bff" /></svg>
             <span className="mono-label text-cyan">Próxima missão</span>
+            {/* Mostra QUAL critério a missão ataca: deixa claro que ela veio
+                do ponto mais fraco deste atendimento, não de um molde. */}
+            {focusLabel && (
+              <span className="ml-auto rounded-full px-2.5 py-[3px] text-[11px] font-semibold" style={{ color: "#f4726a", background: "rgba(244,114,106,.12)", border: "1px solid rgba(244,114,106,.3)" }}>
+                foco: {focusLabel}
+              </span>
+            )}
           </div>
           <p className="mt-3 max-w-[760px] text-[15.5px] font-medium leading-[1.6] text-foreground">{analysis.nextMission}</p>
         </div>

@@ -210,6 +210,7 @@ export async function POST(req: Request) {
       improvements: result.improvements,
       criteriaScores: result.criteriaScores,
       generalScore,
+      missionFocus: result.missionFocus ?? null,
       nextMission: result.nextMission,
       trainingDay,
       createdAt: FieldValue.serverTimestamp(),

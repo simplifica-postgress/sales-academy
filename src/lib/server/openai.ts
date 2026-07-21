@@ -65,8 +65,9 @@ const MOCK_RESULT: AIAnalysisResult = {
     proximoPasso: 38,
     fechamento: 50,
   },
+  missionFocus: "proximoPasso",
   nextMission:
-    "No próximo atendimento, antes de mencionar qualquer preço, faça pelo menos 3 perguntas de diagnóstico (cenário atual, problema e consequência financeira) e só apresente a solução depois que o cliente confirmar a dor.",
+    "Quando o cliente disser que precisa pensar, pergunte o que exatamente ele vai avaliar e combine data e hora do retorno antes de encerrar.",
 };
 
 let client: OpenAI | null = null;

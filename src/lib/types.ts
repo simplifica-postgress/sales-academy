@@ -111,6 +111,8 @@ export interface Analysis {
   improvements: string[];
   criteriaScores: CriteriaScores;
   generalScore: number; // 0–100, média ponderada calculada no backend
+  /** Critério que a missão ataca (o de menor nota). Ausente em análises antigas. */
+  missionFocus?: CriterionKey;
   nextMission: string;
   trainingDay: number;
   createdAt: Timestamp;
