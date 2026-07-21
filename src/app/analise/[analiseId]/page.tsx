@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { collection, doc, getDoc, getDocs, query, where, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, getDocs, type Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { sellerDocsQuery } from "@/lib/sellerQueries";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import ScoreRing from "@/components/ScoreRing";
@@ -17,6 +19,7 @@ import type { Analysis } from "@/lib/types";
 function AnalysisView() {
   const params = useParams<{ analiseId: string }>();
   const id = params.analiseId;
+  const { user } = useAuth();
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,26 +33,35 @@ function AnalysisView() {
         const snap = await getDoc(doc(db, "analyses", id));
         if (!snap.exists()) {
           setNotFound(true);
+          setLoading(false);
           return;
         }
         const data = snap.data() as Analysis;
         setAnalysis(data);
+        setLoading(false);
 
-        // Delta vs. envio anterior do mesmo vendedor.
-        const siblings = await getDocs(query(collection(db, "analyses"), where("userId", "==", data.userId)));
-        const ordered = siblings.docs
-          .map((d) => ({ id: d.id, score: d.get("generalScore") as number, at: d.get("createdAt") as Timestamp | null }))
-          .filter((x) => x.at)
-          .sort((a, b) => a.at!.toMillis() - b.at!.toMillis());
-        const idx = ordered.findIndex((x) => x.id === id);
-        if (idx > 0) setPrevScore(ordered[idx - 1].score);
+        // Delta vs. envio anterior. Vai num try próprio de propósito: se o
+        // gestor não puder listar o histórico, perde-se só a comparação — a
+        // análise em si continua na tela.
+        try {
+          const siblings = await getDocs(
+            sellerDocsQuery("analyses", data.userId, user?.uid, data.companyId ?? null)
+          );
+          const ordered = siblings.docs
+            .map((d) => ({ id: d.id, score: d.get("generalScore") as number, at: d.get("createdAt") as Timestamp | null }))
+            .filter((x) => x.at)
+            .sort((a, b) => a.at!.toMillis() - b.at!.toMillis());
+          const idx = ordered.findIndex((x) => x.id === id);
+          if (idx > 0) setPrevScore(ordered[idx - 1].score);
+        } catch (err) {
+          console.error("Falha ao calcular a variação vs. o envio anterior:", err);
+        }
       } catch {
         setNotFound(true);
-      } finally {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, user?.uid]);
 
   if (loading) {
     return <div className="flex min-h-[50vh] items-center justify-center"><Spinner /></div>;

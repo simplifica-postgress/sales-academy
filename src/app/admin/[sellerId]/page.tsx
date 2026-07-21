@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { collection, doc, getDoc, getDocs, onSnapshot, query, where, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, getDocs, onSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { sellerDocsQuery } from "@/lib/sellerQueries";
 import { adminPost } from "@/lib/adminApi";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
@@ -31,7 +33,11 @@ function humanSize(bytes?: number): string {
 function SellerDetail() {
   const params = useParams<{ sellerId: string }>();
   const uid = params.sellerId;
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  // `undefined` = ainda não sabemos a empresa; `null` = vendedor sem empresa.
+  const [companyId, setCompanyId] = useState<string | null | undefined>(undefined);
+  const [loadError, setLoadError] = useState("");
   const [daysActive, setDaysActive] = useState(0);
   const [analyses, setAnalyses] = useState<AnalysisRow[]>([]);
   const [uploads, setUploads] = useState<UploadRow[]>([]);
@@ -44,33 +50,60 @@ function SellerDetail() {
   useEffect(() => {
     if (!uid) return;
     (async () => {
+      // O perfil decide se a página existe. Só ele define "não encontrado":
+      // antes, qualquer falha nas consultas seguintes virava "vendedor não
+      // encontrado", escondendo o erro real (era falta de permissão).
+      let sellerCompany: string | null = null;
       try {
         const userSnap = await getDoc(doc(db, "users", uid));
-        if (!userSnap.exists()) return setNotFound(true);
+        if (!userSnap.exists()) {
+          setNotFound(true);
+          return;
+        }
         setProfile(userSnap.data() as UserProfile);
+        sellerCompany = (userSnap.get("companyId") as string | null) ?? null;
+        setCompanyId(sellerCompany);
+      } catch (err) {
+        console.error("Falha ao carregar o perfil do vendedor:", err);
+        setLoadError("Não foi possível carregar este vendedor. Verifique se ele está na sua empresa.");
+        return;
+      } finally {
+        setLoading(false);
+      }
+
+      // Daqui pra baixo, uma falha degrada a tela mas não a derruba.
+      try {
         // Mesma fonte da lista de vendedores (progress.completedDays), para os
         // dois painéis mostrarem sempre a mesma contagem de dias enviados.
         const progSnap = await getDoc(doc(db, "progress", uid));
         setDaysActive((progSnap.data()?.completedDays as number) ?? 0);
-        const snap = await getDocs(query(collection(db, "analyses"), where("userId", "==", uid)));
+      } catch (err) {
+        console.error("Falha ao ler o progresso:", err);
+      }
+
+      try {
+        const snap = await getDocs(
+          sellerDocsQuery("analyses", uid, user?.uid, sellerCompany)
+        );
         setAnalyses(
           snap.docs
             .map((d) => ({ id: d.id, ...d.data() }) as AnalysisRow)
             .sort((a, b) => ((a.createdAt as Timestamp)?.toMillis() ?? 0) - ((b.createdAt as Timestamp)?.toMillis() ?? 0))
         );
-      } catch {
-        setNotFound(true);
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.error("Falha ao ler as análises:", err);
+        setLoadError("As análises deste vendedor não puderam ser carregadas.");
       }
     })();
-  }, [uid]);
+  }, [uid, user?.uid]);
 
   // Gravações em tempo real (para refletir a exclusão na hora).
+  // Só assina depois de saber a empresa do vendedor: a consulta precisa do
+  // companyId para as Rules aceitarem (ver sellerDocsQuery).
   useEffect(() => {
-    if (!uid) return;
+    if (!uid || companyId === undefined) return;
     return onSnapshot(
-      query(collection(db, "uploads"), where("userId", "==", uid)),
+      sellerDocsQuery("uploads", uid, user?.uid, companyId),
       (snap) =>
         setUploads(
           snap.docs
@@ -80,9 +113,10 @@ function SellerDetail() {
                 ((b.createdAt as Timestamp)?.toMillis() ?? 0) -
                 ((a.createdAt as Timestamp)?.toMillis() ?? 0)
             )
-        )
+        ),
+      (err) => console.error("Falha ao ler as gravações:", err)
     );
-  }, [uid]);
+  }, [uid, companyId, user?.uid]);
 
   async function deleteRecording(u: UploadRow) {
     const ok = confirm(
@@ -103,8 +137,19 @@ function SellerDetail() {
   }
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><Spinner /></div>;
-  if (notFound || !profile) {
+  if (notFound) {
     return <div className="dc-card p-6"><p className="text-sm text-muted">Vendedor não encontrado. <Link href="/admin" className="text-cyan hover:text-cyan-light">Voltar ao painel</Link></p></div>;
+  }
+  // Sem perfil mas sem "não encontrado" = falha de acesso, não ausência.
+  if (!profile) {
+    return (
+      <div className="dc-card p-6">
+        <p className="text-sm text-muted">
+          {loadError || "Não foi possível abrir este vendedor."}{" "}
+          <Link href="/admin" className="text-cyan hover:text-cyan-light">Voltar ao painel</Link>
+        </p>
+      </div>
+    );
   }
 
   const latest = analyses[analyses.length - 1] ?? null;
