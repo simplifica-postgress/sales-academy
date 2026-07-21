@@ -8,9 +8,10 @@ import AppShell from "@/components/AppShell";
 import ScoreRing from "@/components/ScoreRing";
 import {
   ATTENDANCE_TYPES,
+  IDEAL_SCORE_THRESHOLD,
   LEVELS,
   WEEKLY_GOALS,
-  goalProgress,
+  idealProgress,
   trainingWeek,
   weeklyGoal,
 } from "@/lib/constants";
@@ -72,13 +73,18 @@ function DashboardContent() {
   const provisional = daysActive > 0 && daysActive < RECENT_WINDOW;
 
   // Meta da semana: escada 20 → 30 → … → 85, que sobe a cada 5 dias de
-  // treino. A barra mede o caminho até ESTA meta, não até o ideal — assim o
-  // iniciante tem um alvo alcançável em vez de olhar para 85 e desanimar.
+  // treino. A meta é um ALVO DE CURTO PRAZO; a barra continua medindo a nota
+  // real (0 → 85), com a meta marcada em cima dela.
   const week = trainingWeek(daysActive);
   const goal = weeklyGoal(daysActive);
-  const goalPct = goalProgress(avgScore, daysActive);
   const goalReached = avgScore >= goal;
-  const nextGoal = WEEKLY_GOALS.find((g) => g > goal) ?? null;
+  // Já bateu a meta da semana? O alvo mostrado passa a ser o próximo degrau,
+  // senão o vendedor ficaria olhando para um número que já superou.
+  const activeGoal = goalReached
+    ? (WEEKLY_GOALS.find((g) => g > avgScore) ?? IDEAL_SCORE_THRESHOLD)
+    : goal;
+  const idealPct = idealProgress(avgScore);
+  const goalMarkPct = Math.min((goal / IDEAL_SCORE_THRESHOLD) * 100, 100);
 
   return (
     <div className="fade-up">
@@ -121,51 +127,73 @@ function DashboardContent() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Meta da semana {week}</div>
+              {/* Batida a meta da semana, o rótulo muda: seria mentira dizer
+                  "meta da semana 1" exibindo um número que não é o da semana 1. */}
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
+                {goalReached && avgScore > 0 ? "Próximo alvo" : `Meta da semana ${week}`}
+              </div>
               <div className="mt-1.5 flex items-baseline justify-end gap-1.5">
-                <span className="text-[26px] font-semibold" style={{ color: goalReached ? "#57c98a" : "#f2f5fc" }}>{goal}</span>
+                <span className="text-[26px] font-semibold text-foreground">{activeGoal}</span>
                 <span className="text-[13px] text-muted">de nota</span>
               </div>
-              <div className="mt-0.5 text-[12.5px] font-medium" style={{ color: goalReached ? "#57c98a" : "#7f9bff" }}>
-                {goalReached ? "batida ✓" : `faltam ${goal - avgScore} pontos`}
-                {provisional && <span className="text-muted"> · provisório</span>}
+              <div className="mt-0.5 text-[12.5px] font-medium" style={{ color: goalReached && avgScore > 0 ? "#57c98a" : "#7f9bff" }}>
+                {avgScore === 0
+                  ? "envie o primeiro atendimento"
+                  : goalReached
+                    ? `meta da semana ${week} batida ✓`
+                    : `faltam ${activeGoal - avgScore} pontos`}
               </div>
             </div>
           </div>
 
-          {/* Barra: quão perto a média está da meta DESTA semana */}
+          {/* Barra: a régua é sempre a nota (0 → 85). A meta da semana é um
+              MARCADOR sobre ela, não outra régua — assim o preenchimento nunca
+              contradiz a faixa da média (uma média fraca não enche a barra). */}
           <div className="relative mb-2 mt-[38px] px-0.5">
             <div className="relative h-4 overflow-hidden rounded-full border border-[rgba(120,150,210,.18)]" style={{ background: "#131b33" }}>
-              {/* Enquanto não há dias suficientes, a barra fica esmaecida:
-                  a conta continua honesta, mas sinaliza que ainda não é um
-                  retrato consolidado. */}
               <div
-                className="absolute inset-y-0 left-0 rounded-full"
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
                 style={{
-                  width: `${goalPct}%`,
-                  background: goalReached
-                    ? "linear-gradient(90deg,#2f9d68,#57c98a)"
-                    : "linear-gradient(90deg,#4a6edc,#5a7cff 55%,#9db2ff)",
-                  boxShadow: goalReached ? "0 0 24px rgba(87,201,138,.45)" : "0 0 24px rgba(127,155,255,.5)",
-                  opacity: provisional ? 0.5 : 1,
+                  width: `${idealPct}%`,
+                  background: "linear-gradient(90deg,#4a6edc,#5a7cff 55%,#9db2ff)",
+                  boxShadow: "0 0 24px rgba(127,155,255,.5)",
+                  opacity: provisional ? 0.55 : 1,
                 }}
               />
             </div>
+
+            {/* Marcador da meta da semana, com o rótulo logo abaixo dele —
+                assim fica claro o que aquele traço significa. */}
+            {avgScore > 0 && (
+              <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ left: `${goalMarkPct}%`, zIndex: 2 }}>
+                <span
+                  className="block h-[22px] w-[3px] rounded-full"
+                  style={{ background: goalReached ? "#57c98a" : "#ffffff" }}
+                />
+                <span
+                  className="absolute left-1/2 top-[15px] -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold"
+                  style={{ color: goalReached ? "#57c98a" : "#ffffff" }}
+                >
+                  {goalReached ? "✓" : ""} meta {goal}
+                </span>
+              </div>
+            )}
+
             <div
-              className="absolute top-1/2 h-[30px] w-[30px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 bg-white"
-              style={{
-                left: `${goalPct}%`,
-                borderColor: goalReached ? "#57c98a" : "#7f9bff",
-                boxShadow: `0 0 0 6px ${goalReached ? "rgba(87,201,138,.18)" : "rgba(127,155,255,.18)"}, 0 6px 18px rgba(0,2,12,.6)`,
-                zIndex: 3,
-              }}
+              className="absolute top-1/2 h-[30px] w-[30px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-cyan bg-white"
+              style={{ left: `${idealPct}%`, boxShadow: "0 0 0 6px rgba(127,155,255,.18), 0 6px 18px rgba(0,2,12,.6)", zIndex: 3 }}
             />
           </div>
-          <div className="relative mt-3 flex justify-between text-[11px] font-medium text-muted">
-            <span>Sua média: <span style={{ color: avgScore ? scoreColor(avgScore) : undefined }}>{avgScore || "—"}</span></span>
-            <span style={{ color: goalReached ? "#57c98a" : "#7f9bff" }}>
-              {nextGoal ? `Próxima meta: ${nextGoal}` : "Atendimento ideal · nota 85"}
+
+          <div className="relative mt-[22px] flex items-center justify-between text-[11px] font-medium text-muted">
+            <span>
+              Sua média:{" "}
+              <span className="font-semibold" style={{ color: avgScore ? scoreColor(avgScore) : undefined }}>
+                {avgScore || "—"}
+              </span>
+              {provisional && <span className="text-dim"> · provisória</span>}
             </span>
+            <span className="text-cyan">Atendimento ideal · 85</span>
           </div>
 
           {/* Stats compactos */}
