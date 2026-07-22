@@ -57,10 +57,26 @@ const principlesItem: NavItem = {
   active: (p) => p.startsWith("/principios"),
 };
 
+const iconVideo = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <rect x="3" y="5" width="18" height="14" rx="3" />
+    <path d="M10.5 9.5v5l4-2.5z" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+/** Aulas: todo mundo assiste (o master gerencia em /admin/videos). */
+const lessonsItem: NavItem = {
+  label: "Vídeos e aulas",
+  href: "/aulas",
+  icon: iconVideo,
+  active: (p) => p.startsWith("/aulas"),
+};
+
 const SELLER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: iconDash, active: (p) => p === "/dashboard" },
   { label: "Enviar atendimento", href: "/upload", icon: iconUpload, active: (p) => p.startsWith("/upload") },
   { label: "Histórico", href: "/historico", icon: iconHist, active: (p) => p.startsWith("/historico") || p.startsWith("/analise") },
+  lessonsItem,
   principlesItem,
 ];
 const iconUsers = (
@@ -83,7 +99,7 @@ const iconLab = (
 );
 
 // Seções fixas do admin; o resto de /admin/* é detalhe de vendedor ou empresa.
-const ADMIN_SECTIONS = ["usuarios", "conhecimento", "testar-ia", "empresa"];
+const ADMIN_SECTIONS = ["usuarios", "conhecimento", "testar-ia", "empresa", "videos"];
 
 const homeItem = (label: string): NavItem => ({
   label,
@@ -101,16 +117,17 @@ const testItem: NavItem = {
   active: (p) => p.startsWith("/admin/testar-ia"),
 };
 
-/** Master: organiza empresas, pessoas e a base da IA. */
+/** Master: organiza empresas, pessoas e o conteúdo que alimenta a IA. */
 const MASTER_NAV: NavItem[] = [
   homeItem("Empresas"),
   { label: "Usuários", href: "/admin/usuarios", icon: iconUsers, active: (p) => p.startsWith("/admin/usuarios") },
-  { label: "Conhecimento", href: "/admin/conhecimento", icon: iconBook, active: (p) => p.startsWith("/admin/conhecimento") },
+  { label: "Princípios e Casos", href: "/admin/conhecimento", icon: iconBook, active: (p) => p.startsWith("/admin/conhecimento") },
+  { label: "Vídeos e aulas", href: "/admin/videos", icon: iconVideo, active: (p) => p.startsWith("/admin/videos") || p.startsWith("/aulas") },
   testItem,
 ];
 
-/** Gestor: vê a própria equipe, lê o método e testa a IA. */
-const MANAGER_NAV: NavItem[] = [homeItem("Equipe"), principlesItem, testItem];
+/** Gestor: vê a própria equipe, assiste às aulas, lê o método e testa a IA. */
+const MANAGER_NAV: NavItem[] = [homeItem("Equipe"), lessonsItem, principlesItem, testItem];
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();

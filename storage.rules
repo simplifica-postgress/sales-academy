@@ -21,7 +21,16 @@ service firebase.storage {
       allow update, delete: if false;
     }
 
-    // Nega qualquer caminho fora de uploads/{uid}/.
+    // Vídeos das aulas: qualquer pessoa logada assiste.
+    // A ESCRITA é negada de propósito — o master envia o arquivo para a
+    // própria pasta em uploads/{uid}/ e o backend (Admin SDK, que ignora
+    // estas regras) copia para cá. Assim ninguém publica vídeo direto.
+    match /videos/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Nega qualquer caminho fora dos casos acima.
     match /{allPaths=**} {
       allow read, write: if false;
     }

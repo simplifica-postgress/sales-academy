@@ -10,6 +10,32 @@ import type { Timestamp } from "firebase/firestore";
  */
 export type UserRole = "seller" | "manager" | "master";
 
+// ---------- Vídeos e aulas ----------
+
+/** De onde o vídeo toca: arquivo no nosso Storage ou vídeo do YouTube. */
+export type VideoSource = "upload" | "youtube";
+
+export interface VideoLesson {
+  title: string;
+  description: string;
+  source: VideoSource;
+  /** URL de reprodução: download do Storage ou o id do YouTube em embed. */
+  url: string;
+  /** Só para upload — guarda o caminho para conseguir apagar o arquivo. */
+  storagePath?: string | null;
+  /** Só para YouTube — id extraído do link. */
+  youtubeId?: string | null;
+  /**
+   * Princípios e Casos a que este vídeo se refere (ids da coleção knowledge).
+   * É por aqui que o vídeo aparece dentro do tópico correspondente.
+   */
+  principleIds: string[];
+  order: number;
+  enabled: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp | null;
+}
+
 /** Empresa (a "pasta" do painel master). */
 export interface Company {
   name: string;

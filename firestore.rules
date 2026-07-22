@@ -117,6 +117,13 @@ service cloud.firestore {
       allow write: if isMaster();
     }
 
+    // Vídeos e aulas: material de treinamento da Simplifica, igual para todas
+    // as empresas. Qualquer pessoa logada assiste; só o master cadastra.
+    match /videos/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false; // gravado só pelo backend (endpoint de master)
+    }
+
     // Nega qualquer coleção não declarada acima.
     match /{document=**} {
       allow read, write: if false;
