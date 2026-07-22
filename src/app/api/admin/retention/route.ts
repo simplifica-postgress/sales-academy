@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMaster } from "@/lib/server/adminAuth";
+import { AuthError, requireMaster } from "@/lib/server/adminAuth";
 import { runRetentionCleanup } from "@/lib/server/recordings";
 import { RETENTION_DAYS } from "@/lib/constants";
 
@@ -26,11 +26,11 @@ export async function POST(req: Request) {
   if (!isCron) {
     try {
       await requireMaster(req);
-    } catch {
-      return NextResponse.json(
-        { error: "Acesso restrito a gestores." },
-        { status: 403 }
-      );
+    } catch (err) {
+      // Preserva o status real: 401 = sem token/sessão inválida, 403 = papel
+      // errado. Achatar tudo em 403 escondia a causa e confundia o diagnóstico.
+      const e = err as AuthError;
+      return NextResponse.json({ error: e.message }, { status: e.status ?? 401 });
     }
   }
 
@@ -51,11 +51,9 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     await requireMaster(req);
-  } catch {
-    return NextResponse.json(
-      { error: "Acesso restrito a gestores." },
-      { status: 403 }
-    );
+  } catch (err) {
+    const e = err as AuthError;
+    return NextResponse.json({ error: e.message }, { status: e.status ?? 401 });
   }
   return NextResponse.json({ retentionDays: RETENTION_DAYS });
 }
