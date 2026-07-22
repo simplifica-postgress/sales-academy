@@ -160,6 +160,42 @@ function Videos() {
     }
   }
 
+  async function alternarPublicacao(v: VideoRow) {
+    setErro("");
+    setAviso("");
+    const publicando = v.enabled === false;
+    try {
+      await adminPost("/api/admin/videos", {
+        action: "update",
+        id: v.id,
+        enabled: publicando,
+      });
+      setAviso(
+        publicando
+          ? `"${v.title}" publicado — vendedores e gestores já veem.`
+          : `"${v.title}" ocultado.`
+      );
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao alterar.");
+    }
+  }
+
+  async function publicarTodosVinculados() {
+    const alvos = rows.filter((v) => v.enabled === false && (v.principleIds ?? []).length > 0);
+    if (alvos.length === 0) return;
+    if (!confirm(`Publicar ${alvos.length} vídeo(s) que já têm princípio vinculado?`)) return;
+    setErro("");
+    setAviso("");
+    try {
+      for (const v of alvos) {
+        await adminPost("/api/admin/videos", { action: "update", id: v.id, enabled: true });
+      }
+      setAviso(`${alvos.length} vídeo(s) publicados.`);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao publicar em lote.");
+    }
+  }
+
   async function remover(v: VideoRow) {
     if (!confirm(`Remover "${v.title}"?\n\nO arquivo também é apagado do servidor.`)) return;
     try {
@@ -280,9 +316,26 @@ function Videos() {
       </div>
 
       {/* Grade */}
-      <div className="mb-4 flex items-center justify-between px-0.5">
-        <span className="mono-label">Vídeos publicados</span>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-0.5">
+        <span className="mono-label">
+          Vídeos ({rows.filter((v) => v.enabled !== false).length} publicados ·{" "}
+          {rows.filter((v) => v.enabled === false).length} ocultos)
+        </span>
+        {rows.some((v) => v.enabled === false && (v.principleIds ?? []).length > 0) && (
+          <button
+            onClick={publicarTodosVinculados}
+            className="rounded-lg px-3 py-1.5 text-[12px] font-semibold transition"
+            style={{ border: "1px solid rgba(87,201,138,.45)", background: "rgba(87,201,138,.12)", color: "#57c98a" }}
+          >
+            Publicar os que já têm princípio
+          </button>
+        )}
       </div>
+      {rows.some((v) => v.enabled === false) && (
+        <p className="mb-3.5 text-[12.5px] leading-[1.6] text-muted">
+          Vídeo <strong className="text-foreground">oculto</strong> não aparece para vendedores nem gestores. Use o botão <strong className="text-foreground">publicar</strong> no card quando estiver revisado.
+        </p>
+      )}
 
       {carregando ? (
         <div className="dc-card flex justify-center py-12"><Spinner /></div>
@@ -293,7 +346,13 @@ function Videos() {
       ) : (
         <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(216px, 1fr))" }}>
           {rows.map((v) => (
-            <VideoCard key={v.id} video={v} onRemove={() => remover(v)} onEdit={() => editar(v)} />
+            <VideoCard
+              key={v.id}
+              video={v}
+              onToggle={() => alternarPublicacao(v)}
+              onRemove={() => remover(v)}
+              onEdit={() => editar(v)}
+            />
           ))}
         </div>
       )}

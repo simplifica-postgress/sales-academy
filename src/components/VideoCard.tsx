@@ -17,10 +17,13 @@ export default function VideoCard({
   video,
   onRemove,
   onEdit,
+  onToggle,
 }: {
   video: VideoRow;
   onRemove?: () => void;
   onEdit?: () => void;
+  /** Publicar/ocultar. Sem isto, um vídeo oculto não teria como voltar. */
+  onToggle?: () => void;
 }) {
   const [tocando, setTocando] = useState(false);
   const ehYoutube = video.source === "youtube" && video.youtubeId;
@@ -119,8 +122,22 @@ export default function VideoCard({
         )}
       </div>
 
-      {(onRemove || onEdit) && (
+      {(onRemove || onEdit || onToggle) && (
         <div className="absolute right-3 top-3 flex gap-1.5">
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              title={video.enabled === false ? "Publicar para os vendedores" : "Ocultar dos vendedores"}
+              className="flex h-[26px] items-center gap-1 rounded-lg px-2 text-[11px] font-semibold transition"
+              style={
+                video.enabled === false
+                  ? { border: "1px solid rgba(87,201,138,.5)", background: "rgba(87,201,138,.16)", color: "#57c98a" }
+                  : { border: "1px solid rgba(255,255,255,.16)", background: "rgba(5,8,17,.6)", color: "#c4cffb" }
+              }
+            >
+              {video.enabled === false ? "publicar" : "ocultar"}
+            </button>
+          )}
           {onEdit && (
             <button
               onClick={onEdit}
