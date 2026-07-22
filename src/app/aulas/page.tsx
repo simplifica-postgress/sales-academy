@@ -42,11 +42,21 @@ function Aulas() {
 
   const numerados = useMemo(() => numberPrinciples(principios), [principios]);
 
-  // Só oferece como filtro os princípios que realmente têm vídeo.
+  // Só oferece como filtro os princípios que realmente têm vídeo, já com a
+  // contagem — assim o vendedor escolhe sabendo quantas aulas vai encontrar.
   const filtros = useMemo(() => {
-    const comVideo = new Set((rows ?? []).flatMap((v) => v.principleIds ?? []));
-    return numerados.filter((p) => comVideo.has(p.id ?? ""));
+    const contagem = new Map<string, number>();
+    for (const v of rows ?? []) {
+      for (const p of v.principleIds ?? []) {
+        contagem.set(p, (contagem.get(p) ?? 0) + 1);
+      }
+    }
+    return numerados
+      .filter((p) => contagem.has(p.id ?? ""))
+      .map((p) => ({ ...p, total: contagem.get(p.id ?? "") ?? 0 }));
   }, [rows, numerados]);
+
+  const principioAtivo = filtros.find((p) => p.id === filtro) ?? null;
 
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -82,29 +92,67 @@ function Aulas() {
         )}
       </div>
 
+      {/* Filtro: um seletor no lugar de uma fileira de chips. Com muitos
+          princípios os chips quebravam em 3 linhas e poluíam a tela. */}
       {rows.length > 0 && (filtros.length > 0 || rows.length > 4) && (
-        <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          {[{ id: "todos", label: "Tudo" }, ...filtros.map((p) => ({ id: p.id ?? "", label: `${p.number}. ${p.title.length > 30 ? p.title.slice(0, 30) + "…" : p.title}` }))].map((f) => {
-            const on = filtro === f.id;
-            return (
-              <button
-                key={f.id}
-                onClick={() => setFiltro(f.id)}
-                className="rounded-full px-3.5 py-[7px] text-[12.5px] font-medium transition"
-                style={{
-                  border: `1px solid ${on ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.15)"}`,
-                  background: on ? "rgba(90,124,255,.12)" : "transparent",
-                  color: on ? "#7f9bff" : "#79839c",
-                }}
+        <div className="dc-card mb-4 flex flex-wrap items-center gap-2.5 px-4 py-3">
+          {filtros.length > 0 && (
+            <label className="flex min-w-[240px] flex-1 items-center gap-2.5">
+              <span className="mono-label flex-none" style={{ fontSize: 10.5 }}>Tema</span>
+              <select
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                className="field flex-1"
+                style={{ cursor: "pointer" }}
               >
-                {f.label}
-              </button>
-            );
-          })}
-          {rows.length > 4 && (
-            <input className="field ml-auto max-w-[240px]" placeholder="Buscar vídeo…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+                <option value="todos">Todos os temas · {rows.length} vídeos</option>
+                {filtros.map((p) => (
+                  <option key={p.id} value={p.id ?? ""}>
+                    {p.number}. {p.title} · {p.total}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          <input
+            className="field max-w-[220px] flex-1"
+            placeholder="Buscar vídeo…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+
+          {(filtro !== "todos" || busca) && (
+            <button
+              onClick={() => {
+                setFiltro("todos");
+                setBusca("");
+              }}
+              className="flex-none rounded-lg px-3 py-2 text-[12px] font-medium transition"
+              style={{ border: "1px solid rgba(120,150,210,.16)", color: "#79839c" }}
+            >
+              Limpar
+            </button>
           )}
         </div>
+      )}
+
+      {/* Contexto do que está filtrado: sem isso o vendedor vê poucos vídeos
+          e não entende por quê. */}
+      {rows.length > 0 && (filtro !== "todos" || busca) && (
+        <p className="mb-3.5 px-0.5 text-[12.5px] text-muted">
+          {visiveis.length === 0
+            ? "Nenhum vídeo encontrado"
+            : `${visiveis.length} de ${rows.length} vídeos`}
+          {principioAtivo && (
+            <>
+              {" · "}
+              <span className="font-semibold text-cyan">
+                {principioAtivo.number}. {principioAtivo.title}
+              </span>
+            </>
+          )}
+        </p>
       )}
 
       {rows.length === 0 ? (
