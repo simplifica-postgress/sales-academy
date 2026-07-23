@@ -98,10 +98,16 @@ export default function LoginPage() {
       <div className="w-full max-w-[410px]">
         <div className="mb-[30px] text-center">
           <Image src="/logo.png" alt="Simplifica — Aceleradora de Negócios" width={200} height={53} style={{ width: 200, height: "auto", margin: "0 auto" }} priority />
-          {/* "Sales Academy" numa linha só, com as letras espaçadas —
-              acompanha a largura da logo abaixo dela. */}
+          {/* Divisor curto entre a marca (logo) e o nome do produto — dá
+              respiro e evita que "SALES ACADEMY" cole na tagline embutida da
+              logo ("Aceleradora de Negócios"). */}
           <div
-            className="mt-3.5 font-display font-bold uppercase leading-none"
+            className="mx-auto mt-[18px] h-px w-[54px]"
+            style={{ background: "linear-gradient(90deg,transparent,rgba(127,155,255,.65),transparent)" }}
+          />
+          {/* "Sales Academy" numa linha só, letras espaçadas, na largura da logo. */}
+          <div
+            className="mt-[14px] font-display font-bold uppercase leading-none"
             style={{
               fontSize: "clamp(13px,4vw,15px)",
               letterSpacing: "0.34em",
