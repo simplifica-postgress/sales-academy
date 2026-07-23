@@ -40,6 +40,16 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Rejeita se a promise não resolver a tempo (evita telas presas em celular). */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("tempo esgotado")), ms)
+    ),
+  ]);
+}
+
 /** Garante que users/{uid} existe; cria com defaults no primeiro login. */
 async function ensureUserDoc(user: User, name?: string): Promise<UserProfile> {
   const ref = doc(db, "users", user.uid);
@@ -79,6 +89,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let unsubProfile: (() => void) | null = null;
+    let settled = false;
+    const stopLoading = () => {
+      if (!settled) {
+        settled = true;
+        setLoading(false);
+      }
+    };
+
+    // REDE DE SEGURANÇA (bug de celular): se o Firebase não resolver o estado
+    // de auth — persistência bloqueada em alguns navegadores móveis, ou o
+    // primeiro acesso ao Firestore travando na rede — a tela girava para
+    // sempre. Passados 8s, liberamos: pior caso, cai no login em vez de travar.
+    const failsafe = setTimeout(stopLoading, 8000);
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       // Encerra o listener do perfil anterior ao trocar de usuário.
@@ -90,30 +113,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!firebaseUser) {
         setUser(null);
         setProfile(null);
-        setLoading(false);
+        stopLoading();
         return;
       }
 
+      // Já libera a navegação com o usuário; o perfil chega em seguida (ou
+      // pela subscription). Assim um getDoc lento não segura a tela toda.
+      setUser(firebaseUser);
       try {
-        // Garante o doc e define user+profile juntos (invariante do app).
-        const initial = await ensureUserDoc(firebaseUser);
-        setUser(firebaseUser);
+        // Garante o doc. Corre contra um timeout: em rede móvel ruim, o
+        // getDoc pode demorar demais, e a subscription abaixo preenche depois.
+        const initial = await withTimeout(ensureUserDoc(firebaseUser), 6000);
         setProfile(initial);
       } catch (err) {
-        console.error("Erro ao carregar perfil:", err);
-        setUser(firebaseUser);
-        setProfile(null);
+        console.error("Erro/atraso ao carregar perfil:", err);
       } finally {
-        setLoading(false);
+        stopLoading();
       }
 
       // Mantém o perfil ao vivo (progresso, nível etc. atualizam sozinhos).
-      unsubProfile = onSnapshot(doc(db, "users", firebaseUser.uid), (snap) => {
-        if (snap.exists()) setProfile(snap.data() as UserProfile);
-      });
+      unsubProfile = onSnapshot(
+        doc(db, "users", firebaseUser.uid),
+        (snap) => {
+          if (snap.exists()) setProfile(snap.data() as UserProfile);
+          stopLoading();
+        },
+        (err) => {
+          console.error("Erro ao ouvir o perfil:", err);
+          stopLoading();
+        }
+      );
     });
 
     return () => {
+      clearTimeout(failsafe);
       if (unsubProfile) unsubProfile();
       unsubscribe();
     };
