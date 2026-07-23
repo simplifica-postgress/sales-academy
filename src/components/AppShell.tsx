@@ -209,46 +209,29 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
       {/* Conteúdo */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Topbar (apenas celular, abaixo de 900px) */}
-        <header className="sticky top-0 z-30 flex flex-col gap-3 border-b border-[rgba(120,150,210,.13)] bg-[rgba(0,4,20,.86)] px-[18px] pb-3 pt-3.5 backdrop-blur-lg min-[900px]:hidden">
-          <div className="flex items-center justify-between gap-3">
-            <button onClick={() => go(home)} className="flex items-center gap-2.5">
-              <Image src="/logo.png" alt="Simplifica" width={112} height={30} style={{ width: 112, height: "auto" }} priority />
-              <span className="mono-label border-l border-[rgba(120,150,210,.16)] pl-2.5" style={{ fontSize: 9, letterSpacing: "0.2em" }}>
-                Sales Academy
-              </span>
+        {/* Header do celular (abaixo de 900px): só marca + conta. A navegação
+            foi para a barra inferior, no alcance do polegar. */}
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[rgba(120,150,210,.13)] bg-[rgba(0,4,20,.86)] px-[18px] py-3 backdrop-blur-lg min-[900px]:hidden">
+          <button onClick={() => go(home)} className="flex items-center gap-2.5">
+            <Image src="/logo.png" alt="Simplifica" width={118} height={31} style={{ width: 118, height: "auto" }} priority />
+            <span className="mono-label border-l border-[rgba(120,150,210,.16)] pl-2.5" style={{ fontSize: 9, letterSpacing: "0.2em" }}>
+              Sales Academy
+            </span>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-[11px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>
+              {initials(profile?.name)}
+            </span>
+            <button onClick={() => signOut()} className="flex h-[32px] w-[32px] items-center justify-center rounded-lg border border-[rgba(120,150,210,.14)] text-muted transition hover:text-foreground" title="Sair">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M9 4H5v16h4" /><path d="M14 8l4 4-4 4" /><path d="M18 12H9" />
+              </svg>
             </button>
-            <div className="flex items-center gap-2">
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-[11px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>
-                {initials(profile?.name)}
-              </span>
-              <button onClick={() => signOut()} className="h-[30px] rounded-lg border border-[rgba(120,150,210,.14)] px-3 text-xs font-medium text-muted transition hover:text-foreground">
-                Sair
-              </button>
-            </div>
           </div>
-          <nav className="flex gap-1.5 overflow-x-auto">
-            {nav.map((item) => {
-              const active = item.active(pathname);
-              return (
-                <button
-                  key={item.href}
-                  onClick={() => go(item.href)}
-                  className="flex-none rounded-full border px-3.5 py-[7px] text-[13px] font-medium transition"
-                  style={{
-                    borderColor: active ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.15)",
-                    background: active ? "linear-gradient(90deg, rgba(90,124,255,.16), rgba(90,124,255,.03))" : "transparent",
-                    color: active ? "#ffffff" : "#79839c",
-                  }}
-                >
-                  {item.label === "Enviar atendimento" ? "Enviar" : item.label}
-                </button>
-              );
-            })}
-          </nav>
         </header>
 
-        <main className="mx-auto w-full max-w-[1180px] flex-1 px-4 py-6 lg:px-10 lg:py-9">
+        {/* pb no celular: espaço para a barra inferior fixa não cobrir o conteúdo. */}
+        <main className="mx-auto w-full max-w-[1180px] flex-1 px-4 py-5 pb-[92px] lg:px-10 lg:py-9 min-[900px]:pb-9">
           {showBack && (
             <button
               onClick={goBack}
@@ -263,6 +246,42 @@ export default function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* Navegação inferior fixa (só celular). Respeita a safe-area do iPhone. */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-[rgba(120,150,210,.14)] bg-[rgba(4,8,20,.94)] backdrop-blur-lg min-[900px]:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        {nav.map((item) => {
+          const active = item.active(pathname);
+          return (
+            <button
+              key={item.href}
+              onClick={() => go(item.href)}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 transition"
+              style={{ color: active ? "#7f9bff" : "#79839c" }}
+            >
+              <span className="flex h-[22px] items-center justify-center" style={active ? { filter: "drop-shadow(0 0 6px rgba(127,155,255,.5))" } : undefined}>
+                {item.icon}
+              </span>
+              <span className="w-full truncate text-center text-[10px] font-semibold leading-none" style={{ letterSpacing: "0.01em" }}>
+                {navShortLabel(item.label)}
+              </span>
+              {active && <span className="mt-0.5 h-[3px] w-4 rounded-full bg-primary" />}
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
+}
+
+/** Rótulo curto para a barra inferior (espaço apertado no celular). */
+function navShortLabel(label: string): string {
+  const mapa: Record<string, string> = {
+    "Enviar atendimento": "Enviar",
+    "Princípios e Casos": "Princípios",
+    "Vídeos e aulas": "Vídeos",
+  };
+  return mapa[label] ?? label;
 }
