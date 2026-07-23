@@ -88,15 +88,15 @@ function DashboardContent() {
 
   return (
     <div className="fade-up">
-      {/* Cabeçalho */}
-      <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
+      {/* Cabeçalho — no celular empilha (saudação, depois o nível). */}
+      <div className="mb-[18px] flex flex-col gap-3 min-[560px]:flex-row min-[560px]:flex-wrap min-[560px]:items-center min-[560px]:justify-between">
         <div>
           <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Treinamento comercial · Simplifica</div>
-          <h1 className="mt-[7px] text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">
+          <h1 className="mt-[7px] text-[24px] font-semibold leading-tight tracking-[-0.015em] text-foreground min-[560px]:text-[26px]">
             Olá, {firstName} 👋
           </h1>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
+        <div className="flex flex-col items-start gap-1.5 min-[560px]:items-end">
           <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(127,155,255,.28)] px-3.5 py-2 text-[12px] font-semibold text-cyan" style={{ background: "rgba(127,155,255,.08)" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l2.4 6.3L21 9.6l-5 4.3 1.6 6.5L12 16.9 6.4 20.4 8 13.9l-5-4.3 6.6-.3z" /></svg>
             Nível {level} de 5 · {levelInfo.name}
@@ -110,29 +110,35 @@ function DashboardContent() {
       {/* Hero: sequência de envios + progresso até o atendimento ideal */}
       <section className="relative mb-4 overflow-hidden rounded-[22px] p-px" style={{ background: "linear-gradient(150deg, rgba(90,124,255,.55), rgba(120,150,210,.12) 45%, rgba(127,155,255,.3))", boxShadow: "0 22px 60px rgba(0,2,12,.5)" }}>
         <div className="relative rounded-[21px]" style={{ padding: "clamp(24px,4vw,40px) clamp(22px,4vw,44px)", background: "radial-gradient(760px 340px at 82% -30%, rgba(90,124,255,.22), transparent 62%), linear-gradient(120deg, #151f3c 0%, #0b1124 60%)" }}>
-          <div className="flex flex-wrap items-end justify-between gap-5">
+          {/* No celular os dois blocos empilham à esquerda, separados por um
+              divisor; lado a lado só a partir de 560px. */}
+          <div className="flex flex-col gap-4 min-[560px]:flex-row min-[560px]:items-end min-[560px]:justify-between min-[560px]:gap-5">
             <div>
               <div className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-cyan">Sua sequência de envios</div>
-              <div className="mt-3.5 flex items-baseline gap-3">
-                <span className="font-semibold leading-none text-foreground" style={{ fontSize: "clamp(56px,10vw,92px)", letterSpacing: "-0.04em", textShadow: "0 4px 40px rgba(90,124,255,.4)" }}>
-                  {sendStreak}<span className="text-muted" style={{ fontSize: "0.34em" }}> {sendStreak === 1 ? "dia" : "dias"}</span>
+              <div className="mt-3 flex items-baseline gap-3">
+                <span className="font-semibold leading-none text-foreground" style={{ fontSize: "clamp(52px,13vw,92px)", letterSpacing: "-0.04em", textShadow: "0 4px 40px rgba(90,124,255,.4)" }}>
+                  {sendStreak}<span className="text-muted" style={{ fontSize: "0.32em" }}> {sendStreak === 1 ? "dia" : "dias"}</span>
                 </span>
-                <div className="pb-2.5">
-                  <div className="text-[22px] font-semibold leading-none text-foreground">{sendStreak > 0 ? "seguidos 🔥" : "vamos começar"}</div>
-                  <div className="mt-2 inline-flex items-baseline gap-1.5 rounded-lg border border-[rgba(127,155,255,.28)] px-3 py-1.5" style={{ background: "rgba(127,155,255,.08)" }}>
-                    <span className="text-[12px] font-medium uppercase tracking-[0.1em] text-muted">Dias enviados</span>
-                    <span className="text-[22px] font-semibold leading-none text-cyan">{daysActive}</span>
+                <div className="pb-1.5">
+                  <div className="text-[19px] font-semibold leading-none text-foreground min-[560px]:text-[22px]">{sendStreak > 0 ? "seguidos 🔥" : "vamos começar"}</div>
+                  <div className="mt-2 inline-flex items-baseline gap-1.5 rounded-lg border border-[rgba(127,155,255,.28)] px-2.5 py-1.5" style={{ background: "rgba(127,155,255,.08)" }}>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted">Dias enviados</span>
+                    <span className="text-[20px] font-semibold leading-none text-cyan">{daysActive}</span>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="text-right">
+
+            {/* Divisor só no celular (some quando vira lado a lado). */}
+            <div className="h-px w-full bg-[rgba(120,150,210,.14)] min-[560px]:hidden" />
+
+            <div className="text-left min-[560px]:text-right">
               {/* Batida a meta da semana, o rótulo muda: seria mentira dizer
                   "meta da semana 1" exibindo um número que não é o da semana 1. */}
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
                 {goalReached && avgScore > 0 ? "Próximo alvo" : `Meta da semana ${week}`}
               </div>
-              <div className="mt-1.5 flex items-baseline justify-end gap-1.5">
+              <div className="mt-1.5 flex items-baseline gap-1.5 min-[560px]:justify-end">
                 <span className="text-[26px] font-semibold text-foreground">{activeGoal}</span>
                 <span className="text-[13px] text-muted">de nota</span>
               </div>
@@ -208,10 +214,12 @@ function DashboardContent() {
             <span className="text-cyan">Atendimento ideal · 85</span>
           </div>
 
-          {/* Stats compactos */}
-          <div className="mt-8 grid gap-3.5 border-t border-[rgba(120,150,210,.15)] pt-[26px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
-            <div className="flex items-center gap-3.5">
-              <ScoreRing value={lastAnalysis?.generalScore ?? null} size={56} strokeWidth={6} />
+          {/* Stats: no celular um grid 2×2 limpo (sem os traços verticais, que
+              só fazem sentido numa linha); no desktop volta a linha única com
+              divisores. */}
+          <div className="mt-7 grid grid-cols-2 gap-x-4 gap-y-5 border-t border-[rgba(120,150,210,.15)] pt-[22px] min-[560px]:mt-8 min-[560px]:grid-cols-4 min-[560px]:pt-[26px]">
+            <div className="flex items-center gap-3">
+              <ScoreRing value={lastAnalysis?.generalScore ?? null} size={52} strokeWidth={6} />
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Último envio</div>
                 {hasData && lastAnalysis && (
@@ -219,8 +227,8 @@ function DashboardContent() {
                 )}
               </div>
             </div>
-            <div className="border-l border-[rgba(120,150,210,.13)] pl-3.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média · últimos {RECENT_WINDOW} dias</div>
+            <div className="min-[560px]:border-l min-[560px]:border-[rgba(120,150,210,.13)] min-[560px]:pl-3.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Média · {RECENT_WINDOW} dias</div>
               <div className="mt-1.5 flex items-baseline gap-2">
                 <span className="text-[24px] font-semibold" style={{ color: avgScore ? scoreColor(avgScore) : "#79839c" }}>{avgScore}</span>
                 {avgScore > 0 && (
@@ -228,14 +236,14 @@ function DashboardContent() {
                 )}
               </div>
               {daysActive > 0 && daysActive < RECENT_WINDOW && (
-                <div className="mt-1 text-[10.5px] text-muted">provisória · {daysActive} de {RECENT_WINDOW} dias</div>
+                <div className="mt-1 text-[10.5px] text-muted">provisória · {daysActive} de {RECENT_WINDOW}</div>
               )}
             </div>
-            <div className="border-l border-[rgba(120,150,210,.13)] pl-3.5">
+            <div className="min-[560px]:border-l min-[560px]:border-[rgba(120,150,210,.13)] min-[560px]:pl-3.5">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Melhor nota</div>
               <div className="mt-1.5 text-[24px] font-semibold" style={{ color: bestScore ? scoreColor(bestScore) : "#79839c" }}>{bestScore}</div>
             </div>
-            <div className="border-l border-[rgba(120,150,210,.13)] pl-3.5">
+            <div className="min-[560px]:border-l min-[560px]:border-[rgba(120,150,210,.13)] min-[560px]:pl-3.5">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Total de envios</div>
               <div className="mt-1.5 flex items-baseline gap-1.5"><span className="text-[24px] font-semibold text-foreground">{totalSends}</span><span className="text-[12px] font-medium text-muted">atend.</span></div>
             </div>
