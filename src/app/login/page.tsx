@@ -98,23 +98,18 @@ export default function LoginPage() {
       <div className="w-full max-w-[410px]">
         <div className="mb-[30px] text-center">
           <Image src="/logo.png" alt="Simplifica — Aceleradora de Negócios" width={200} height={53} style={{ width: 200, height: "auto", margin: "0 auto" }} priority />
-          {/* "Sales Academy" como título dominante do produto, empilhado em
-              duas linhas: assim as letras ficam grandes (ênfase) sem a frase
-              esticar além da largura da logo. Forma um lockup com a logo. */}
+          {/* "Sales Academy" numa linha só, com as letras espaçadas —
+              acompanha a largura da logo abaixo dela. */}
           <div
-            className="mt-3.5 inline-block font-display font-extrabold uppercase"
+            className="mt-3.5 font-display font-bold uppercase leading-none"
             style={{
-              fontSize: "clamp(26px,8vw,32px)",
-              lineHeight: 0.98,
-              letterSpacing: "0.12em",
-              paddingRight: "0.12em",
-              background: "linear-gradient(100deg,#7f9bff,#9db2ff 55%,#c4cffb)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
+              fontSize: "clamp(13px,4vw,15px)",
+              letterSpacing: "0.34em",
+              paddingRight: "0.34em",
+              color: "#c4cffb",
             }}
           >
-            Sales<br />Academy
+            Sales Academy
           </div>
         </div>
 
