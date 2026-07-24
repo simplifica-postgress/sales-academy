@@ -6,7 +6,7 @@ import {
   buildUserPrompt,
   type AIAnalysisResult,
 } from "@/lib/analysis";
-import { weightedGeneralScore } from "@/lib/constants";
+import { weightedGeneralScore, type AttendanceMedium } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
 import { prepareAudioChunks } from "./audio";
 import { getKnowledgeText } from "./knowledge";
@@ -100,6 +100,56 @@ export async function transcribe(
   return parts.join("\n").trim();
 }
 
+/**
+ * Lê prints de conversa (WhatsApp/chat) e devolve o diálogo em texto.
+ *
+ * Usa a visão do próprio modelo de análise — não precisa de OCR à parte. As
+ * imagens vão na ORDEM enviada, porque uma conversa costuma render vários
+ * prints em sequência e a ordem muda o sentido do atendimento.
+ */
+export async function transcribeImages(
+  images: { data: Buffer; mimeType: string }[]
+): Promise<string> {
+  if (MOCK) return MOCK_TRANSCRIPT;
+  if (images.length === 0) return "";
+
+  const completion = await openai().chat.completions.create({
+    model: ANALYSIS_MODEL,
+    ...(SUPPORTS_TEMPERATURE ? { temperature: 0 } : {}),
+    messages: [
+      {
+        role: "system",
+        content:
+          "Você transcreve prints de conversas comerciais (WhatsApp, Instagram, chat). " +
+          "Devolva APENAS o diálogo, em ordem cronológica, uma mensagem por linha, no formato 'Vendedor: ...' ou 'Cliente: ...'. " +
+          "No WhatsApp, as mensagens alinhadas à direita (fundo colorido) são de quem enviou o print — normalmente o VENDEDOR; as da esquerda são do CLIENTE. " +
+          "Transcreva literalmente, sem resumir, corrigir ou inventar. Ignore horários, marcas de entrega e elementos de interface. " +
+          "Se um print estiver ilegível, escreva [ilegível] naquele ponto.",
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text:
+              images.length > 1
+                ? `Estes são ${images.length} prints da MESMA conversa, em ordem. Transcreva tudo como um diálogo único e contínuo.`
+                : "Transcreva a conversa deste print.",
+          },
+          ...images.map((img) => ({
+            type: "image_url" as const,
+            image_url: {
+              url: `data:${img.mimeType};base64,${img.data.toString("base64")}`,
+            },
+          })),
+        ],
+      },
+    ],
+  });
+
+  return (completion.choices[0]?.message?.content ?? "").trim();
+}
+
 /** Gera a análise estruturada e recalcula a nota geral pelos pesos. */
 export async function analyze(
   profile: Pick<
@@ -108,7 +158,8 @@ export async function analyze(
   >,
   trainingDay: number,
   observation: string,
-  transcript: string
+  transcript: string,
+  medium: AttendanceMedium = "audio"
 ): Promise<{ result: AIAnalysisResult; generalScore: number }> {
   if (MOCK) {
     return {
@@ -127,7 +178,7 @@ export async function analyze(
       { role: "system", content: buildSystemPrompt(knowledge) },
       {
         role: "user",
-        content: buildUserPrompt(profile, trainingDay, observation, transcript),
+        content: buildUserPrompt(profile, trainingDay, observation, transcript, medium),
       },
     ],
     response_format: {

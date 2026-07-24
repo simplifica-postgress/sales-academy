@@ -11,8 +11,10 @@ import ScoreRing from "@/components/ScoreRing";
 import Spinner from "@/components/Spinner";
 import {
   ACCEPTED_AUDIO_TYPES,
+  ACCEPTED_IMAGE_TYPES,
   ACCEPTED_VIDEO_TYPES,
   CRITERIA,
+  MAX_IMAGES_PER_SUBMISSION,
   MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
 import { criteriaFill, scoreBand } from "@/lib/ui";
@@ -44,7 +46,8 @@ function TestLab() {
   const { user, profile } = useAuth();
   const isMaster = profile?.role === "master";
 
-  const [modo, setModo] = useState<"texto" | "arquivo">("texto");
+  const [modo, setModo] = useState<"texto" | "arquivo" | "prints">("texto");
+  const [prints, setPrints] = useState<File[]>([]);
   const [transcript, setTranscript] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
@@ -53,6 +56,20 @@ function TestLab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState<TestResponse | null>(null);
+
+  function onPickPrints(lista: FileList | null) {
+    setError("");
+    if (!lista?.length) return;
+    const novos = Array.from(lista);
+    if (novos.some((f) => !ACCEPTED_IMAGE_TYPES.includes(f.type))) {
+      return setError("Envie PNG, JPG ou WEBP.");
+    }
+    const total = [...prints, ...novos];
+    if (total.length > MAX_IMAGES_PER_SUBMISSION) {
+      return setError(`No máximo ${MAX_IMAGES_PER_SUBMISSION} prints.`);
+    }
+    setPrints(total);
+  }
 
   function onPickFile(f: File | null) {
     setError("");
@@ -69,14 +86,36 @@ function TestLab() {
     setData(null);
 
     if (modo === "arquivo" && !file) return setError("Selecione um áudio ou vídeo.");
+    if (modo === "prints" && prints.length === 0) return setError("Selecione ao menos um print.");
     if (modo === "texto" && transcript.trim().length < 20) {
       return setError("Cole uma transcrição com pelo menos 20 caracteres.");
     }
-    if (modo === "arquivo" && !user) return setError("Sessão expirada. Entre novamente.");
+    if (modo !== "texto" && !user) return setError("Sessão expirada. Entre novamente.");
 
     setLoading(true);
     try {
       let filePath: string | undefined;
+      let imagePaths: string[] | undefined;
+
+      if (modo === "prints" && user) {
+        // Mesma pasta do usuário (regras do Storage); o backend descarta depois.
+        setUploadPct(0);
+        imagePaths = [];
+        for (let i = 0; i < prints.length; i++) {
+          const p = `uploads/${user.uid}/teste-${Date.now()}-${i}-${safeName(prints[i].name)}`;
+          const t = uploadBytesResumable(ref(storage, p), prints[i], { contentType: prints[i].type });
+          await new Promise<void>((resolve, reject) => {
+            t.on(
+              "state_changed",
+              (s) => setUploadPct(Math.round(((i + s.bytesTransferred / s.totalBytes) / prints.length) * 100)),
+              () => reject(new Error("Falha ao enviar os prints.")),
+              () => resolve()
+            );
+          });
+          imagePaths.push(p);
+        }
+        setUploadPct(null);
+      }
 
       if (modo === "arquivo" && file && user) {
         // Mesmo caminho do vendedor: as regras do Storage só deixam cada um
@@ -100,6 +139,7 @@ function TestLab() {
       const res = await adminPost<TestResponse>("/api/admin/test-analysis", {
         transcript: modo === "texto" ? transcript : "",
         filePath,
+        imagePaths,
         sellerName,
         mainDifficulty,
       });
@@ -130,7 +170,7 @@ function TestLab() {
       <form onSubmit={handleSubmit} className="dc-card mb-3.5 p-6">
         {/* Escolha do modo */}
         <div className="mb-4 flex flex-wrap gap-2">
-          {(["texto", "arquivo"] as const).map((m) => {
+          {(["texto", "arquivo", "prints"] as const).map((m) => {
             const on = modo === m;
             return (
               <button
@@ -144,7 +184,7 @@ function TestLab() {
                   color: on ? "#7f9bff" : "#79839c",
                 }}
               >
-                {m === "texto" ? "Colar transcrição" : "Enviar áudio ou vídeo"}
+                {m === "texto" ? "Colar transcrição" : m === "arquivo" ? "Enviar áudio ou vídeo" : "Prints de conversa"}
               </button>
             );
           })}
@@ -170,6 +210,29 @@ function TestLab() {
               </button>
             </div>
             <textarea id="tr" value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={10} className="field" style={{ resize: "vertical" }} placeholder="Cole aqui o diálogo do atendimento…" />
+          </>
+        ) : modo === "prints" ? (
+          <>
+            <div className="mb-1.5 mt-4"><span className="mono-label">Prints da conversa</span></div>
+            <label htmlFor="tp" className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl px-5 py-7 text-center transition" style={{ border: `1.5px dashed ${prints.length ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.28)"}`, background: prints.length ? "rgba(90,124,255,.06)" : "rgba(11,17,36,.4)" }}>
+              <span className="text-[13.5px] font-semibold text-foreground">
+                {prints.length ? `${prints.length} print(s) selecionado(s)` : "Escolher prints da conversa"}
+              </span>
+              <span className="text-[11.5px] text-muted">PNG, JPG ou WEBP · até {MAX_IMAGES_PER_SUBMISSION}</span>
+            </label>
+            <input id="tp" type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} multiple className="hidden" onChange={(e) => { onPickPrints(e.target.files); e.target.value = ""; }} />
+            {prints.length > 0 && (
+              <div className="mt-2.5 flex flex-col gap-1.5">
+                {prints.map((p, i) => (
+                  <div key={`${p.name}-${i}`} className="flex items-center gap-2.5 rounded-lg px-3 py-2" style={{ background: "rgba(11,17,36,.55)", border: "1px solid rgba(120,150,210,.14)" }}>
+                    <span className="flex h-[20px] w-[20px] flex-none items-center justify-center rounded-md font-mono text-[11px] font-bold text-cyan" style={{ background: "rgba(90,124,255,.14)" }}>{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-foreground">{p.name}</span>
+                    <button type="button" onClick={() => setPrints(prints.filter((_, j) => j !== i))} className="flex-none text-[15px] leading-none text-muted transition hover:text-danger">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="mt-2 text-[12px] text-muted">A ordem acima é a ordem da conversa. Os prints são descartados após a leitura.</p>
           </>
         ) : (
           <>

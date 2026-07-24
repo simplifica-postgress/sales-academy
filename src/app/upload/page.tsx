@@ -8,7 +8,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSellerData } from "@/hooks/useSellerData";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
-import { ACCEPTED_AUDIO_TYPES, ACCEPTED_VIDEO_TYPES, ATTENDANCE_TYPES, CONSENT_TEXT, MAX_UPLOAD_BYTES } from "@/lib/constants";
+import {
+  ACCEPTED_AUDIO_TYPES,
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+  ATTENDANCE_TYPES,
+  CONSENT_TEXT,
+  MAX_IMAGES_PER_SUBMISSION,
+  MAX_IMAGE_BYTES,
+  MAX_UPLOAD_BYTES,
+} from "@/lib/constants";
 import { isToday } from "@/lib/training";
 
 const ACCEPT = [...ACCEPTED_AUDIO_TYPES, ...ACCEPTED_VIDEO_TYPES].join(",");
@@ -31,7 +40,10 @@ function UploadForm() {
   const { analyses } = useSellerData(user?.uid);
   const analyzedToday = analyses.some((a) => isToday(a.createdAt));
 
+  const [modo, setModo] = useState<"arquivo" | "prints" | "texto">("arquivo");
   const [file, setFile] = useState<File | null>(null);
+  const [prints, setPrints] = useState<File[]>([]);
+  const [texto, setTexto] = useState("");
   const [attendanceType, setAttendanceType] = useState("");
   const [observation, setObservation] = useState("");
   const [error, setError] = useState("");
@@ -44,6 +56,25 @@ function UploadForm() {
   const suggested = profile?.attendanceTypes ?? [];
   const typeOptions = ATTENDANCE_TYPES.filter((t) => suggested.length === 0 || suggested.includes(t.value));
 
+  function onPickPrints(lista: FileList | null) {
+    setError("");
+    if (!lista || lista.length === 0) return;
+    const novos = Array.from(lista);
+    for (const f of novos) {
+      if (!ACCEPTED_IMAGE_TYPES.includes(f.type)) {
+        return setError("Envie prints em PNG, JPG ou WEBP.");
+      }
+      if (f.size > MAX_IMAGE_BYTES) {
+        return setError(`"${f.name}" é grande demais (máximo 8 MB por print).`);
+      }
+    }
+    const total = [...prints, ...novos];
+    if (total.length > MAX_IMAGES_PER_SUBMISSION) {
+      return setError(`No máximo ${MAX_IMAGES_PER_SUBMISSION} prints por envio.`);
+    }
+    setPrints(total);
+  }
+
   function onPickFile(f: File | null) {
     setError("");
     if (!f) return setFile(null);
@@ -53,9 +84,35 @@ function UploadForm() {
     setFile(f);
   }
 
+  /** Sobe um arquivo para a pasta do próprio vendedor e devolve o caminho. */
+  async function enviarArquivo(f: File, uid: string, aoProgredir: (p: number) => void) {
+    const path = `uploads/${uid}/${Date.now()}-${safeName(f.name)}`;
+    const task = uploadBytesResumable(ref(storage, path), f, { contentType: f.type });
+    await new Promise<void>((resolve, reject) => {
+      task.on(
+        "state_changed",
+        (snap) => aoProgredir(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+        (err) =>
+          reject(
+            new Error(
+              err.code === "storage/unauthorized"
+                ? "Sem permissão para enviar. Verifique as regras do Storage."
+                : "Falha ao enviar o arquivo. Tente novamente."
+            )
+          ),
+        () => resolve()
+      );
+    });
+    return path;
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!file) return setError("Selecione um arquivo de áudio ou vídeo.");
+    if (modo === "arquivo" && !file) return setError("Selecione um arquivo de áudio ou vídeo.");
+    if (modo === "prints" && prints.length === 0) return setError("Selecione ao menos um print da conversa.");
+    if (modo === "texto" && texto.trim().length < 20) {
+      return setError("Cole a conversa (pelo menos 20 caracteres).");
+    }
     if (!attendanceType) return setError("Selecione o tipo de atendimento.");
     if (!consent) return setError("É preciso aceitar o termo para enviar o atendimento.");
     if (!user) return setError("Sessão expirada. Entre novamente.");
@@ -63,36 +120,30 @@ function UploadForm() {
     setError("");
     setSubmitting(true);
     setStepIndex(0);
-    setUploadPct(0);
     let ticker: ReturnType<typeof setInterval> | undefined;
 
     try {
-      // 1. Envia direto para o Storage (sem passar pelo servidor do app).
-      const path = `uploads/${user.uid}/${Date.now()}-${safeName(file.name)}`;
-      const task = uploadBytesResumable(ref(storage, path), file, {
-        contentType: file.type,
-      });
+      const corpo: Record<string, unknown> = { attendanceType, observation, consent: true };
 
-      await new Promise<void>((resolve, reject) => {
-        task.on(
-          "state_changed",
-          (snap) =>
-            setUploadPct(
-              Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
-            ),
-          (err) =>
-            reject(
-              new Error(
-                err.code === "storage/unauthorized"
-                  ? "Sem permissão para enviar. Verifique as regras do Storage."
-                  : "Falha ao enviar o arquivo. Tente novamente."
-              )
-            ),
-          () => resolve()
-        );
-      });
+      if (modo === "arquivo" && file) {
+        setUploadPct(0);
+        corpo.filePath = await enviarArquivo(file, user.uid, setUploadPct);
+      } else if (modo === "prints") {
+        // Sobe os prints NA ORDEM escolhida — é a sequência da conversa.
+        setUploadPct(0);
+        const caminhos: string[] = [];
+        for (let i = 0; i < prints.length; i++) {
+          caminhos.push(
+            await enviarArquivo(prints[i], user.uid, (p) =>
+              setUploadPct(Math.round(((i + p / 100) / prints.length) * 100))
+            )
+          );
+        }
+        corpo.imagePaths = caminhos;
+      } else {
+        corpo.pastedText = texto.trim();
+      }
 
-      // 2. Pede a análise: o backend baixa o arquivo do Storage.
       setUploadPct(null);
       ticker = setInterval(
         () => setStepIndex((i) => Math.min(i + 1, PROCESSING_STEPS.length - 1)),
@@ -109,12 +160,7 @@ function UploadForm() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          filePath: path,
-          attendanceType,
-          observation,
-          consent: true,
-        }),
+        body: JSON.stringify(corpo),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Falha ao processar.");
@@ -171,7 +217,7 @@ function UploadForm() {
     <form onSubmit={handleSubmit} className="fade-up mx-auto max-w-[660px]">
       <div className="mb-6">
         <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Enviar atendimento</h1>
-        <p className="mt-2 text-[13.5px] leading-[1.6] text-muted">Áudio ou vídeo de um atendimento real. A IA transcreve, analisa e devolve seu plano de melhoria em minutos.</p>
+        <p className="mt-2 text-[13.5px] leading-[1.6] text-muted">Ligação, reunião ou conversa por mensagem. A IA analisa e devolve seu plano de melhoria em minutos.</p>
       </div>
 
       {/* Já tem nota hoje: aviso curto, só para o vendedor não estranhar se a
@@ -183,18 +229,96 @@ function UploadForm() {
         </div>
       )}
 
-      <label htmlFor="up-file" className="mb-3.5 flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl px-5 py-[38px] text-center transition hover:border-[rgba(90,124,255,.65)]" style={{ border: `1.5px dashed ${file ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.18)"}`, background: file ? "rgba(90,124,255,.05)" : "rgba(2,13,35,.5)" }}>
-        <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] border border-[rgba(90,124,255,.35)] text-cyan" style={{ background: "rgba(90,124,255,.1)" }}>
-          {file ? (
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 18V6l10-2v11" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="15" r="2.5" /></svg>
-          ) : (
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3v10" /><path d="M7.5 7.5 12 3l4.5 4.5" /><path d="M4 15v3a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-3" /></svg>
+      {/* Como o atendimento aconteceu: ligação (áudio), prints de conversa
+          ou a conversa colada em texto. */}
+      <div className="mb-3.5 grid grid-cols-3 gap-2">
+        {([
+          { id: "arquivo", label: "Áudio ou vídeo", sub: "ligação, reunião" },
+          { id: "prints", label: "Prints", sub: "WhatsApp, chat" },
+          { id: "texto", label: "Colar conversa", sub: "texto" },
+        ] as const).map((m) => {
+          const on = modo === m.id;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => { setModo(m.id); setError(""); }}
+              className="rounded-xl px-2 py-2.5 text-center transition"
+              style={{
+                border: `1px solid ${on ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.16)"}`,
+                background: on ? "rgba(90,124,255,.1)" : "transparent",
+              }}
+            >
+              <span className="block text-[12.5px] font-semibold" style={{ color: on ? "#7f9bff" : "#cdd5e6" }}>{m.label}</span>
+              <span className="mt-0.5 block text-[10.5px] text-muted">{m.sub}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {modo === "arquivo" && (
+        <label htmlFor="up-file" className="mb-3.5 flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl px-5 py-[38px] text-center transition hover:border-[rgba(90,124,255,.65)]" style={{ border: `1.5px dashed ${file ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.18)"}`, background: file ? "rgba(90,124,255,.05)" : "rgba(2,13,35,.5)" }}>
+          <span className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] border border-[rgba(90,124,255,.35)] text-cyan" style={{ background: "rgba(90,124,255,.1)" }}>
+            {file ? (
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 18V6l10-2v11" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="15" r="2.5" /></svg>
+            ) : (
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3v10" /><path d="M7.5 7.5 12 3l4.5 4.5" /><path d="M4 15v3a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-3" /></svg>
+            )}
+          </span>
+          <div className="text-sm font-semibold text-foreground">{file ? file.name : "Clique para escolher um áudio ou vídeo"}</div>
+          <div className="font-mono text-[11.5px] text-muted">{file ? `${humanSize(file.size)} · clique para trocar` : "MP3, M4A, WAV, MP4, MOV · até 500 MB"}</div>
+          <input id="up-file" type="file" accept={ACCEPT} className="hidden" onChange={(e) => onPickFile(e.target.files?.[0] ?? null)} />
+        </label>
+      )}
+
+      {modo === "prints" && (
+        <div className="mb-3.5">
+          <label htmlFor="up-prints" className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl px-5 py-[30px] text-center transition" style={{ border: `1.5px dashed ${prints.length ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.18)"}`, background: prints.length ? "rgba(90,124,255,.05)" : "rgba(2,13,35,.5)" }}>
+            <span className="flex h-[44px] w-[44px] items-center justify-center rounded-[13px] border border-[rgba(90,124,255,.35)] text-cyan" style={{ background: "rgba(90,124,255,.1)" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 15l4-4 4 4 3-3 4 4" /><circle cx="8.5" cy="9" r="1.2" /></svg>
+            </span>
+            <div className="text-sm font-semibold text-foreground">
+              {prints.length ? `${prints.length} print(s) selecionado(s)` : "Clique para escolher os prints"}
+            </div>
+            <div className="text-[11.5px] text-muted">PNG, JPG ou WEBP · até {MAX_IMAGES_PER_SUBMISSION} prints</div>
+            <input id="up-prints" type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} multiple className="hidden" onChange={(e) => { onPickPrints(e.target.files); e.target.value = ""; }} />
+          </label>
+
+          {prints.length > 0 && (
+            <>
+              <p className="mt-2.5 text-[12px] text-muted">
+                A ordem abaixo é a ordem da conversa. Envie do começo para o fim.
+              </p>
+              <div className="mt-2 flex flex-col gap-1.5">
+                {prints.map((p, i) => (
+                  <div key={`${p.name}-${i}`} className="flex items-center gap-2.5 rounded-lg px-3 py-2" style={{ background: "rgba(11,17,36,.55)", border: "1px solid rgba(120,150,210,.14)" }}>
+                    <span className="flex h-[20px] w-[20px] flex-none items-center justify-center rounded-md font-mono text-[11px] font-bold text-cyan" style={{ background: "rgba(90,124,255,.14)" }}>{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-foreground">{p.name}</span>
+                    <span className="flex-none font-mono text-[11px] text-muted">{humanSize(p.size)}</span>
+                    <button type="button" onClick={() => setPrints(prints.filter((_, j) => j !== i))} className="flex-none text-[15px] leading-none text-muted transition hover:text-danger" title="Remover">×</button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
-        </span>
-        <div className="text-sm font-semibold text-foreground">{file ? file.name : "Clique para escolher um áudio ou vídeo"}</div>
-        <div className="font-mono text-[11.5px] text-muted">{file ? `${humanSize(file.size)} · clique para trocar` : "MP3, M4A, WAV, MP4, MOV · até 500 MB"}</div>
-        <input id="up-file" type="file" accept={ACCEPT} className="hidden" onChange={(e) => onPickFile(e.target.files?.[0] ?? null)} />
-      </label>
+        </div>
+      )}
+
+      {modo === "texto" && (
+        <div className="mb-3.5">
+          <textarea
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            rows={10}
+            className="field"
+            style={{ resize: "vertical" }}
+            placeholder={"Cole aqui a conversa. Ex.:\n\nVendedor: Oi Marcos, tudo bem? Vi que você pediu informação…\nCliente: Oi! Queria saber o valor.\nVendedor: …"}
+          />
+          <p className="mt-2 text-[12px] leading-[1.55] text-muted">
+            Pode colar direto do WhatsApp (opção <strong className="text-foreground">Exportar conversa</strong>) ou digitar como foi.
+          </p>
+        </div>
+      )}
 
       <div className="dc-card mb-3.5 p-6">
         <div className="mono-label mb-3">Tipo de atendimento</div>

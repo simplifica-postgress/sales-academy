@@ -1,4 +1,4 @@
-import { CRITERIA } from "./constants";
+import { CRITERIA, mediumLabel, type AttendanceMedium } from "./constants";
 import type { CriteriaScores, CriterionKey, UserProfile } from "./types";
 
 /** Resposta estruturada que a IA devolve (a nota geral é calculada no backend). */
@@ -133,7 +133,8 @@ export function buildUserPrompt(
   >,
   trainingDay: number,
   observation: string,
-  transcript: string
+  transcript: string,
+  medium: AttendanceMedium = "audio"
 ): string {
   return `PERFIL DO VENDEDOR
 - Nome: ${profile.name}
@@ -143,6 +144,13 @@ export function buildUserPrompt(
 - Principal dificuldade: ${profile.mainDifficulty}
 - Objetivo no treinamento: ${profile.goal}
 - Dia de prática (uso contínuo, sem prazo fixo): ${trainingDay || 1}
+
+FORMATO DESTE ATENDIMENTO: ${mediumLabel(medium)}
+${
+  medium === "texto"
+    ? "Avalie como conversa escrita: NÃO cobre tom de voz, ritmo de fala ou escuta ativa por áudio. Considere clareza e objetividade das mensagens, tempo/ordem das respostas, uso de perguntas no texto, e se ele conduziu ao próximo passo por escrito. Mensagem longa demais, vários assuntos numa tacada ou responder só o que perguntaram sem conduzir são falhas típicas deste formato."
+    : "Avalie como conversa falada: considere condução, escuta, perguntas feitas na hora e como reagiu ao que ouviu."
+}
 
 OBSERVAÇÃO DO VENDEDOR SOBRE ESTE ATENDIMENTO
 ${observation.trim() || "(nenhuma)"}

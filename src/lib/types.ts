@@ -87,7 +87,10 @@ export interface Upload {
   companyId?: string | null;
   fileUrl: string;
   filePath: string; // caminho no Storage: uploads/{userId}/{data}/{arquivo}
-  fileType: "audio" | "video";
+  /** "texto" = transcrição colada; "print" = imagens da conversa. */
+  fileType: "audio" | "video" | "texto" | "print";
+  /** Quantos prints vieram no envio (só para fileType "print"). */
+  imageCount?: number;
   mimeType: string;
   fileSize?: number;
   status: UploadStatus;

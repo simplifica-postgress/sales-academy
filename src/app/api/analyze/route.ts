@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminAuth, adminBucket, adminDb } from "@/lib/server/firebaseAdmin";
-import { analyze, transcribe } from "@/lib/server/openai";
+import { analyze, transcribe, transcribeImages } from "@/lib/server/openai";
 import { computeProgression } from "@/lib/progression";
 import {
   ACCEPTED_AUDIO_TYPES,
+  ACCEPTED_IMAGE_TYPES,
   ACCEPTED_VIDEO_TYPES,
   CONSENT_VERSION,
   IDEAL_SCORE_THRESHOLD,
+  MAX_IMAGES_PER_SUBMISSION,
+  MAX_IMAGE_BYTES,
   MAX_UPLOAD_BYTES,
+  type AttendanceMedium,
 } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
 
@@ -77,6 +81,8 @@ export async function POST(req: Request) {
   // 2. Lê o pedido: o arquivo já está no Storage, recebemos o caminho.
   const body = (await req.json()) as {
     filePath?: string;
+    imagePaths?: string[];
+    pastedText?: string;
     attendanceType?: string;
     observation?: string;
     consent?: boolean;
@@ -85,9 +91,6 @@ export async function POST(req: Request) {
   const attendanceType = body.attendanceType ?? "";
   const observation = body.observation ?? "";
 
-  if (!filePath) {
-    return NextResponse.json({ error: "Arquivo não enviado." }, { status: 400 });
-  }
   // Consentimento é obrigatório e fica registrado no envio (LGPD).
   if (body.consent !== true) {
     return NextResponse.json(
@@ -95,41 +98,86 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  // O caminho precisa ser da pasta do próprio vendedor (anti-adulteração).
-  if (!filePath.startsWith(`uploads/${uid}/`)) {
-    return NextResponse.json(
-      { error: "Caminho de arquivo inválido." },
-      { status: 403 }
-    );
-  }
 
-  const storageFile = adminBucket.file(filePath);
-  const [exists] = await storageFile.exists();
-  if (!exists) {
+  // Três formas de enviar um atendimento:
+  //  - arquivo de áudio/vídeo (filePath)  → transcrição por Whisper
+  //  - prints da conversa (imagePaths)    → leitura por visão do modelo
+  //  - transcrição colada (pastedText)    → usada direto
+  const pastedText = (body.pastedText ?? "").trim();
+  const imagePaths = Array.isArray(body.imagePaths) ? body.imagePaths : [];
+  const formas = [filePath ? 1 : 0, imagePaths.length ? 1 : 0, pastedText ? 1 : 0].reduce((a, b) => a + b, 0);
+  if (formas === 0) {
     return NextResponse.json(
-      { error: "Arquivo não encontrado no Storage." },
-      { status: 404 }
-    );
-  }
-
-  const [meta] = await storageFile.getMetadata();
-  const mimeType = meta.contentType ?? "";
-  const size = Number(meta.size ?? 0);
-
-  if (size > MAX_UPLOAD_BYTES) {
-    return NextResponse.json(
-      { error: "Arquivo muito grande (máximo 500 MB)." },
+      { error: "Envie um áudio/vídeo, prints da conversa ou cole a conversa." },
       { status: 400 }
     );
   }
-  const isAudio = ACCEPTED_AUDIO_TYPES.includes(mimeType);
-  const isVideo = ACCEPTED_VIDEO_TYPES.includes(mimeType);
-  if (!isAudio && !isVideo) {
+  if (formas > 1) {
     return NextResponse.json(
-      { error: "Formato não suportado. Envie áudio ou vídeo." },
+      { error: "Envie um formato por vez." },
       { status: 400 }
     );
   }
+
+  // Todo caminho precisa ser da pasta do próprio vendedor (anti-adulteração).
+  const todosCaminhos = filePath ? [filePath] : imagePaths;
+  for (const p of todosCaminhos) {
+    if (!p.startsWith(`uploads/${uid}/`)) {
+      return NextResponse.json(
+        { error: "Caminho de arquivo inválido." },
+        { status: 403 }
+      );
+    }
+  }
+  if (imagePaths.length > MAX_IMAGES_PER_SUBMISSION) {
+    return NextResponse.json(
+      { error: `No máximo ${MAX_IMAGES_PER_SUBMISSION} prints por envio.` },
+      { status: 400 }
+    );
+  }
+
+  let mimeType = "";
+  let size = 0;
+  let storageFile: ReturnType<typeof adminBucket.file> | null = null;
+
+  if (filePath) {
+    storageFile = adminBucket.file(filePath);
+    const [exists] = await storageFile.exists();
+    if (!exists) {
+      return NextResponse.json(
+        { error: "Arquivo não encontrado no Storage." },
+        { status: 404 }
+      );
+    }
+    const [meta] = await storageFile.getMetadata();
+    mimeType = meta.contentType ?? "";
+    size = Number(meta.size ?? 0);
+
+    if (size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: "Arquivo muito grande (máximo 500 MB)." },
+        { status: 400 }
+      );
+    }
+    const isAudio = ACCEPTED_AUDIO_TYPES.includes(mimeType);
+    const isVideo = ACCEPTED_VIDEO_TYPES.includes(mimeType);
+    if (!isAudio && !isVideo) {
+      return NextResponse.json(
+        { error: "Formato não suportado. Envie áudio ou vídeo." },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Conversa escrita (prints ou texto colado) muda como a IA avalia.
+  const medium: AttendanceMedium = filePath ? "audio" : "texto";
+  const fileType: "audio" | "video" | "texto" | "print" = filePath
+    ? ACCEPTED_VIDEO_TYPES.includes(mimeType)
+      ? "video"
+      : "audio"
+    : imagePaths.length
+      ? "print"
+      : "texto";
 
   // 3. Carrega o perfil do vendedor.
   const userRef = adminDb.collection("users").doc(uid);
@@ -162,8 +210,9 @@ export async function POST(req: Request) {
     userId: uid,
     companyId,
     fileUrl: "",
-    filePath,
-    fileType: isVideo ? "video" : "audio",
+    filePath: filePath || (imagePaths[0] ?? ""),
+    imageCount: imagePaths.length || undefined,
+    fileType,
     mimeType,
     fileSize: size,
     status: "processing",
@@ -178,23 +227,57 @@ export async function POST(req: Request) {
   });
 
   try {
-    // 5. Baixa do Storage, transcreve e analisa.
-    const [buffer] = await storageFile.download();
-    const transcript = await transcribe(
-      buffer,
-      filePath.split("/").pop() ?? "audio",
-      mimeType
-    );
-    if (!transcript || transcript.length < 20) {
-      throw new Error(
-        "Não foi possível entender o áudio. Verifique a gravação e tente de novo."
+    // 5. Obtém a transcrição conforme o formato enviado.
+    let transcript: string;
+    if (storageFile && filePath) {
+      const [buffer] = await storageFile.download();
+      transcript = await transcribe(
+        buffer,
+        filePath.split("/").pop() ?? "audio",
+        mimeType
       );
+      if (!transcript || transcript.length < 20) {
+        throw new Error(
+          "Não foi possível entender o áudio. Verifique a gravação e tente de novo."
+        );
+      }
+    } else if (imagePaths.length) {
+      // Baixa os prints NA ORDEM enviada — a sequência é o fio da conversa.
+      const imagens: { data: Buffer; mimeType: string }[] = [];
+      for (const p of imagePaths) {
+        const f = adminBucket.file(p);
+        const [existe] = await f.exists();
+        if (!existe) throw new Error("Um dos prints não foi encontrado.");
+        const [m] = await f.getMetadata();
+        const tipo = m.contentType ?? "";
+        if (!ACCEPTED_IMAGE_TYPES.includes(tipo)) {
+          throw new Error("Envie prints em PNG, JPG ou WEBP.");
+        }
+        if (Number(m.size ?? 0) > MAX_IMAGE_BYTES) {
+          throw new Error("Um dos prints é grande demais.");
+        }
+        const [buf] = await f.download();
+        imagens.push({ data: buf, mimeType: tipo });
+      }
+      transcript = await transcribeImages(imagens);
+      if (!transcript || transcript.length < 20) {
+        throw new Error(
+          "Não consegui ler a conversa nos prints. Tente imagens mais nítidas ou cole o texto."
+        );
+      }
+    } else {
+      transcript = pastedText;
+      if (transcript.length < 20) {
+        throw new Error("Cole uma conversa com pelo menos 20 caracteres.");
+      }
     }
+
     const { result, generalScore } = await analyze(
       profile,
       trainingDay,
       observation,
-      transcript
+      transcript,
+      medium
     );
 
     // 6. Salva a análise.

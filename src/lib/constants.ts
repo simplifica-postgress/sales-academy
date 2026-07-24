@@ -135,8 +135,35 @@ export const ACCEPTED_VIDEO_TYPES = [
   "video/webm",
 ];
 
+/** Prints de conversa (WhatsApp, Instagram, chat do site). */
+export const ACCEPTED_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+];
+
+/** Uma conversa longa costuma render vários prints. */
+export const MAX_IMAGES_PER_SUBMISSION = 10;
+
+/** Limite por imagem (8 MB) — print de celular fica bem abaixo disso. */
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
 /** Limite de upload (500 MB) — vídeos de reunião podem ser grandes. */
 export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
+
+/**
+ * Formato do atendimento enviado. Importa para a IA: numa conversa escrita
+ * não faz sentido cobrar tom de voz ou ritmo de fala, e numa ligação não faz
+ * sentido cobrar formatação de mensagem.
+ */
+export type AttendanceMedium = "audio" | "texto";
+
+/** Descrição do formato para o prompt da IA. */
+export function mediumLabel(medium: AttendanceMedium): string {
+  return medium === "texto"
+    ? "conversa ESCRITA (mensagens trocadas por WhatsApp/chat)"
+    : "LIGAÇÃO/reunião falada (transcrita a partir do áudio)";
+}
 
 // ---------- Consentimento (LGPD) ----------
 

@@ -12,11 +12,17 @@ service firebase.storage {
       allow read: if request.auth != null
         && request.auth.uid == userId;
 
+      // Áudio/vídeo do atendimento OU prints da conversa (WhatsApp/chat).
+      // Imagem tem limite menor: print de celular fica bem abaixo de 8 MB.
       allow create: if request.auth != null
         && request.auth.uid == userId
-        && request.resource.size < 500 * 1024 * 1024
-        && (request.resource.contentType.matches('audio/.*')
-            || request.resource.contentType.matches('video/.*'));
+        && (
+          (request.resource.size < 500 * 1024 * 1024
+            && (request.resource.contentType.matches('audio/.*')
+                || request.resource.contentType.matches('video/.*')))
+          || (request.resource.size < 8 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*'))
+        );
 
       allow update, delete: if false;
     }

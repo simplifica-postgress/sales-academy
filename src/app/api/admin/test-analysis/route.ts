@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireStaff, type Caller } from "@/lib/server/adminAuth";
 import { adminBucket } from "@/lib/server/firebaseAdmin";
-import { analyze, transcribe } from "@/lib/server/openai";
+import { analyze, transcribe, transcribeImages } from "@/lib/server/openai";
 import { getKnowledgeText } from "@/lib/server/knowledge";
 import {
   ACCEPTED_AUDIO_TYPES,
+  ACCEPTED_IMAGE_TYPES,
   ACCEPTED_VIDEO_TYPES,
+  MAX_IMAGES_PER_SUBMISSION,
   MAX_UPLOAD_BYTES,
+  type AttendanceMedium,
 } from "@/lib/constants";
 
 export const runtime = "nodejs";
@@ -33,6 +36,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     transcript?: string;
     filePath?: string;
+    imagePaths?: string[];
     sellerName?: string;
     mainDifficulty?: string;
     observation?: string;
@@ -41,7 +45,53 @@ export async function POST(req: Request) {
 
   let transcript = (body.transcript ?? "").trim();
   const filePath = (body.filePath ?? "").trim();
+  const imagePaths = Array.isArray(body.imagePaths) ? body.imagePaths : [];
   let transcribedFrom: string | null = null;
+  // Conversa escrita (prints) muda como a IA avalia.
+  const medium: AttendanceMedium = filePath ? "audio" : imagePaths.length ? "texto" : "texto";
+
+  // Prints: lê a conversa pela visão do modelo e descarta os arquivos.
+  if (imagePaths.length) {
+    if (imagePaths.length > MAX_IMAGES_PER_SUBMISSION) {
+      return NextResponse.json(
+        { error: `No máximo ${MAX_IMAGES_PER_SUBMISSION} prints.` },
+        { status: 400 }
+      );
+    }
+    const imagens: { data: Buffer; mimeType: string }[] = [];
+    try {
+      for (const p of imagePaths) {
+        if (!p.startsWith(`uploads/${caller.uid}/`)) {
+          return NextResponse.json({ error: "Caminho inválido." }, { status: 403 });
+        }
+        const f = adminBucket.file(p);
+        const [existe] = await f.exists();
+        if (!existe) {
+          return NextResponse.json({ error: "Print não encontrado." }, { status: 404 });
+        }
+        const [m] = await f.getMetadata();
+        const tipo = m.contentType ?? "";
+        if (!ACCEPTED_IMAGE_TYPES.includes(tipo)) {
+          return NextResponse.json({ error: "Envie PNG, JPG ou WEBP." }, { status: 400 });
+        }
+        const [buf] = await f.download();
+        imagens.push({ data: buf, mimeType: tipo });
+      }
+      transcript = (await transcribeImages(imagens)).trim();
+      transcribedFrom = `${imagePaths.length} print(s)`;
+    } catch (err) {
+      console.error("Falha ao ler os prints:", err);
+      return NextResponse.json(
+        { error: "Não foi possível ler a conversa nos prints." },
+        { status: 500 }
+      );
+    } finally {
+      // Teste não guarda arquivo.
+      for (const p of imagePaths) {
+        await adminBucket.file(p).delete().catch(() => {});
+      }
+    }
+  }
 
   if (filePath) {
     // Só a própria pasta: impede pedir a transcrição do arquivo de outro.
@@ -123,7 +173,8 @@ export async function POST(req: Request) {
       profile,
       body.trainingDay ?? 1,
       body.observation ?? "",
-      transcript
+      transcript,
+      medium
     );
     const knowledge = await getKnowledgeText();
 
