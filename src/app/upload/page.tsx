@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ref, uploadBytesResumable } from "firebase/storage";
 import { auth, storage } from "@/lib/firebase";
@@ -52,9 +52,37 @@ function UploadForm() {
   // Progresso real do envio ao Storage (0–100); null enquanto não envia.
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [consent, setConsent] = useState(false);
+  // Quando o gateway corta a conexão (áudio demora mais que o timeout do
+  // proxy) mas o servidor SEGUE processando: guardamos o instante em que
+  // passamos a esperar e as análises que já existiam, para navegar assim que
+  // a nova aparecer no tempo real. null = não estamos nesse modo.
+  const [waitingSince, setWaitingSince] = useState<number | null>(null);
+  const knownAnalysisIds = useRef<Set<string>>(new Set());
 
   const suggested = profile?.attendanceTypes ?? [];
   const typeOptions = ATTENDANCE_TYPES.filter((t) => suggested.length === 0 || suggested.includes(t.value));
+
+  // Modo de espera: o envio ao servidor foi cortado no meio (timeout do proxy),
+  // mas a análise costuma ser salva mesmo assim. Fica de olho no tempo real:
+  // quando surgir uma análise que não existia no envio, abre ela. Se passar do
+  // limite sem aparecer, avisa para conferir no histórico.
+  useEffect(() => {
+    if (waitingSince === null) return;
+    const nova = analyses.find((a) => !knownAnalysisIds.current.has(a.id));
+    if (nova) {
+      router.replace(`/analise/${nova.id}`);
+      return;
+    }
+    const restante = Math.max(0, 240_000 - (Date.now() - waitingSince));
+    const t = setTimeout(() => {
+      setWaitingSince(null);
+      setSubmitting(false);
+      setError(
+        "A análise demorou mais do que o servidor permite e a conexão caiu. Ela pode ter sido concluída — confira em Histórico daqui a pouco. Se não aparecer, tente um arquivo menor ou mais curto."
+      );
+    }, restante);
+    return () => clearTimeout(t);
+  }, [waitingSince, analyses, router]);
 
   function onPickPrints(lista: FileList | null) {
     setError("");
@@ -154,17 +182,53 @@ function UploadForm() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Sessão expirada. Entre novamente.");
 
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(corpo),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Falha ao processar.");
-      router.replace(`/analise/${data.analysisId}`);
+      // Guarda as análises que já existem: se a conexão cair, é assim que
+      // reconhecemos a nova quando ela for salva pelo servidor.
+      knownAnalysisIds.current = new Set(analyses.map((a) => a.id));
+
+      let res: Response;
+      try {
+        res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(corpo),
+        });
+      } catch {
+        // A conexão caiu antes de qualquer resposta (rede ou gateway). O
+        // servidor pode estar terminando — espera a análise aparecer.
+        setWaitingSince(Date.now());
+        return;
+      }
+
+      // Lê como texto primeiro: quando o proxy corta a conexão, o corpo vem
+      // vazio e res.json() estoura com "Unexpected end of JSON input" — um
+      // erro que não diz nada a quem está usando.
+      const raw = await res.text();
+      let data: { analysisId?: string; error?: string } | null = null;
+      if (raw) {
+        try {
+          data = JSON.parse(raw) as { analysisId?: string; error?: string };
+        } catch {
+          /* corpo não-JSON (ex.: página de erro do proxy) */
+        }
+      }
+
+      if (data) {
+        if (!res.ok) {
+          throw new Error(data.error ?? `Falha ao processar (erro ${res.status}).`);
+        }
+        if (data.analysisId) {
+          router.replace(`/analise/${data.analysisId}`);
+          return;
+        }
+      }
+
+      // Resposta vazia ou ilegível: o gateway encerrou a conexão, mas o
+      // servidor segue processando e vai salvar a análise. Espera por ela.
+      setWaitingSince(Date.now());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado.");
       setSubmitting(false);
@@ -180,7 +244,11 @@ function UploadForm() {
         <div className="dc-card mt-10 px-8 py-11 text-center">
           <div className="mx-auto h-[52px] w-[52px] rounded-full border-[3px] border-indicator" style={{ borderTopColor: "#7f9bff", animation: "spin .9s linear infinite" }} />
           <div className="mt-[22px] text-base font-semibold text-foreground">
-            {uploadPct !== null ? `Enviando seu atendimento… ${uploadPct}%` : `${PROCESSING_STEPS[stepIndex]}…`}
+            {uploadPct !== null
+              ? `Enviando seu atendimento… ${uploadPct}%`
+              : waitingSince !== null
+                ? "Concluindo a análise…"
+                : `${PROCESSING_STEPS[stepIndex]}…`}
           </div>
 
           {uploadPct !== null && (
@@ -189,7 +257,12 @@ function UploadForm() {
             </div>
           )}
 
-          <p className="mt-3 text-[12.5px] leading-[1.6] text-muted">Isso pode levar alguns minutos, dependendo do tamanho da gravação.<br />Não feche esta página.</p>
+          <p className="mt-3 text-[12.5px] leading-[1.6] text-muted">
+            {waitingSince !== null
+              ? "Está demorando um pouco mais que o normal, mas segue processando."
+              : "Isso pode levar alguns minutos, dependendo do tamanho da gravação."}
+            <br />Não feche esta página.
+          </p>
           <div className="mx-auto mt-[26px] flex max-w-[330px] flex-col gap-[11px] text-left">
             {PROCESSING_STEPS.map((label, i) => {
               // Durante o envio, só o passo 0 está em andamento.

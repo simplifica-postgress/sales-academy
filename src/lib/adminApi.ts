@@ -20,9 +20,24 @@ export async function adminPost<T = unknown>(
     body: JSON.stringify(body),
   });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error((data as { error?: string }).error ?? "Falha na operação.");
+  // Lê como texto primeiro: se o proxy corta a conexão (análise de áudio longa),
+  // o corpo vem vazio e res.json() estouraria com "Unexpected end of JSON input".
+  const raw = await res.text();
+  let data: { error?: string } = {};
+  if (raw) {
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      /* corpo não-JSON */
+    }
+  }
+  if (!res.ok || !raw) {
+    throw new Error(
+      data.error ??
+        (raw
+          ? "Falha na operação."
+          : "O servidor demorou demais e encerrou a conexão. Tente um arquivo menor ou mais curto.")
+    );
   }
   return data as T;
 }
