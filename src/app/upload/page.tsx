@@ -58,6 +58,8 @@ function UploadForm() {
   // a nova aparecer no tempo real. null = não estamos nesse modo.
   const [waitingSince, setWaitingSince] = useState<number | null>(null);
   const knownAnalysisIds = useRef<Set<string>>(new Set());
+  /** Quando o envio começou — a análise nova é sempre posterior a isso. */
+  const submittedAt = useRef(0);
 
   const suggested = profile?.attendanceTypes ?? [];
   const typeOptions = ATTENDANCE_TYPES.filter((t) => suggested.length === 0 || suggested.includes(t.value));
@@ -68,12 +70,18 @@ function UploadForm() {
   // limite sem aparecer, avisa para conferir no histórico.
   useEffect(() => {
     if (waitingSince === null) return;
-    const nova = analyses.find((a) => !knownAnalysisIds.current.has(a.id));
+    // Precisa ser desconhecida E posterior ao envio: se a lista ainda não
+    // tinha carregado quando enviamos, uma análise antiga pareceria "nova".
+    const nova = analyses.find(
+      (a) =>
+        !knownAnalysisIds.current.has(a.id) &&
+        (a.createdAt?.toMillis() ?? 0) >= submittedAt.current - 120_000
+    );
     if (nova) {
       router.replace(`/analise/${nova.id}`);
       return;
     }
-    const restante = Math.max(0, 240_000 - (Date.now() - waitingSince));
+    const restante = Math.max(0, 360_000 - (Date.now() - waitingSince));
     const t = setTimeout(() => {
       setWaitingSince(null);
       setSubmitting(false);
@@ -148,6 +156,7 @@ function UploadForm() {
     setError("");
     setSubmitting(true);
     setStepIndex(0);
+    submittedAt.current = Date.now();
     let ticker: ReturnType<typeof setInterval> | undefined;
 
     try {
@@ -186,6 +195,12 @@ function UploadForm() {
       // reconhecemos a nova quando ela for salva pelo servidor.
       knownAnalysisIds.current = new Set(analyses.map((a) => a.id));
 
+      // Só faz sentido "esperar a análise chegar" se a requisição de fato
+      // durou tempo de análise. Uma falha imediata é erro de verdade e tem de
+      // aparecer como erro — não disfarçada de "está demorando".
+      const iniciadoEm = Date.now();
+      const demorou = () => Date.now() - iniciadoEm > 45_000;
+
       let res: Response;
       try {
         res = await fetch("/api/analyze", {
@@ -197,38 +212,42 @@ function UploadForm() {
           body: JSON.stringify(corpo),
         });
       } catch {
-        // A conexão caiu antes de qualquer resposta (rede ou gateway). O
-        // servidor pode estar terminando — espera a análise aparecer.
-        setWaitingSince(Date.now());
-        return;
+        // Conexão caiu sem resposta. Se já rodava há tempo, foi o gateway
+        // desistindo enquanto o servidor seguia — vale esperar a análise.
+        if (demorou()) return setWaitingSince(Date.now());
+        throw new Error(
+          "Não foi possível falar com o servidor. Verifique sua conexão e tente novamente."
+        );
       }
 
-      // Lê como texto primeiro: quando o proxy corta a conexão, o corpo vem
-      // vazio e res.json() estoura com "Unexpected end of JSON input" — um
-      // erro que não diz nada a quem está usando.
+      // Lê como texto primeiro: um 500 sem corpo ou uma página de erro do
+      // proxy fariam res.json() estourar com "Unexpected end of JSON input".
       const raw = await res.text();
       let data: { analysisId?: string; error?: string } | null = null;
       if (raw) {
         try {
           data = JSON.parse(raw) as { analysisId?: string; error?: string };
         } catch {
-          /* corpo não-JSON (ex.: página de erro do proxy) */
+          /* corpo não-JSON */
         }
       }
 
-      if (data) {
-        if (!res.ok) {
-          throw new Error(data.error ?? `Falha ao processar (erro ${res.status}).`);
-        }
-        if (data.analysisId) {
-          router.replace(`/analise/${data.analysisId}`);
-          return;
-        }
+      if (data?.error) throw new Error(data.error);
+      if (res.ok && data?.analysisId) {
+        router.replace(`/analise/${data.analysisId}`);
+        return;
       }
 
-      // Resposta vazia ou ilegível: o gateway encerrou a conexão, mas o
-      // servidor segue processando e vai salvar a análise. Espera por ela.
-      setWaitingSince(Date.now());
+      // Sem JSON legível. Gateway estourando (502/504) ou requisição longa:
+      // o servidor provavelmente continua e vai salvar a análise.
+      if (res.status === 502 || res.status === 504 || demorou()) {
+        setWaitingSince(Date.now());
+        return;
+      }
+      // Falha imediata e sem explicação: mostra o que dá para mostrar.
+      throw new Error(
+        `O servidor respondeu ${res.status} sem detalhes. Tente novamente; se continuar, avise o suporte.`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado.");
       setSubmitting(false);

@@ -25,6 +25,21 @@ export const maxDuration = 300;
  * teste, não um registro de treinamento — não faz sentido guardar a gravação.
  */
 export async function POST(req: Request) {
+  // Garante resposta JSON mesmo em erro não previsto (ver /api/analyze).
+  try {
+    return await handleTest(req);
+  } catch (err) {
+    console.error("Erro não tratado em /api/admin/test-analysis:", err);
+    const detalhe =
+      err instanceof Error ? err.message : "erro inesperado no servidor";
+    return NextResponse.json(
+      { error: `Falha no servidor: ${detalhe}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleTest(req: Request) {
   let caller: Caller;
   try {
     caller = await requireStaff(req);

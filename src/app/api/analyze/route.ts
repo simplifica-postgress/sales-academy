@@ -58,7 +58,28 @@ function sendStreakFrom(dayKeys: Set<string>): number {
   return streak;
 }
 
+/**
+ * Rede de segurança: qualquer erro não previsto aqui dentro viraria um 500 SEM
+ * corpo JSON, e o navegador quebrava com "Unexpected end of JSON input" — um
+ * erro que não diz nada a quem está usando. Falhas do Storage (exists,
+ * getMetadata, download) e do Firestore acontecem fora do try do pipeline, e
+ * eram justamente as que escapavam no envio de áudio.
+ */
 export async function POST(req: Request) {
+  try {
+    return await handleAnalyze(req);
+  } catch (err) {
+    console.error("Erro não tratado em /api/analyze:", err);
+    const detalhe =
+      err instanceof Error ? err.message : "erro inesperado no servidor";
+    return NextResponse.json(
+      { error: `Falha no servidor ao processar o atendimento: ${detalhe}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleAnalyze(req: Request) {
   // 1. Autenticação: token do Firebase no header Authorization.
   const authHeader = req.headers.get("authorization") ?? "";
   const idToken = authHeader.startsWith("Bearer ")
@@ -142,14 +163,30 @@ export async function POST(req: Request) {
 
   if (filePath) {
     storageFile = adminBucket.file(filePath);
-    const [exists] = await storageFile.exists();
+    // Consultar o Storage pode falhar por credencial/bucket errado. Sem este
+    // try, o erro subia como 500 sem corpo e o envio de áudio morria sem
+    // explicação — enquanto texto e prints, que não passam por aqui, iam bem.
+    let exists: boolean;
+    let meta: { contentType?: string | null; size?: string | number | null };
+    try {
+      [exists] = await storageFile.exists();
+      [meta] = await storageFile.getMetadata();
+    } catch (err) {
+      console.error("Falha ao consultar o arquivo no Storage:", filePath, err);
+      return NextResponse.json(
+        {
+          error:
+            "Não foi possível acessar o arquivo enviado. Tente de novo; se persistir, avise o suporte.",
+        },
+        { status: 502 }
+      );
+    }
     if (!exists) {
       return NextResponse.json(
         { error: "Arquivo não encontrado no Storage." },
         { status: 404 }
       );
     }
-    const [meta] = await storageFile.getMetadata();
     mimeType = meta.contentType ?? "";
     size = Number(meta.size ?? 0);
 
