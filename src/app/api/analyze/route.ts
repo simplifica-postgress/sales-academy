@@ -248,7 +248,9 @@ async function handleAnalyze(req: Request) {
     companyId,
     fileUrl: "",
     filePath: filePath || (imagePaths[0] ?? ""),
-    imageCount: imagePaths.length || undefined,
+    // Só existe em envio de prints: o Firestore rejeita `undefined`, então o
+    // campo não pode nem aparecer nos demais formatos.
+    ...(imagePaths.length ? { imageCount: imagePaths.length } : {}),
     fileType,
     mimeType,
     fileSize: size,
