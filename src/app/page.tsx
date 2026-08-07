@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import LandingPage from "@/components/LandingPage";
+import SalaAgendamentoLP from "@/components/SalaAgendamentoLP";
 import Spinner from "@/components/Spinner";
 
 /**
@@ -32,5 +32,5 @@ export default function Home() {
     );
   }
 
-  return <LandingPage />;
+  return <SalaAgendamentoLP />;
 }

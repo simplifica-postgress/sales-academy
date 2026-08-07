@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,9 +27,21 @@ function friendlyError(err: unknown): string {
   return "Algo deu errado. Tente novamente.";
 }
 
-export default function LoginPage() {
+/**
+ * Para onde ir depois de entrar. Aceita SÓ caminho interno começando com "/"
+ * (e nunca "//"), senão um link malicioso poderia usar o nosso login para
+ * jogar a pessoa em outro site já autenticada.
+ */
+function destinoSeguro(next: string | null): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return "/";
+  return next;
+}
+
+function LoginForm() {
   const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const router = useRouter();
+  // Vem da landing page: /login?next=/checkout
+  const destino = destinoSeguro(useSearchParams().get("next"));
 
   const [mode, setMode] = useState<Mode>("signin");
   const [name, setName] = useState("");
@@ -40,8 +52,8 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) router.replace("/");
-  }, [loading, user, router]);
+    if (!loading && user) router.replace(destino);
+  }, [loading, user, router, destino]);
 
   if (loading || user) {
     return (
@@ -56,7 +68,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await signInWithGoogle();
-      router.replace("/");
+      router.replace(destino);
     } catch (err) {
       setError(friendlyError(err));
       setSubmitting(false);
@@ -77,7 +89,7 @@ export default function LoginPage() {
       }
       if (mode === "signup") await signUpWithEmail(name.trim(), email, password);
       else await signInWithEmail(email, password);
-      router.replace("/");
+      router.replace(destino);
     } catch (err) {
       setError(friendlyError(err));
       setSubmitting(false);
@@ -197,5 +209,23 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+/**
+ * useSearchParams (o ?next= vindo da landing) exige uma fronteira de Suspense
+ * para a página continuar sendo pré-renderizada.
+ */
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Spinner />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
