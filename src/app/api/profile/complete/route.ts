@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/server/firebaseAdmin";
+import { claimPendingSubscription } from "@/lib/server/subscriptionLink";
 import { ATTENDANCE_TYPES } from "@/lib/constants";
 import type { AttendanceType } from "@/lib/types";
 
@@ -112,6 +113,16 @@ export async function POST(req: Request) {
     },
     { merge: true }
   );
+
+  // Quem comprou pela landing page pagou ANTES de ter conta. Aqui o pagamento
+  // guardado (casado pelo e-mail do checkout) vira assinatura ativa.
+  try {
+    await claimPendingSubscription(uid, email ?? snap.get("email") ?? null);
+  } catch (err) {
+    // Nunca derruba o cadastro por causa disso: o perfil é o essencial, e a
+    // pendência continua salva para ser resgatada depois.
+    console.error("Falha ao resgatar assinatura pendente:", err);
+  }
 
   await adminDb.collection("progress").doc(uid).set({
     totalUploads: 0,

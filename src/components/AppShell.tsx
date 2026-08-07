@@ -57,6 +57,13 @@ const principlesItem: NavItem = {
   active: (p) => p.startsWith("/principios"),
 };
 
+const iconGear = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+    <circle cx="12" cy="12" r="3.2" />
+    <path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.5 2.4-1a7.6 7.6 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 2.6-1.5l2.4 1 2-3.5z" />
+  </svg>
+);
+
 const iconVideo = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
     <rect x="3" y="5" width="18" height="14" rx="3" />
@@ -189,6 +196,26 @@ export default function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
+        {/* Configurações: canto inferior esquerdo, logo acima do perfil. */}
+        <button
+          onClick={() => go("/configuracoes")}
+          className={`flex items-center gap-[11px] rounded-[10px] px-3 py-2.5 text-left text-sm font-medium transition ${
+            pathname.startsWith("/configuracoes") ? "text-foreground" : "text-muted hover:text-foreground"
+          }`}
+          style={{
+            background: pathname.startsWith("/configuracoes")
+              ? "linear-gradient(90deg, rgba(90,124,255,.16), rgba(90,124,255,.03))"
+              : "transparent",
+          }}
+        >
+          <span
+            className="h-4 w-[3px] flex-none rounded-[2px]"
+            style={{ background: pathname.startsWith("/configuracoes") ? "linear-gradient(#5a7cff,#7f9bff)" : "transparent" }}
+          />
+          {iconGear}
+          Configurações
+        </button>
+
         <div className="flex items-center gap-2.5 border-t border-[rgba(120,150,210,.12)] pt-3.5">
           <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-xs font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>
             {initials(profile?.name)}
@@ -222,6 +249,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
             <span className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-[11px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>
               {initials(profile?.name)}
             </span>
+            <button onClick={() => go("/configuracoes")} className="flex h-[32px] w-[32px] items-center justify-center rounded-lg border border-[rgba(120,150,210,.14)] text-muted transition hover:text-foreground" title="Configurações">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.4-1-2 3.5 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.5 2.4-1a7.6 7.6 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 2.6-1.5l2.4 1 2-3.5z" />
+              </svg>
+            </button>
             <button onClick={() => signOut()} className="flex h-[32px] w-[32px] items-center justify-center rounded-lg border border-[rgba(120,150,210,.14)] text-muted transition hover:text-foreground" title="Sair">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M9 4H5v16h4" /><path d="M14 8l4 4-4 4" /><path d="M18 12H9" />

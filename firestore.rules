@@ -62,7 +62,14 @@ service cloud.firestore {
         || isManagerOf(resource.data.companyId);
 
       // Criação no primeiro login: sempre vendedor, sem empresa e sem progresso.
+      // E NUNCA com campos de assinatura: eles são gravados só pelo backend
+      // (Stripe/webhook) — sem esta trava, uma conta nova poderia nascer
+      // "assinante" forjando o documento no primeiro login.
       allow create: if isSelf(userId)
+        && !request.resource.data.keys().hasAny([
+          'plan', 'subscriptionStatus', 'stripeCustomerId',
+          'stripeSubscriptionId', 'subscriptionPeriodEnd', 'subscriptionUpdatedAt'
+        ])
         && request.resource.data.role == 'seller'
         && request.resource.data.companyId == null
         && request.resource.data.profileCompleted == false
@@ -122,6 +129,13 @@ service cloud.firestore {
     match /videos/{docId} {
       allow read: if isSignedIn();
       allow write: if false; // gravado só pelo backend (endpoint de master)
+    }
+
+    // Pagamentos feitos ANTES de a conta existir (compra pela landing page),
+    // esperando o cadastro no mesmo e-mail. Contém dado de cobrança e é
+    // território exclusivo do backend: ninguém lê nem escreve pelo cliente.
+    match /pendingSubscriptions/{email} {
+      allow read, write: if false;
     }
 
     // Nega qualquer coleção não declarada acima.

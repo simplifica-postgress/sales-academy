@@ -43,6 +43,26 @@ export interface Company {
   updatedAt: Timestamp | null;
 }
 
+// ---------- Assinatura ----------
+
+/**
+ * vendedor   — plano individual (R$ 147/mês), pago pelo Stripe.
+ * enterprise — plano por empresa, negociado com o comercial (sem checkout).
+ */
+export type PlanId = "vendedor" | "enterprise";
+
+/**
+ * active    — em dia.
+ * past_due  — pagamento falhou; o Stripe ainda vai tentar de novo.
+ * canceling — cancelada, mas com acesso até o fim do período pago.
+ * canceled  — encerrada.
+ */
+export type SubscriptionStatus =
+  | "active"
+  | "past_due"
+  | "canceling"
+  | "canceled";
+
 export type AttendanceType =
   | "ligacao"
   | "whatsapp"
@@ -75,6 +95,16 @@ export interface UserProfile {
   currentLevel: number; // 1–5
   profileCompleted: boolean;
   createdAt: Timestamp;
+
+  // ---- Assinatura (gravada SÓ pelo backend; ver firestore.rules) ----
+  /** Plano atual; ausente/null = nunca assinou. */
+  plan?: PlanId | null;
+  subscriptionStatus?: SubscriptionStatus | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  /** Fim do período pago: até quando vai o acesso de quem cancelou. */
+  subscriptionPeriodEnd?: Timestamp | null;
+  subscriptionUpdatedAt?: Timestamp | null;
 }
 
 // ---------- Uploads ----------
