@@ -209,7 +209,7 @@ function ConfigContent() {
               {busy ? "Ativando…" : PAYMENT_LINK ? `Assinar — ${VENDEDOR_PRICE_LABEL}` : "Ativar assinatura de teste"}
             </button>
             {!PAYMENT_LINK && (
-              <p className="mt-2 text-[11.5px] text-muted">Ambiente de teste: sem cobrança real (link do Stripe ainda não configurado).</p>
+              <p className="mt-2 text-[11.5px] text-muted">Ambiente de teste: sem cobrança real.</p>
             )}
           </>
         )}

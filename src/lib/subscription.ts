@@ -23,23 +23,61 @@ export function statusTone(status: SubscriptionStatus): "good" | "warn" | "bad" 
   return "bad";
 }
 
+/** Só um lugar decide quem entra — telas e servidor usam esta mesma lista. */
+export type AccessReason =
+  | "master"
+  | "gestor"
+  | "empresarial"
+  | "cortesia"
+  | "assinatura"
+  | "periodo-final"
+  | "sem-acesso";
+
+/** Campos necessários para julgar acesso (serve ao cliente e ao servidor). */
+export type AccessInput = Pick<
+  UserProfile,
+  "role" | "plan" | "subscriptionStatus" | "subscriptionPeriodEnd" | "courtesyAccess"
+> & { subscriptionPeriodEnd?: { toMillis(): number } | null };
+
 /**
- * Tem acesso pago AGORA? `canceling` mantém acesso até o fim do período;
- * `past_due` mantém enquanto o Stripe tenta cobrar de novo (padrão do
- * mercado: não corta no primeiro cartão recusado).
+ * POR QUE esta pessoa tem (ou não tem) acesso.
+ *
+ * Regras, em ordem:
+ *  · master e gestor entram sempre — quem administra não paga assinatura, e
+ *    a empresa do gestor é contratada por fora;
+ *  · plano empresarial entra (contrato direto, sem passar pelo checkout);
+ *  · cortesia entra (quem já usava antes de existir cobrança);
+ *  · assinatura ativa entra; `past_due` também, porque cortar no primeiro
+ *    cartão recusado perde cliente que só trocou de cartão;
+ *  · cancelada entra até o fim do período já pago.
  */
-export function hasPaidAccess(
-  profile: Pick<UserProfile, "subscriptionStatus" | "subscriptionPeriodEnd" | "plan"> | null
-): boolean {
-  if (!profile) return false;
-  if (profile.plan === "enterprise") return true;
+export function accessReason(profile: AccessInput | null): AccessReason {
+  if (!profile) return "sem-acesso";
+  if (profile.role === "master") return "master";
+  if (profile.role === "manager") return "gestor";
+  if (profile.plan === "enterprise") return "empresarial";
+  if (profile.courtesyAccess === true) return "cortesia";
   const s = profile.subscriptionStatus;
-  if (s === "active" || s === "past_due") return true;
+  if (s === "active" || s === "past_due") return "assinatura";
   if (s === "canceling") {
-    const end = profile.subscriptionPeriodEnd as Timestamp | null | undefined;
-    return !!end && end.toMillis() > Date.now();
+    const end = profile.subscriptionPeriodEnd;
+    if (end && end.toMillis() > Date.now()) return "periodo-final";
   }
-  return false;
+  return "sem-acesso";
+}
+
+/** Pode usar a plataforma agora? */
+export function hasAccess(profile: AccessInput | null): boolean {
+  return accessReason(profile) !== "sem-acesso";
+}
+
+/**
+ * O bloqueio está ligado? Fica atrás de um interruptor para poder subir o
+ * código sem mudar nada para ninguém, e ligar só quando você decidir.
+ * Ausente ou diferente de "true" = desligado (ninguém é barrado).
+ */
+export function paywallLigado(): boolean {
+  return process.env.NEXT_PUBLIC_PAYWALL === "true";
 }
 
 /** Data curta em pt-BR (ex.: 15 de setembro de 2026). */

@@ -3,6 +3,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminAuth, adminBucket, adminDb } from "@/lib/server/firebaseAdmin";
 import { analyze, transcribe, transcribeImages } from "@/lib/server/openai";
 import { computeProgression } from "@/lib/progression";
+import { hasAccess, paywallLigado } from "@/lib/subscription";
 import {
   ACCEPTED_AUDIO_TYPES,
   ACCEPTED_IMAGE_TYPES,
@@ -226,6 +227,16 @@ async function handleAnalyze(req: Request) {
     );
   }
   const profile = userSnap.data() as UserProfile;
+
+  // Trava de assinatura NO SERVIDOR. A tela também bloqueia, mas só ela não
+  // basta: quem souber chamar esta rota direto usaria a IA de graça — e é
+  // ela que custa dinheiro por envio.
+  if (paywallLigado() && !hasAccess(profile)) {
+    return NextResponse.json(
+      { error: "Sua assinatura está inativa. Ative para enviar atendimentos." },
+      { status: 402 }
+    );
+  }
 
   // Dia de prática (dias desde o início do uso), sem teto: a ferramenta é
   // usada quando o vendedor precisa, não há prazo fixo de 30 dias.

@@ -101,7 +101,7 @@ async function handleCancel(req: Request) {
     const subId = profile.stripeSubscriptionId;
     if (!subId) {
       return NextResponse.json(
-        { error: "Assinatura sem vínculo com o Stripe. Fale com o suporte." },
+        { error: "Não encontramos o vínculo da sua assinatura. Fale com o suporte." },
         { status: 409 }
       );
     }
@@ -120,7 +120,7 @@ async function handleCancel(req: Request) {
     } catch (err) {
       console.error("Stripe recusou o cancelamento:", err);
       return NextResponse.json(
-        { error: "O Stripe não aceitou o cancelamento. Tente de novo ou fale com o suporte." },
+        { error: "Não foi possível concluir o cancelamento agora. Tente de novo ou fale com o suporte." },
         { status: 502 }
       );
     }

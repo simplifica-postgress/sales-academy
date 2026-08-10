@@ -75,7 +75,7 @@ function CheckoutFluxo() {
         if (voltandoDoPagamento) {
           // Pagou mas ainda não confirmou (Pix/boleto, ou webhook atrasado).
           setErro(
-            "Ainda não recebemos a confirmação do seu pagamento. Se você acabou de pagar, aguarde alguns minutos e atualize esta página — assim que o Stripe confirmar, seu acesso é liberado automaticamente."
+            "Ainda não recebemos a confirmação do seu pagamento. Se você acabou de pagar, aguarde alguns minutos e atualize esta página. Seu acesso é liberado automaticamente."
           );
           return;
         }

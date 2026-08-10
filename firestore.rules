@@ -68,7 +68,8 @@ service cloud.firestore {
       allow create: if isSelf(userId)
         && !request.resource.data.keys().hasAny([
           'plan', 'subscriptionStatus', 'stripeCustomerId',
-          'stripeSubscriptionId', 'subscriptionPeriodEnd', 'subscriptionUpdatedAt'
+          'stripeSubscriptionId', 'subscriptionPeriodEnd', 'subscriptionUpdatedAt',
+          'courtesyAccess'
         ])
         && request.resource.data.role == 'seller'
         && request.resource.data.companyId == null

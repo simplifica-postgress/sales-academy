@@ -9,6 +9,7 @@ import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import Spinner from "@/components/Spinner";
 import TeamPanel from "@/components/TeamPanel";
+import SeloPlano from "@/components/SeloPlano";
 import { initials } from "@/lib/ui";
 import type { Company, UserProfile, UserRole } from "@/lib/types";
 
@@ -59,6 +60,28 @@ function CompanyDetail() {
       setError(err instanceof Error ? err.message : "Falha na operação.");
     } finally {
       setBusyUid(null);
+    }
+  }
+
+  /**
+   * Marca a empresa inteira como Empresarial. É assim que o contrato fechado
+   * por fora (sem checkout) vira acesso para todos os vendedores dela.
+   */
+  async function definirPlanoEmpresarial(virar: boolean) {
+    setError("");
+    setNotice("");
+    try {
+      const r = await adminPost<{ alterados: number }>("/api/admin/set-plan", {
+        companyId,
+        enterprise: virar,
+      });
+      setNotice(
+        virar
+          ? `${r.alterados} pessoa(s) agora entram pelo plano Empresarial.`
+          : `Plano Empresarial removido de ${r.alterados} pessoa(s).`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao alterar o plano.");
     }
   }
 
@@ -128,6 +151,43 @@ function CompanyDetail() {
         )}
       </div>
 
+      {/* Plano da empresa (contrato fechado por fora, sem checkout) */}
+      <div className="dc-card mt-3.5 p-5">
+        <div className="mono-label mb-3">Plano da empresa</div>
+        {(() => {
+          const comPlano = members.filter((m) => m.plan === "enterprise").length;
+          const todos = members.length > 0 && comPlano === members.length;
+          return (
+            <>
+              <p className="text-[13px] leading-[1.65] text-muted">
+                {todos
+                  ? `Empresarial ativo para as ${comPlano} pessoas desta empresa — todas entram sem pagar assinatura individual.`
+                  : comPlano > 0
+                    ? `Parcial: ${comPlano} de ${members.length} estão no Empresarial. Aplique para igualar todo mundo.`
+                    : "Marque quando a empresa fechar contrato direto com vocês. Todos os vendedores dela passam a ter acesso sem pagar pelo site."}
+              </p>
+              <div className="mt-3.5 flex flex-wrap gap-2.5">
+                <button
+                  onClick={() => definirPlanoEmpresarial(true)}
+                  disabled={members.length === 0}
+                  className="btn-primary rounded-[10px] px-4 py-2 text-[13px] font-semibold disabled:opacity-40"
+                >
+                  {todos ? "Reaplicar Empresarial" : "Marcar como Empresarial"}
+                </button>
+                {comPlano > 0 && (
+                  <button
+                    onClick={() => definirPlanoEmpresarial(false)}
+                    className="rounded-[10px] border border-[rgba(244,114,106,.32)] px-4 py-2 text-[13px] font-medium text-danger transition hover:bg-[rgba(244,114,106,.07)]"
+                  >
+                    Remover Empresarial
+                  </button>
+                )}
+              </div>
+            </>
+          );
+        })()}
+      </div>
+
       {/* Pessoas na pasta */}
       <div className="dc-card mt-3.5 p-5">
         <div className="mono-label mb-3">Pessoas nesta empresa ({members.length})</div>
@@ -137,6 +197,7 @@ function CompanyDetail() {
           members.map((m) => (
             <div key={m.id} className="flex flex-wrap items-center gap-3 border-b border-[rgba(120,150,210,.09)] py-2.5 last:border-0">
               <span className="flex-1 truncate text-[13.5px] text-foreground">{m.name} <span className="text-muted">· {ROLE_LABEL[m.role]}</span></span>
+              <SeloPlano profile={m} />
               {m.role === "seller" && (
                 <button onClick={() => call(m.id, { role: "manager" }, `${m.name.split(" ")[0]} agora é gestor desta empresa.`)} disabled={busyUid === m.id} className="rounded-lg border border-[rgba(90,124,255,.35)] px-3 py-1.5 text-[12px] font-medium text-cyan transition disabled:opacity-50">
                   Tornar gestor

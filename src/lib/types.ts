@@ -105,6 +105,12 @@ export interface UserProfile {
   /** Fim do período pago: até quando vai o acesso de quem cancelou. */
   subscriptionPeriodEnd?: Timestamp | null;
   subscriptionUpdatedAt?: Timestamp | null;
+  /**
+   * Acesso de cortesia: usa a plataforma sem pagar, para sempre. É como
+   * ficam quem já usava antes de existir cobrança — ninguém que confiou na
+   * ferramenta primeiro pode acordar bloqueado.
+   */
+  courtesyAccess?: boolean;
 }
 
 // ---------- Uploads ----------

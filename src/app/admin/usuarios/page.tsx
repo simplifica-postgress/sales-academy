@@ -8,6 +8,7 @@ import { adminPost } from "@/lib/adminApi";
 import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import Spinner from "@/components/Spinner";
+import SeloPlano from "@/components/SeloPlano";
 import { initials } from "@/lib/ui";
 import type { UserProfile, UserRole } from "@/lib/types";
 
@@ -174,14 +175,14 @@ function Users() {
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[640px]">
-              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "1.5fr 1.3fr 150px 170px" }}>
-                <span>Nome</span><span>E-mail</span><span>Papel</span><span>Empresa</span>
+              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "1.4fr 1.1fr 128px 150px 170px" }}>
+                <span>Nome</span><span>E-mail</span><span>Acesso</span><span>Papel</span><span>Empresa</span>
               </div>
               {rows.map((r) => {
                 const isSelf = r.uid === user?.uid;
                 const staff = r.role !== "seller";
                 return (
-                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "1.5fr 1.3fr 150px 170px" }}>
+                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "1.4fr 1.1fr 128px 150px 170px" }}>
                     <span className="flex min-w-0 items-center gap-[11px]">
                       <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(74,110,220,.35), rgba(127,155,255,.14))" }}>{initials(r.name)}</span>
                       <span className="min-w-0 truncate text-[13.5px] font-semibold text-foreground">
@@ -189,6 +190,9 @@ function Users() {
                       </span>
                     </span>
                     <span className="truncate text-[12.5px] text-muted">{r.email}</span>
+
+                    {/* Como esta pessoa tem acesso: pagando, contrato, cortesia — ou não tem. */}
+                    <span><SeloPlano profile={r} /></span>
 
                     {/* Papel: o master não pode se rebaixar (o backend também barra). */}
                     <span>

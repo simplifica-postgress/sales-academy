@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { initials } from "@/lib/ui";
+import { hasAccess, paywallLigado } from "@/lib/subscription";
+import AssinaturaNecessaria from "@/components/AssinaturaNecessaria";
 
 interface NavItem {
   label: string;
@@ -150,6 +152,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const go = (href: string) => router.push(href);
   const home = isStaff ? "/admin" : "/dashboard";
 
+  // Bloqueio por assinatura. Configurações fica SEMPRE acessível: é lá que a
+  // pessoa vê o estado da conta e assina — trancá-la seria trancar a saída.
+  const bloqueado =
+    paywallLigado() &&
+    !!profile &&
+    !hasAccess(profile) &&
+    !pathname.startsWith("/configuracoes");
+
   // Botão de voltar: aparece em toda página que não é a inicial do papel.
   const showBack = pathname !== home;
   const goBack = () => {
@@ -265,7 +275,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
         {/* pb no celular: espaço para a barra inferior fixa não cobrir o conteúdo. */}
         <main className="mx-auto w-full max-w-[1180px] flex-1 px-4 py-5 pb-[92px] lg:px-10 lg:py-9 min-[900px]:pb-9">
-          {showBack && (
+          {bloqueado && (
+            <AssinaturaNecessaria
+              nome={profile?.name?.split(" ")[0]}
+              encerrada={profile?.subscriptionStatus === "canceled" || profile?.subscriptionStatus === "canceling"}
+            />
+          )}
+          {!bloqueado && showBack && (
             <button
               onClick={goBack}
               className="mb-4 inline-flex items-center gap-2 rounded-lg border border-[rgba(120,150,210,.16)] bg-card-alt px-3.5 py-2 text-[12.5px] font-medium text-muted transition hover:border-[rgba(90,124,255,.5)] hover:text-foreground"
@@ -276,7 +292,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               Voltar
             </button>
           )}
-          {children}
+          {!bloqueado && children}
         </main>
       </div>
 
