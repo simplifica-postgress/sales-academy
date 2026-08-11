@@ -9,6 +9,7 @@ import AuthGate from "@/components/AuthGate";
 import AppShell from "@/components/AppShell";
 import Spinner from "@/components/Spinner";
 import SeloPlano from "@/components/SeloPlano";
+import { accessReason } from "@/lib/subscription";
 import { initials } from "@/lib/ui";
 import type { UserProfile, UserRole } from "@/lib/types";
 
@@ -21,6 +22,7 @@ function Users() {
   const [busyUid, setBusyUid] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [busca, setBusca] = useState("");
 
   // Formulário de criação
   const [showForm, setShowForm] = useState(false);
@@ -119,7 +121,68 @@ function Users() {
     }
   }
 
+  /** Já está sem acesso? (staff sempre entra, então nunca aparece como sem acesso) */
+  const semAcesso = (r: Row) => accessReason(r) === "sem-acesso";
+
+  /**
+   * Encerra o acesso. O aviso é explícito sobre a cobrança porque essa é a
+   * parte que dá problema: encerrar sem cancelar no Stripe cobraria a pessoa
+   * todo mês por algo que ela não tem mais.
+   */
+  async function encerrarAcesso(r: Row) {
+    const nome = r.name || r.email;
+    const pagante = r.subscriptionStatus === "active" || r.subscriptionStatus === "past_due";
+    const texto = pagante
+      ? `Encerrar o acesso de ${nome}?\n\nA assinatura será CANCELADA no Stripe (para de cobrar) e o acesso cai imediatamente.`
+      : `Encerrar o acesso de ${nome}?\n\nA pessoa perde o acesso imediatamente. Dá para devolver depois.`;
+    if (!confirm(texto)) return;
+
+    setError("");
+    setNotice("");
+    setBusyUid(r.uid);
+    try {
+      const res = await adminPost<{ stripeCancelado: boolean; aviso: string | null }>(
+        "/api/admin/revogar-acesso",
+        { uid: r.uid }
+      );
+      setNotice(
+        res.aviso ??
+          `Acesso de ${nome} encerrado${res.stripeCancelado ? " e cobrança cancelada" : ""}.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao encerrar o acesso.");
+    } finally {
+      setBusyUid(null);
+    }
+  }
+
+  /** Devolve o acesso como cortesia (sem cobrar). */
+  async function devolverAcesso(r: Row) {
+    setError("");
+    setNotice("");
+    setBusyUid(r.uid);
+    try {
+      await adminPost("/api/admin/revogar-acesso", { uid: r.uid, restaurar: true });
+      setNotice(`${r.name || r.email} voltou a ter acesso (cortesia).`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao devolver o acesso.");
+    } finally {
+      setBusyUid(null);
+    }
+  }
+
   const admins = rows.filter((r) => r.role !== "seller").length;
+
+  // Busca por nome ou e-mail. Sem acento e sem caixa: procurar "jose" acha
+  // "José", que é como a pessoa digita quando está com pressa.
+  const semAcento = (s: string) =>
+    s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  const termo = semAcento(busca.trim());
+  const visiveis = termo
+    ? rows.filter(
+        (r) => semAcento(r.name ?? "").includes(termo) || semAcento(r.email ?? "").includes(termo)
+      )
+    : rows;
 
   return (
     <div className="fade-up">
@@ -128,12 +191,42 @@ function Users() {
           <div className="mono-label" style={{ letterSpacing: "0.18em" }}>Gestão de acessos</div>
           <h1 className="mt-2 text-[27px] font-semibold leading-tight tracking-[-0.015em] text-foreground">Usuários</h1>
           <p className="mt-1.5 text-[13px] text-muted">
-            {rows.length} conta{rows.length === 1 ? "" : "s"} · {admins} gestor{admins === 1 ? "" : "es"}
+            {termo
+              ? `${visiveis.length} de ${rows.length} conta${rows.length === 1 ? "" : "s"}`
+              : `${rows.length} conta${rows.length === 1 ? "" : "s"} · ${admins} gestor${admins === 1 ? "" : "es"}`}
           </p>
         </div>
         <button onClick={() => setShowForm((v) => !v)} className="btn-primary rounded-[10px] px-[18px] py-2.5 text-[13px] font-semibold">
           {showForm ? "Fechar" : "+ Nova conta"}
         </button>
+      </div>
+
+      {/* Busca: com dezenas de contas, rolar a lista para achar alguém é dor. */}
+      <div className="relative mb-3.5">
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3.5-3.5" />
+          </svg>
+        </span>
+        <input
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="field"
+          style={{ paddingLeft: 38, paddingRight: busca ? 38 : undefined }}
+          placeholder="Buscar por nome ou e-mail…"
+          aria-label="Buscar conta por nome ou e-mail"
+        />
+        {busca && (
+          <button
+            type="button"
+            onClick={() => setBusca("")}
+            title="Limpar busca"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[15px] leading-none text-muted transition hover:text-foreground"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {notice && <p className="mb-3.5 rounded-[10px] border border-[rgba(127,155,255,.3)] bg-[rgba(127,155,255,.08)] px-3.5 py-[11px] text-[13px] text-cyan">{notice}</p>}
@@ -174,22 +267,28 @@ function Users() {
           <p className="px-6 py-10 text-center text-sm text-muted">Nenhum usuário ainda.</p>
         ) : (
           <div className="overflow-x-auto">
-            <div className="min-w-[640px]">
-              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "1.4fr 1.1fr 128px 150px 170px" }}>
-                <span>Nome</span><span>E-mail</span><span>Acesso</span><span>Papel</span><span>Empresa</span>
+            {/* Largura mínima para o nome e o e-mail caberem inteiros. Abaixo
+                disso a tabela rola de lado em vez de espremer tudo. */}
+            <div className="min-w-[860px]">
+              <div className="grid items-center gap-3 border-b border-[rgba(120,150,210,.14)] px-[22px] py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted" style={{ gridTemplateColumns: "minmax(0,1.6fr) 128px 140px 158px 92px" }}>
+                <span>Pessoa</span><span>Acesso</span><span>Papel</span><span>Empresa</span><span className="text-right">Ação</span>
               </div>
-              {rows.map((r) => {
+              {visiveis.map((r) => {
                 const isSelf = r.uid === user?.uid;
                 const staff = r.role !== "seller";
                 return (
-                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "1.4fr 1.1fr 128px 150px 170px" }}>
+                  <div key={r.uid} className="grid items-center gap-3 border-b border-[rgba(120,150,210,.09)] px-[22px] py-3 last:border-0" style={{ gridTemplateColumns: "minmax(0,1.6fr) 128px 140px 158px 92px" }}>
+                    {/* Nome e e-mail juntos: separados em colunas, o e-mail
+                        virava "ad…" e não servia para identificar ninguém. */}
                     <span className="flex min-w-0 items-center gap-[11px]">
-                      <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(74,110,220,.35), rgba(127,155,255,.14))" }}>{initials(r.name)}</span>
-                      <span className="min-w-0 truncate text-[13.5px] font-semibold text-foreground">
-                        {r.name || "—"}{isSelf && <span className="ml-1.5 text-[11px] font-normal text-muted">(você)</span>}
+                      <span className="flex h-[32px] w-[32px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.35)] text-[10.5px] font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(74,110,220,.35), rgba(127,155,255,.14))" }}>{initials(r.name)}</span>
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
+                          {r.name || "—"}{isSelf && <span className="ml-1.5 text-[11px] font-normal text-muted">(você)</span>}
+                        </span>
+                        <span className="truncate text-[12px] leading-tight text-muted" title={r.email}>{r.email}</span>
                       </span>
                     </span>
-                    <span className="truncate text-[12.5px] text-muted">{r.email}</span>
 
                     {/* Como esta pessoa tem acesso: pagando, contrato, cortesia — ou não tem. */}
                     <span><SeloPlano profile={r} /></span>
@@ -229,6 +328,32 @@ function Users() {
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
+                    </span>
+
+                    {/* Encerrar / devolver acesso */}
+                    <span className="text-right">
+                      {isSelf ? (
+                        <span className="text-[11px] text-muted">—</span>
+                      ) : semAcesso(r) ? (
+                        <button
+                          onClick={() => devolverAcesso(r)}
+                          disabled={busyUid === r.uid}
+                          className="rounded-lg border border-[rgba(74,222,157,.35)] px-2.5 py-1.5 text-[11.5px] font-medium transition disabled:opacity-50"
+                          style={{ color: "#4ade9d" }}
+                          title="Devolver acesso como cortesia"
+                        >
+                          Devolver
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => encerrarAcesso(r)}
+                          disabled={busyUid === r.uid}
+                          className="rounded-lg border border-[rgba(244,114,106,.32)] px-2.5 py-1.5 text-[11.5px] font-medium text-danger transition hover:bg-[rgba(244,114,106,.08)] disabled:opacity-50"
+                          title="Encerrar o acesso desta pessoa"
+                        >
+                          Encerrar
+                        </button>
+                      )}
                     </span>
                   </div>
                 );

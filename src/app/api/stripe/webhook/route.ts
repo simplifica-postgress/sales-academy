@@ -142,9 +142,12 @@ async function handleWebhook(req: Request) {
 
       let status: "active" | "past_due" | "canceling" | "canceled";
       if (event.type === "customer.subscription.deleted") status = "canceled";
+      // "unpaid" NÃO é o mesmo que "past_due": é o Stripe DESISTINDO de
+      // cobrar depois de esgotar as tentativas. Tratar como pagamento
+      // pendente daria acesso vitalício a quem nunca mais vai pagar.
+      else if (sub.status === "unpaid" || sub.status === "canceled") status = "canceled";
       else if (sub.cancel_at_period_end) status = "canceling";
-      else if (sub.status === "past_due" || sub.status === "unpaid") status = "past_due";
-      else if (sub.status === "canceled") status = "canceled";
+      else if (sub.status === "past_due") status = "past_due";
       else status = "active";
 
       const endSec =

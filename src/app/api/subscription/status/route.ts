@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Timestamp } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/server/firebaseAdmin";
 import { claimPendingSubscription } from "@/lib/server/subscriptionLink";
+import { accessReason } from "@/lib/subscription";
 import type { UserProfile } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -68,15 +69,15 @@ async function handleStatus(req: Request) {
   const status = profile.subscriptionStatus ?? null;
   const end = (profile.subscriptionPeriodEnd ?? null) as Timestamp | null;
 
-  // Mesma regra do cliente (lib/subscription): enterprise sempre tem acesso;
-  // cancelada mantém até o fim do período pago.
-  let paid = false;
-  if (profile.plan === "enterprise") paid = true;
-  else if (status === "active" || status === "past_due") paid = true;
-  else if (status === "canceling") paid = !!end && end.toMillis() > Date.now();
+  // UMA regra só, a mesma que a tela e o bloqueio usam. Aqui já houve uma
+  // cópia da lógica, que envelheceu: não conhecia cortesia nem gestor, e
+  // mandava pagar quem já tinha acesso.
+  const motivo = accessReason(profile);
+  const paid = motivo !== "sem-acesso";
 
   return NextResponse.json({
     paid,
+    motivo,
     plan: profile.plan ?? null,
     status,
     profileCompleted: profile.profileCompleted === true,
