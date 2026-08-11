@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -138,6 +138,35 @@ const MASTER_NAV: NavItem[] = [
 /** Gestor: vê a própria equipe, assiste às aulas, lê o método e testa a IA. */
 const MANAGER_NAV: NavItem[] = [homeItem("Equipe"), lessonsItem, principlesItem, testItem];
 
+/**
+ * Preferência de sidebar recolhida, guardada no navegador.
+ *
+ * Fica fora do React porque é estado do NAVEGADOR, não do componente: lido
+ * com useSyncExternalStore, que sabe lidar com o servidor (onde localStorage
+ * não existe) sem precisar de efeito nem de estado duplicado.
+ */
+const CHAVE_SIDEBAR = "sidebarRecolhida";
+let ouvintesSidebar: (() => void)[] = [];
+
+function assinarSidebar(aoMudar: () => void) {
+  ouvintesSidebar.push(aoMudar);
+  // "storage" cobre o caso de duas abas abertas ao mesmo tempo.
+  window.addEventListener("storage", aoMudar);
+  return () => {
+    ouvintesSidebar = ouvintesSidebar.filter((o) => o !== aoMudar);
+    window.removeEventListener("storage", aoMudar);
+  };
+}
+
+function lerSidebar(): boolean {
+  return localStorage.getItem(CHAVE_SIDEBAR) === "1";
+}
+
+function definirSidebar(recolhida: boolean) {
+  localStorage.setItem(CHAVE_SIDEBAR, recolhida ? "1" : "0");
+  for (const avisar of ouvintesSidebar) avisar();
+}
+
 export default function AppShell({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const router = useRouter();
@@ -151,6 +180,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   const go = (href: string) => router.push(href);
   const home = isStaff ? "/admin" : "/dashboard";
+
+  // Sidebar recolhida: sobra largura para as tabelas do painel, que são o
+  // motivo de existir esse botão. A escolha fica salva — ninguém quer
+  // recolher de novo a cada visita.
+  const recolhida = useSyncExternalStore(assinarSidebar, lerSidebar, () => false);
+  const alternarSidebar = () => definirSidebar(!recolhida);
 
   // Bloqueio por assinatura. Configurações fica SEMPRE acessível: é lá que a
   // pessoa vê o estado da conta e assina — trancá-la seria trancar a saída.
@@ -171,12 +206,31 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen items-stretch">
       {/* Sidebar (desktop e notebook) */}
-      <aside className="sticky top-0 hidden h-screen w-[248px] flex-none flex-col gap-2 border-r border-[rgba(120,150,210,.13)] bg-[rgba(2,13,35,.72)] px-4 pb-5 pt-[26px] backdrop-blur-md min-[900px]:flex">
-        <button onClick={() => go(home)} className="border-b border-[rgba(120,150,210,.12)] px-2.5 pb-[18px] text-left">
-          <Image src="/logo.png" alt="Simplifica" width={132} height={35} style={{ width: 132, height: "auto" }} priority />
-          <div className="mono-label mt-2.5" style={{ letterSpacing: "0.22em", fontSize: 10 }}>
-            Sales Academy
-          </div>
+      <aside
+        className={`sticky top-0 hidden h-screen flex-none flex-col gap-2 border-r border-[rgba(120,150,210,.13)] bg-[rgba(2,13,35,.72)] pb-5 pt-[26px] backdrop-blur-md min-[900px]:flex ${
+          recolhida ? "w-[72px] px-2.5" : "w-[248px] px-4"
+        } motion-safe:transition-[width] motion-safe:duration-200`}
+      >
+        <button
+          onClick={() => go(home)}
+          className={`border-b border-[rgba(120,150,210,.12)] pb-[18px] ${recolhida ? "flex justify-center" : "px-2.5 text-left"}`}
+          title={recolhida ? "Sales Academy" : undefined}
+        >
+          {recolhida ? (
+            <span
+              className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] font-display text-[17px] font-extrabold text-white"
+              style={{ background: "linear-gradient(150deg,#4a6edc,#7f9bff)" }}
+            >
+              S
+            </span>
+          ) : (
+            <>
+              <Image src="/logo.png" alt="Simplifica" width={132} height={35} style={{ width: 132, height: "auto" }} priority />
+              <div className="mono-label mt-2.5" style={{ letterSpacing: "0.22em", fontSize: 10 }}>
+                Sales Academy
+              </div>
+            </>
+          )}
         </button>
 
         <nav className="mt-3 flex flex-1 flex-col gap-1">
@@ -186,54 +240,95 @@ export default function AppShell({ children }: { children: ReactNode }) {
               <button
                 key={item.href}
                 onClick={() => go(item.href)}
-                className={`flex items-center gap-[11px] rounded-[10px] px-3 py-2.5 text-left text-sm font-medium transition ${
-                  active ? "text-foreground" : "text-muted hover:text-foreground"
-                }`}
+                // Recolhida, o rótulo vira tooltip — sem ele os ícones viram adivinhação.
+                title={recolhida ? item.label : undefined}
+                className={`flex items-center rounded-[10px] py-2.5 text-sm font-medium transition ${
+                  recolhida ? "justify-center px-0" : "gap-[11px] px-3 text-left"
+                } ${active ? "text-foreground" : "text-muted hover:text-foreground"}`}
                 style={{
                   background: active
                     ? "linear-gradient(90deg, rgba(90,124,255,.16), rgba(90,124,255,.03))"
                     : "transparent",
                 }}
               >
-                <span
-                  className="h-4 w-[3px] flex-none rounded-[2px]"
-                  style={{ background: active ? "linear-gradient(#5a7cff,#7f9bff)" : "transparent" }}
-                />
-                {item.icon}
-                {item.label}
+                {!recolhida && (
+                  <span
+                    className="h-4 w-[3px] flex-none rounded-[2px]"
+                    style={{ background: active ? "linear-gradient(#5a7cff,#7f9bff)" : "transparent" }}
+                  />
+                )}
+                <span style={active && recolhida ? { color: "#7f9bff" } : undefined}>{item.icon}</span>
+                {!recolhida && item.label}
               </button>
             );
           })}
         </nav>
 
+        {/* Recolher / expandir */}
+        <button
+          onClick={alternarSidebar}
+          title={recolhida ? "Expandir menu" : "Recolher menu"}
+          aria-label={recolhida ? "Expandir menu" : "Recolher menu"}
+          className={`flex items-center rounded-[10px] py-2 text-[12.5px] font-medium text-muted transition hover:text-foreground ${
+            recolhida ? "justify-center px-0" : "gap-[11px] px-3"
+          }`}
+        >
+          <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            style={{ transform: recolhida ? "rotate(180deg)" : undefined }}
+          >
+            <path d="M14 7l-5 5 5 5" />
+            <path d="M19 4v16" />
+          </svg>
+          {!recolhida && "Recolher menu"}
+        </button>
+
         {/* Configurações: canto inferior esquerdo, logo acima do perfil. */}
         <button
           onClick={() => go("/configuracoes")}
-          className={`flex items-center gap-[11px] rounded-[10px] px-3 py-2.5 text-left text-sm font-medium transition ${
-            pathname.startsWith("/configuracoes") ? "text-foreground" : "text-muted hover:text-foreground"
-          }`}
+          title={recolhida ? "Configurações" : undefined}
+          className={`flex items-center rounded-[10px] py-2.5 text-sm font-medium transition ${
+            recolhida ? "justify-center px-0" : "gap-[11px] px-3 text-left"
+          } ${pathname.startsWith("/configuracoes") ? "text-foreground" : "text-muted hover:text-foreground"}`}
           style={{
             background: pathname.startsWith("/configuracoes")
               ? "linear-gradient(90deg, rgba(90,124,255,.16), rgba(90,124,255,.03))"
               : "transparent",
           }}
         >
-          <span
-            className="h-4 w-[3px] flex-none rounded-[2px]"
-            style={{ background: pathname.startsWith("/configuracoes") ? "linear-gradient(#5a7cff,#7f9bff)" : "transparent" }}
-          />
-          {iconGear}
-          Configurações
+          {!recolhida && (
+            <span
+              className="h-4 w-[3px] flex-none rounded-[2px]"
+              style={{ background: pathname.startsWith("/configuracoes") ? "linear-gradient(#5a7cff,#7f9bff)" : "transparent" }}
+            />
+          )}
+          <span style={pathname.startsWith("/configuracoes") && recolhida ? { color: "#7f9bff" } : undefined}>{iconGear}</span>
+          {!recolhida && "Configurações"}
         </button>
 
-        <div className="flex items-center gap-2.5 border-t border-[rgba(120,150,210,.12)] pt-3.5">
-          <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-xs font-semibold text-cyan" style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}>
+        <div
+          className={`flex items-center border-t border-[rgba(120,150,210,.12)] pt-3.5 ${
+            recolhida ? "flex-col gap-2" : "gap-2.5"
+          }`}
+        >
+          <span
+            className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full border border-[rgba(90,124,255,.4)] text-xs font-semibold text-cyan"
+            style={{ background: "linear-gradient(135deg, rgba(0,82,185,.35), rgba(127,155,255,.14))" }}
+            title={recolhida ? `${profile?.name || "—"} · ${roleLabel}` : undefined}
+          >
             {initials(profile?.name)}
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[13px] font-semibold text-foreground">{profile?.name || "—"}</div>
-            <div className="mono-label mt-0.5" style={{ fontSize: 10, letterSpacing: "0.1em" }}>{roleLabel}</div>
-          </div>
+          {!recolhida && (
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-semibold text-foreground">{profile?.name || "—"}</div>
+              <div className="mono-label mt-0.5" style={{ fontSize: 10, letterSpacing: "0.1em" }}>{roleLabel}</div>
+            </div>
+          )}
           <button onClick={() => signOut()} title="Sair" className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg border border-[rgba(120,150,210,.14)] text-muted transition hover:border-[rgba(90,124,255,.55)] hover:text-foreground">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M9 4H5v16h4" />
