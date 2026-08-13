@@ -3,7 +3,9 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { hasAccess, paywallLigado } from "@/lib/subscription";
 import type { UserRole } from "@/lib/types";
+import AssinaturaNecessaria from "./AssinaturaNecessaria";
 import Spinner from "./Spinner";
 
 /**
@@ -69,6 +71,30 @@ export default function AuthGate({
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Spinner />
+      </div>
+    );
+  }
+
+  // Bloqueio por assinatura. Fica AQUI, e não só no AppShell, porque nem toda
+  // tela de dentro usa o AppShell — /cadastro não usa, e era por ali que dava
+  // para entrar sem pagar: bastava fechar o checkout e voltar depois.
+  // Configurações continua livre: é onde a pessoa assina (trancar seria
+  // trancar a saída).
+  if (
+    paywallLigado() &&
+    profile &&
+    !hasAccess(profile) &&
+    !pathname.startsWith("/configuracoes")
+  ) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-5">
+        <AssinaturaNecessaria
+          nome={profile.name?.split(" ")[0]}
+          encerrada={
+            profile.subscriptionStatus === "canceled" ||
+            profile.subscriptionStatus === "canceling"
+          }
+        />
       </div>
     );
   }
