@@ -4,7 +4,7 @@ import OpenAI from "openai";
 import { adminBucket, adminDb } from "@/lib/server/firebaseAdmin";
 import { temAcesso } from "@/lib/server/reunioesAuth";
 import { transcribe } from "@/lib/server/openai";
-import { getKnowledgeText } from "@/lib/server/knowledge";
+import { guiaReuniaoTexto } from "@/lib/server/reunioesGuia";
 import {
   ESQUEMA_REUNIAO,
   notaGeral,
@@ -107,9 +107,10 @@ async function analisar(req: Request) {
       { status: 500 }
     );
   }
-  // A mesma metodologia que alimenta o Sales Academy — o time avalia a
-  // reunião pela régua da casa, não por uma régua genérica.
-  const metodologia = await getKnowledgeText().catch(() => "");
+  // O script de REUNIÃO da Simplifica, e só ele. A base do Sales Academy
+  // (atendimento) não entra aqui em hipótese alguma: são réguas diferentes,
+  // e cruzá-las faria a IA cobrar prospecção de um closer.
+  const metodologia = guiaReuniaoTexto();
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const resposta = await openai.chat.completions.create({

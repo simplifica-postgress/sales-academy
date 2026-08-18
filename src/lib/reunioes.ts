@@ -11,12 +11,12 @@ import type { Timestamp } from "firebase/firestore";
 
 export type CriterioReuniao =
   | "abertura"
-  | "diagnostico"
-  | "escuta"
-  | "solucao"
-  | "valor"
+  | "mapeamento"
+  | "expectativas"
+  | "metodologia"
+  | "ancoragem"
+  | "provaSocial"
   | "objecoes"
-  | "conducao"
   | "fechamento";
 
 export const CRITERIOS_REUNIAO: {
@@ -25,14 +25,59 @@ export const CRITERIOS_REUNIAO: {
   peso: number;
   ajuda: string;
 }[] = [
-  { key: "abertura",   label: "Abertura e contexto",      peso: 8,  ajuda: "Quebrou o gelo, alinhou objetivo e tempo da reunião." },
-  { key: "diagnostico", label: "Diagnóstico do cenário",  peso: 20, ajuda: "Entendeu o problema, o processo atual e o impacto antes de propor." },
-  { key: "escuta",     label: "Escuta e perguntas",       peso: 12, ajuda: "Deixou o cliente falar, aprofundou o que ele disse, não atropelou." },
-  { key: "solucao",    label: "Solução conectada à dor",  peso: 15, ajuda: "Apresentou o que resolve o problema DELE, não um catálogo." },
-  { key: "valor",      label: "Geração de valor e prova", peso: 15, ajuda: "Mostrou retorno, números, casos — justificou o investimento." },
-  { key: "objecoes",   label: "Tratamento de objeções",   peso: 12, ajuda: "Investigou a objeção real em vez de só rebater." },
-  { key: "conducao",   label: "Condução da reunião",      peso: 8,  ajuda: "Manteve o controle, o ritmo e o foco no objetivo." },
-  { key: "fechamento", label: "Fechamento e próximo passo", peso: 10, ajuda: "Pediu a decisão e saiu com data e compromisso definidos." },
+  {
+    key: "abertura",
+    label: "Apresentação e autoridade",
+    peso: 8,
+    ajuda:
+      "Etapas 1 e 2: apresentou-se, apresentou a Simplifica (25 estados, 500+ empresas) e a promessa dos 42 dias.",
+  },
+  {
+    key: "mapeamento",
+    label: "Mapeamento com números",
+    peso: 22,
+    ajuda:
+      "Etapa 3: tempo de mercado, tamanho da equipe, faturamento atual e recorde, ticket médio, vendas/mês, meta do ano e como vende hoje.",
+  },
+  {
+    key: "expectativas",
+    label: "Alinhamento de expectativas",
+    peso: 8,
+    ajuda: "Etapa 4: deixou claro o objetivo da reunião e combinou como ela seria conduzida.",
+  },
+  {
+    key: "metodologia",
+    label: "Apresentação da metodologia",
+    peso: 12,
+    ajuda: "Etapas 5 a 8: BASE, TRAÇÃO, MATURAÇÃO e ESCALA, e o problema que o método resolve.",
+  },
+  {
+    key: "ancoragem",
+    label: "Ancoragem e geração de valor",
+    peso: 12,
+    ajuda:
+      "Etapa 6/7: comparou com o custo do time interno (R$ 27.466) e ligou o investimento aos NÚMEROS que o lead deu.",
+  },
+  {
+    key: "provaSocial",
+    label: "Prova social",
+    peso: 10,
+    ajuda: "Etapa 8/9: cases específicos, com números e prazo, e não elogio genérico.",
+  },
+  {
+    key: "objecoes",
+    label: "Tratamento de objeções",
+    peso: 14,
+    ajuda:
+      "Etapas 11 e 12: investigou a objeção real (preço, sócio, 'faço sozinho') em vez de só rebater.",
+  },
+  {
+    key: "fechamento",
+    label: "Fechamento e próximo passo",
+    peso: 14,
+    ajuda:
+      "Pediu a decisão, e saiu com compromisso: data definida, grupo, indicações. 'Depois te falo' não é fechamento.",
+  },
 ];
 
 export type NotasReuniao = Record<CriterioReuniao, number>;
@@ -130,28 +175,35 @@ export const ESQUEMA_REUNIAO = {
   },
 } as const;
 
-/** Instruções do avaliador. */
-export function promptSistema(conhecimento = ""): string {
+/**
+ * Instruções do avaliador.
+ *
+ * O `guia` aqui é SEMPRE o script de reunião da Simplifica — nunca a base
+ * do Sales Academy. Ver src/lib/server/reunioesGuia.ts.
+ */
+export function promptSistema(guia = ""): string {
   const lista = CRITERIOS_REUNIAO.map(
     (c) => `- ${c.label} (peso ${c.peso}): ${c.ajuda}`
   ).join("\n");
 
-  return `Você é um head comercial sênior da Simplifica avaliando a gravação de uma REUNIÃO DE VENDAS do próprio time. O objetivo do time é fechar mais clientes, e esta análise é interna — pode ser direta, sem diplomacia.
+  return `Você é o head comercial da Simplifica avaliando a gravação de uma REUNIÃO DE VENDAS do próprio time. O objetivo é fechar mais clientes, e a análise é interna — seja direto, sem diplomacia.
 
 Avalie por estes critérios e pesos (somam 100):
 ${lista}
 
-${conhecimento}
+${guia}
 
 Como avaliar:
-- Reunião não é atendimento: aqui o que decide é ter DIAGNOSTICADO antes de propor, gerado valor e saído com um próximo passo firmado. Uma reunião simpática que termina em "vou pensar e te falo" é uma reunião fraca, por mais agradável que tenha sido.
+- A régua é o SCRIPT ACIMA. Aponte o que o vendedor cumpriu, o que pulou e o que fez fora de ordem, citando a etapa pelo nome ("Etapa 3 — Mapeamento").
+- O MAPEAMENTO é o que mais pesa, e é objetivo: verifique um a um se ele levantou tempo de mercado, tamanho da equipe, faturamento atual, faturamento recorde, ticket médio, vendas por mês, meta do ano e como vende hoje. Diga quais faltaram. Sem esses números não há ancoragem possível depois.
+- Reunião não é atendimento: aqui o que decide é diagnosticar antes de propor, ancorar valor nos números do próprio lead e sair com compromisso. Reunião simpática que termina em "vou pensar e te falo" é reunião fraca.
 - Cite trechos concretos. Feedback genérico não serve para nada.
-- Aponte o que o cliente entregou de graça e o vendedor não aproveitou: sinais de urgência, orçamento, insatisfação com o fornecedor atual, menção a prazo ou a quem decide.
-- Em "momentoDecisivo", aponte o instante exato em que a reunião virou — e explique por quê.
-- Notas calibradas: 85+ excelente, 70-84 boa, 50-69 mediana, abaixo de 50 fraca. Não distribua notas altas por educação.
+- Aponte o que o cliente entregou de graça e o vendedor não aproveitou: sinal de urgência, orçamento, insatisfação com fornecedor atual, prazo, quem decide.
+- Em "momentoDecisivo", aponte o instante exato em que a reunião virou — e por quê.
+- Notas calibradas: 85+ excelente, 70-84 boa, 50-69 mediana, abaixo de 50 fraca. Não distribua nota alta por educação.
 - "probabilidadeFechamento" reflete como a reunião TERMINOU, não a simpatia do cliente. Sem próximo passo com data, dificilmente é "alta".
-- Em "proximaAcao", uma ação só, concreta, que dê para executar na próxima reunião.
-- Escreva em português do Brasil, tratando o vendedor por "você".
+- Em "proximaAcao", uma ação só, concreta, executável na próxima reunião.
+- Português do Brasil, tratando o vendedor por "você".
 - Responda APENAS no formato JSON pedido.`;
 }
 
