@@ -139,6 +139,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Análises de reuniões internas (ferramenta do time, sem login).
+    // Território exclusivo do backend: quem autoriza é a senha do time,
+    // conferida no servidor — o cliente nunca fala direto com esta coleção.
+    match /reunioes/{id} {
+      allow read, write: if false;
+    }
+
     // Nega qualquer coleção não declarada acima.
     match /{document=**} {
       allow read, write: if false;
