@@ -155,7 +155,9 @@ function Ferramenta() {
   const [lista, setLista] = useState<ItemLista[]>([]);
   const [carregandoLista, setCarregandoLista] = useState(true);
 
-  const [modo, setModo] = useState<"arquivo" | "texto">("arquivo");
+  const [modo, setModo] = useState<"arquivo" | "documento" | "texto">("arquivo");
+  const [documento, setDocumento] = useState<{ nome: string; caracteres: number } | null>(null);
+  const [lendoDoc, setLendoDoc] = useState(false);
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [texto, setTexto] = useState("");
   const [titulo, setTitulo] = useState("");
@@ -208,12 +210,35 @@ function Ferramenta() {
     });
   }
 
+  /** Lê a transcrição de um .docx/.txt e joga no campo de texto. */
+  async function lerDocumento(f: File) {
+    setErro("");
+    setLendoDoc(true);
+    setDocumento(null);
+    try {
+      const dados = new FormData();
+      dados.append("arquivo", f);
+      const r = await fetch("/api/reunioes/documento", { method: "POST", body: dados });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error ?? "Não foi possível ler o documento.");
+      setTexto(d.texto);
+      setDocumento({ nome: d.arquivo, caracteres: d.caracteres });
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Não foi possível ler o documento.");
+    } finally {
+      setLendoDoc(false);
+    }
+  }
+
   async function analisar(e: FormEvent) {
     e.preventDefault();
     setErro("");
     if (modo === "arquivo" && !arquivo) return setErro("Escolha a gravação da reunião.");
     if (modo === "texto" && texto.trim().length < 40) {
       return setErro("Cole a transcrição da reunião (pelo menos 40 caracteres).");
+    }
+    if (modo === "documento" && texto.trim().length < 40) {
+      return setErro("Escolha o documento com a transcrição da reunião.");
     }
 
     setEnviando(true);
@@ -233,6 +258,8 @@ function Ferramenta() {
         await enviarArquivo(dados.url, arquivo);
         corpo.caminho = dados.caminho;
       } else {
+        // Documento e texto colado terminam no mesmo lugar: o que vai para a
+        // IA é sempre a transcrição em texto.
         corpo.textoColado = texto.trim();
       }
 
@@ -308,11 +335,12 @@ function Ferramenta() {
           </button>
         </div>
 
-        <div className="mb-3.5 grid grid-cols-2 gap-2">
+        <div className="mb-3.5 grid grid-cols-3 gap-2">
           {(
             [
               { id: "arquivo", rotulo: "Gravação", sub: "áudio ou vídeo" },
-              { id: "texto", rotulo: "Transcrição", sub: "colar texto" },
+              { id: "documento", rotulo: "Documento", sub: "Word ou txt" },
+              { id: "texto", rotulo: "Colar texto", sub: "transcrição" },
             ] as const
           ).map((m) => {
             const on = modo === m.id;
@@ -376,6 +404,58 @@ function Ferramenta() {
               }}
             />
           </label>
+        ) : modo === "documento" ? (
+          <div className="mb-3.5">
+            <label
+              htmlFor="doc"
+              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl px-5 py-[34px] text-center transition"
+              style={{
+                border: `1.5px dashed ${documento ? "rgba(90,124,255,.5)" : "rgba(120,150,210,.18)"}`,
+                background: documento ? "rgba(90,124,255,.05)" : "rgba(2,13,35,.5)",
+              }}
+            >
+              <span
+                className="flex h-[44px] w-[44px] items-center justify-center rounded-[13px] border border-[rgba(90,124,255,.35)] text-cyan"
+                style={{ background: "rgba(90,124,255,.1)" }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                  <path d="M14 3v5h5" />
+                  <path d="M9 13h6M9 17h6" />
+                </svg>
+              </span>
+              <div className="text-sm font-semibold text-foreground">
+                {lendoDoc ? "Lendo o documento…" : documento ? documento.nome : "Clique para escolher o documento"}
+              </div>
+              <div className="font-mono text-[11.5px] text-muted">
+                {documento
+                  ? `${documento.caracteres.toLocaleString("pt-BR")} caracteres lidos · clique para trocar`
+                  : "Word (.docx), .txt, .vtt ou .srt"}
+              </div>
+              <input
+                id="doc"
+                type="file"
+                accept=".docx,.txt,.md,.vtt,.srt"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) lerDocumento(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {documento && (
+              <details className="mt-2.5">
+                <summary className="cursor-pointer text-[12px] text-muted transition hover:text-foreground">
+                  Conferir o texto lido
+                </summary>
+                <pre className="mt-2 max-h-[220px] overflow-auto whitespace-pre-wrap rounded-xl bg-card-alt p-3.5 font-mono text-[11.5px] leading-[1.7] text-muted">
+                  {texto.slice(0, 4000)}
+                  {texto.length > 4000 ? "…" : ""}
+                </pre>
+              </details>
+            )}
+          </div>
         ) : (
           <textarea
             value={texto}
