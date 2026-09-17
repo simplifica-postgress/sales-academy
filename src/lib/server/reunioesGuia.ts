@@ -18,8 +18,10 @@ import { adminDb } from "./firebaseAdmin";
  * Ctrl+A apagado por engano) se desfaz com um clique.
  */
 
-const DOC = adminDb.collection("reunioesGuia").doc("atual");
-const HISTORICO = adminDb.collection("reunioesGuiaHistorico");
+// Funções, não constantes: o build importa este arquivo sem credenciais do
+// banco, e tocar no adminDb ao carregar o módulo derruba o build.
+const DOC = () => adminDb.collection("reunioesGuia").doc("atual");
+const HISTORICO = () => adminDb.collection("reunioesGuiaHistorico");
 
 /** Guia de fábrica: vale enquanto ninguém editar pela página. */
 export const GUIA_PADRAO = `
@@ -299,7 +301,7 @@ const iso = (t: Timestamp | undefined | null) => t?.toDate?.().toISOString() ?? 
 
 /** O guia em uso agora (o editado, ou o de fábrica). */
 export async function lerGuia(): Promise<GuiaAtual> {
-  const snap = await DOC.get();
+  const snap = await DOC().get();
   const texto = (snap.get("texto") as string | undefined)?.trim();
   if (!snap.exists || !texto) {
     return { texto: GUIA_PADRAO, atualizadoEm: null, atualizadoPor: null, padrao: true };
@@ -317,14 +319,14 @@ export async function salvarGuia(texto: string, autor: string | null): Promise<v
   const anterior = await lerGuia();
   if (anterior.texto.trim() === texto.trim()) return; // nada mudou
 
-  await HISTORICO.add({
+  await HISTORICO().add({
     texto: anterior.texto,
     eraPadrao: anterior.padrao,
     autorDaVersao: anterior.atualizadoPor,
     substituidaEm: FieldValue.serverTimestamp(),
     substituidaPor: autor,
   });
-  await DOC.set({
+  await DOC().set({
     texto: texto.trim(),
     atualizadoEm: FieldValue.serverTimestamp(),
     atualizadoPor: autor,
@@ -333,7 +335,7 @@ export async function salvarGuia(texto: string, autor: string | null): Promise<v
 
 /** Últimas versões substituídas, da mais recente para a mais antiga. */
 export async function listarVersoes(limite = 15): Promise<VersaoGuia[]> {
-  const snap = await HISTORICO.orderBy("substituidaEm", "desc").limit(limite).get();
+  const snap = await HISTORICO().orderBy("substituidaEm", "desc").limit(limite).get();
   return snap.docs.map((d) => {
     const texto = (d.get("texto") as string) ?? "";
     return {
@@ -348,7 +350,7 @@ export async function listarVersoes(limite = 15): Promise<VersaoGuia[]> {
 
 /** Volta uma versão antiga (a atual também vai para o histórico). */
 export async function restaurarVersao(id: string, autor: string | null): Promise<boolean> {
-  const snap = await HISTORICO.doc(id).get();
+  const snap = await HISTORICO().doc(id).get();
   const texto = snap.get("texto") as string | undefined;
   if (!snap.exists || !texto) return false;
   await salvarGuia(texto, autor ? `${autor} (restaurou)` : "restauração");
