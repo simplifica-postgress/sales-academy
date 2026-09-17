@@ -145,6 +145,12 @@ service cloud.firestore {
     match /reunioes/{id} {
       allow read, write: if false;
     }
+    match /reunioesGuia/{id} {
+      allow read, write: if false;
+    }
+    match /reunioesGuiaHistorico/{id} {
+      allow read, write: if false;
+    }
 
     // Nega qualquer coleção não declarada acima.
     match /{document=**} {

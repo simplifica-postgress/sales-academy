@@ -7,6 +7,7 @@ import { transcribe } from "@/lib/server/openai";
 import { guiaReuniaoTexto } from "@/lib/server/reunioesGuia";
 import {
   ESQUEMA_REUNIAO,
+  retratoCriterios,
   notaGeral,
   promptSistema,
   promptUsuario,
@@ -110,7 +111,8 @@ async function analisar(req: Request) {
   // O script de REUNIÃO da Simplifica, e só ele. A base do Sales Academy
   // (atendimento) não entra aqui em hipótese alguma: são réguas diferentes,
   // e cruzá-las faria a IA cobrar prospecção de um closer.
-  const metodologia = guiaReuniaoTexto();
+  // Lido na hora: se alguém editou o guia pela página, já vale nesta análise.
+  const metodologia = await guiaReuniaoTexto();
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const resposta = await openai.chat.completions.create({
@@ -139,6 +141,9 @@ async function analisar(req: Request) {
     transcricao,
     ...resultado,
     notaGeral: nota,
+    // Retrato dos critérios desta análise: se a régua mudar depois, a tela
+    // ainda mostra esta análise com os nomes e pesos com que foi feita.
+    criterios: retratoCriterios(),
     origem,
     criadoEm: FieldValue.serverTimestamp(),
   });

@@ -10,15 +10,24 @@ import type { Timestamp } from "firebase/firestore";
  */
 
 export type CriterioReuniao =
-  | "abertura"
-  | "mapeamento"
-  | "expectativas"
-  | "metodologia"
-  | "ancoragem"
-  | "provaSocial"
+  | "conexao"
+  | "autoridade"
+  | "diagnostico"
+  | "validacao"
+  | "apresentacao"
+  | "valor"
+  | "negociacao"
   | "objecoes"
   | "fechamento";
 
+/**
+ * Critérios = as FASES do guia de reunião, não as frases dele.
+ *
+ * O guia é editável pela página; se os critérios citassem números ou nomes
+ * específicos do script (como os antigos citavam "R$ 27.466"), eles ficariam
+ * mentindo na primeira edição. Por isso cada critério descreve o que a fase
+ * pede, e a IA confere o detalhe no guia em vigor.
+ */
 export const CRITERIOS_REUNIAO: {
   key: CriterioReuniao;
   label: string;
@@ -26,59 +35,67 @@ export const CRITERIOS_REUNIAO: {
   ajuda: string;
 }[] = [
   {
-    key: "abertura",
-    label: "Apresentação e autoridade",
+    key: "conexao",
+    label: "Conexão e rapport",
     peso: 8,
-    ajuda:
-      "Etapas 1 e 2: apresentou-se, apresentou a Simplifica (25 estados, 500+ empresas) e a promessa dos 42 dias.",
+    ajuda: "Conexão imediata, rapport fora do assunto de venda, leitura do perfil do cliente e condução espelhada a ele.",
   },
   {
-    key: "mapeamento",
-    label: "Mapeamento com números",
+    key: "autoridade",
+    label: "Abertura e autoridade",
+    peso: 8,
+    ajuda: "Assumiu a condução, apresentou-se e explicou objetivo e funcionamento da reunião, tirando a pressão de venda.",
+  },
+  {
+    key: "diagnostico",
+    label: "Diagnóstico",
     peso: 22,
-    ajuda:
-      "Etapa 3: tempo de mercado, tamanho da equipe, faturamento atual e recorde, ticket médio, vendas/mês, meta do ano e como vende hoje.",
+    ajuda: "Perguntou em vez de afirmar — situação, problema, impacto e necessidade — e levantou os números do negócio.",
   },
   {
-    key: "expectativas",
-    label: "Alinhamento de expectativas",
+    key: "validacao",
+    label: "Devolução da dor",
     peso: 8,
-    ajuda: "Etapa 4: deixou claro o objetivo da reunião e combinou como ela seria conduzida.",
+    ajuda: "Antes de apresentar, devolveu os pontos que ouviu e fez o cliente confirmar a leitura.",
   },
   {
-    key: "metodologia",
-    label: "Apresentação da metodologia",
-    peso: 12,
-    ajuda: "Etapas 5 a 8: BASE, TRAÇÃO, MATURAÇÃO e ESCALA, e o problema que o método resolve.",
+    key: "apresentacao",
+    label: "Método e números",
+    peso: 16,
+    ajuda: "Apresentou o método ligado à dor encontrada e montou a conta com os números reais do cliente, mostrando o gargalo.",
   },
   {
-    key: "ancoragem",
-    label: "Ancoragem e geração de valor",
-    peso: 12,
-    ajuda:
-      "Etapa 6/7: comparou com o custo do time interno (R$ 27.466) e ligou o investimento aos NÚMEROS que o lead deu.",
+    key: "valor",
+    label: "Ancoragem e prova",
+    peso: 8,
+    ajuda: "Ancorou o valor e usou depoimentos escolhidos para aquele cliente, não genéricos.",
   },
   {
-    key: "provaSocial",
-    label: "Prova social",
+    key: "negociacao",
+    label: "Alinhamento para negociar",
     peso: 10,
-    ajuda: "Etapa 8/9: cases específicos, com números e prazo, e não elogio genérico.",
+    ajuda: "Antes do preço, confirmou que a proposta resolve o problema e combinou um sim ou não na reunião.",
   },
   {
     key: "objecoes",
     label: "Tratamento de objeções",
-    peso: 14,
-    ajuda:
-      "Etapas 11 e 12: investigou a objeção real (preço, sócio, 'faço sozinho') em vez de só rebater.",
+    peso: 10,
+    ajuda: "Acolheu a objeção, descobriu a real, isolou (é só esse fator?) e criou compromisso antes de ceder.",
   },
   {
     key: "fechamento",
-    label: "Fechamento e próximo passo",
-    peso: 14,
-    ajuda:
-      "Pediu a decisão, e saiu com compromisso: data definida, grupo, indicações. 'Depois te falo' não é fechamento.",
+    label: "Fechamento",
+    peso: 10,
+    ajuda: "Fez a oferta, pediu a decisão e o compromisso na própria reunião e pediu indicação. 'Depois te falo' não é fechamento.",
   },
 ];
+
+/** Retrato dos critérios gravado junto de cada análise. */
+export type CriterioSalvo = { key: string; label: string; peso: number };
+
+export function retratoCriterios(): CriterioSalvo[] {
+  return CRITERIOS_REUNIAO.map(({ key, label, peso }) => ({ key, label, peso }));
+}
 
 export type NotasReuniao = Record<CriterioReuniao, number>;
 
@@ -178,32 +195,35 @@ export const ESQUEMA_REUNIAO = {
 /**
  * Instruções do avaliador.
  *
- * O `guia` aqui é SEMPRE o script de reunião da Simplifica — nunca a base
- * do Sales Academy. Ver src/lib/server/reunioesGuia.ts.
+ * O `guia` aqui é SEMPRE o guia de reunião da Simplifica — nunca a base do
+ * Sales Academy. Ver src/lib/server/reunioesGuia.ts.
  */
 export function promptSistema(guia = ""): string {
   const lista = CRITERIOS_REUNIAO.map(
     (c) => `- ${c.label} (peso ${c.peso}): ${c.ajuda}`
   ).join("\n");
 
-  return `Você é o head comercial da Simplifica avaliando a gravação de uma REUNIÃO DE VENDAS do próprio time. O objetivo é fechar mais clientes, e a análise é interna — seja direto, sem diplomacia.
+  return `Você é o head comercial da Simplifica avaliando a gravação de uma REUNIÃO DE FECHAMENTO do próprio time. O objetivo é fechar mais clientes, e a análise é interna — seja direto, sem diplomacia.
 
-Avalie por estes critérios e pesos (somam 100):
+Avalie por estes critérios e pesos (somam 100). Cada critério é uma FASE do guia abaixo: o detalhe do que a fase exige está no guia, e é contra ele que você julga.
 ${lista}
 
 ${guia}
 
 Como avaliar:
-- A régua é o SCRIPT ACIMA. Aponte o que o vendedor cumpriu, o que pulou e o que fez fora de ordem, citando a etapa pelo nome ("Etapa 3 — Mapeamento").
-- O MAPEAMENTO é o que mais pesa, e é objetivo: verifique um a um se ele levantou tempo de mercado, tamanho da equipe, faturamento atual, faturamento recorde, ticket médio, vendas por mês, meta do ano e como vende hoje. Diga quais faltaram. Sem esses números não há ancoragem possível depois.
-- Reunião não é atendimento: aqui o que decide é diagnosticar antes de propor, ancorar valor nos números do próprio lead e sair com compromisso. Reunião simpática que termina em "vou pensar e te falo" é reunião fraca.
-- Cite trechos concretos. Feedback genérico não serve para nada.
-- Aponte o que o cliente entregou de graça e o vendedor não aproveitou: sinal de urgência, orçamento, insatisfação com fornecedor atual, prazo, quem decide.
+- A régua é o GUIA ACIMA. Aponte o que o vendedor cumpriu, o que pulou e o que fez fora de ordem, citando a etapa com o nome que o guia usa.
+- O DIAGNÓSTICO é o que mais pesa. Verifique se ele PERGUNTOU em vez de afirmar, se cobriu situação, problema, impacto e necessidade, e quais números do negócio levantou ou deixou de levantar. Sem números não há conta para mostrar depois.
+- Confira se a dor foi devolvida e validada pelo cliente ANTES da apresentação, e se a apresentação usou os números reais dele para mostrar onde está o gargalo.
+- Reunião simpática que termina em "vou pensar e te falo" é reunião fraca. O que decide é diagnosticar antes de propor, mostrar a conta e sair com compromisso.
+- Cite trechos concretos, com o minuto quando a transcrição trouxer. Feedback genérico não serve para nada.
+- Aponte o que o cliente entregou de graça e o vendedor não aproveitou: urgência, orçamento, insatisfação com o fornecedor atual, prazo, quem decide.
 - Em "momentoDecisivo", aponte o instante exato em que a reunião virou — e por quê.
 - Notas calibradas: 85+ excelente, 70-84 boa, 50-69 mediana, abaixo de 50 fraca. Não distribua nota alta por educação.
-- "probabilidadeFechamento" reflete como a reunião TERMINOU, não a simpatia do cliente. Sem próximo passo com data, dificilmente é "alta".
+- Critério cuja fase não chegou a acontecer (por exemplo, não houve objeção) é avaliado pelo que deveria ter acontecido ali, sem inventar.
+- "probabilidadeFechamento" reflete como a reunião TERMINOU, não a simpatia do cliente. Sem compromisso ou data, dificilmente é "alta".
 - Em "proximaAcao", uma ação só, concreta, executável na próxima reunião.
 - Português do Brasil, tratando o vendedor por "você".
+- Texto puro, sem markdown: nada de **, # ou listas dentro dos campos (a tela mostra o texto como está).
 - Responda APENAS no formato JSON pedido.`;
 }
 

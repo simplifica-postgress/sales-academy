@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import ScoreRing from "@/components/ScoreRing";
 import Spinner from "@/components/Spinner";
 import { criteriaFill, scoreBand } from "@/lib/ui";
-import { CRITERIOS_REUNIAO, type CriterioReuniao } from "@/lib/reunioes";
+import { CRITERIOS_REUNIAO, type CriterioSalvo } from "@/lib/reunioes";
 
 type Analise = {
   id: string;
@@ -18,8 +18,10 @@ type Analise = {
   acertos: string[];
   erros: string[];
   perdidas: string[];
-  notas: Record<CriterioReuniao, number>;
-  focoDaProxima: CriterioReuniao;
+  notas: Record<string, number>;
+  focoDaProxima: string;
+  /** Critérios em vigor quando a análise foi feita. */
+  criterios?: CriterioSalvo[];
   proximaAcao: string;
   probabilidadeFechamento: "alta" | "media" | "baixa";
   notaGeral: number;
@@ -88,7 +90,14 @@ export default function AnaliseReuniaoPage({ params }: { params: Promise<{ id: s
   }
 
   const p = PROB[analise.probabilidadeFechamento] ?? PROB.baixa;
-  const foco = CRITERIOS_REUNIAO.find((c) => c.key === analise.focoDaProxima);
+  // Análise antiga mostra os critérios com que foi avaliada, não os de hoje.
+  // A dica só vale quando o critério é o mesmo de hoje (mesma chave e nome).
+  const atuais = new Map(CRITERIOS_REUNIAO.map((c) => [c.key as string, c]));
+  const criterios = (analise.criterios?.length ? analise.criterios : CRITERIOS_REUNIAO).map((c) => {
+    const hoje = atuais.get(c.key);
+    return { key: c.key, label: c.label, peso: c.peso, ajuda: hoje?.label === c.label ? hoje.ajuda : undefined };
+  });
+  const foco = criterios.find((c) => c.key === analise.focoDaProxima);
 
   return (
     <main className="fade-up mx-auto w-full max-w-[1000px] px-4 py-8 lg:px-8">
@@ -161,7 +170,7 @@ export default function AnaliseReuniaoPage({ params }: { params: Promise<{ id: s
       <div className="dc-card mb-3.5 p-6">
         <div className="mono-label mb-[18px]">Nota por critério</div>
         <div className="grid gap-x-11 gap-y-[26px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
-          {CRITERIOS_REUNIAO.map((c) => {
+          {criterios.map((c) => {
             const nota = analise.notas?.[c.key] ?? 0;
             const band = scoreBand(nota);
             return (

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import Spinner from "@/components/Spinner";
 import { ACCEPTED_AUDIO_TYPES, ACCEPTED_VIDEO_TYPES } from "@/lib/constants";
 import { faixa } from "@/lib/reunioes";
@@ -326,13 +327,21 @@ function Ferramenta() {
       <form onSubmit={analisar} className="dc-card mb-4 p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="mono-label">Analisar uma reunião</div>
-          <button
-            type="button"
-            onClick={sair}
-            className="text-[11.5px] text-muted transition hover:text-foreground"
-          >
-            Sair
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/reunioes/guia"
+              className="text-[11.5px] font-medium text-cyan transition hover:text-foreground"
+            >
+              Guia da análise
+            </Link>
+            <button
+              type="button"
+              onClick={sair}
+              className="text-[11.5px] text-muted transition hover:text-foreground"
+            >
+              Sair
+            </button>
+          </div>
         </div>
 
         <div className="mb-3.5 grid grid-cols-3 gap-2">

@@ -1,487 +1,368 @@
 import "server-only";
+import { FieldValue, type Timestamp } from "firebase-admin/firestore";
+import { adminDb } from "./firebaseAdmin";
 
 /**
- * Metodologia da REUNIÃO comercial da Simplifica — script do closer e
- * checklist da estrutura, como o time usa.
+ * Guia da REUNIÃO de fechamento da Simplifica — a régua da análise de
+ * reuniões (/reunioes).
  *
- * ISOLADO DE PROPÓSITO. Este texto alimenta SÓ a análise de reuniões
- * (/reunioes). A base do Sales Academy — a coleção "knowledge", que avalia
- * atendimento — é outra coisa e não se cruza com esta em ponto nenhum:
- * arquivos diferentes, funções diferentes, destinos diferentes.
+ * ISOLADO DE PROPÓSITO. Este guia vive nas coleções "reunioesGuia" e
+ * "reunioesGuiaHistorico", que só este arquivo lê e escreve. A base do
+ * Sales Academy (coleção "knowledge", que avalia ATENDIMENTO) é outra coisa
+ * e nunca se cruza com esta: coleções diferentes, funções diferentes,
+ * destinos diferentes. Misturar faria a IA cobrar de quem atende WhatsApp
+ * coisas de reunião de fechamento, e vice-versa.
  *
- * Misturar as duas faria a IA cobrar de um vendedor de WhatsApp coisas de
- * reunião de fechamento, e cobrar de um closer coisas de prospecção.
- *
- * Fica em ARQUIVO, e não no banco, exatamente para não existir caminho
- * possível entre uma base e a outra.
+ * O texto pode ser editado por qualquer pessoa do time pela própria página.
+ * Por isso toda troca guarda a versão anterior: uma edição errada (ou um
+ * Ctrl+A apagado por engano) se desfaz com um clique.
  */
-export const GUIA_REUNIAO = `
-Script closer
 
-SCRIPT COMPLETO SIMPLIFICA - 
+const DOC = adminDb.collection("reunioesGuia").doc("atual");
+const HISTORICO = adminDb.collection("reunioesGuiaHistorico");
 
-Use este script EXATAMENTE como está escrito. Leia se necessário.
+/** Guia de fábrica: vale enquanto ninguém editar pela página. */
+export const GUIA_PADRAO = `
+Condução Reunião de Fechamento - SIMPLIFICA
+Sempre chamar atenção do cliente (ok? vamos lá? bora? certo?)
+Todo mundo tem cérebro de gelatina
+Método
+1- Conexão/autoridade
+2- Diagnóstico/Apresentação/Negociação/Fechamento
 
 
+Pontos da reunião:
+ - Conexão imediata
 
+Sorria assim que o lead entrar na reunião, e não tire o olhar da câmera nos 2 primeiros minutos.
 
+1º RAPPORT - falar com cliente do tempo, da cidade, do clima, dos filhos, qualquer coisa que não pareça um vendedor chato.
 
-🎯 ETAPA 1 - APRESENTAÇÃO DO CLOSER  DA EMPRESA E SÓCIOS
+Objetivos: Conexão / Quebra de expectativas / Detectar perfil comportamental (DISC) e nível de desafio.
+O que fazer: Analisar a adaptar (espelhar) a sua condução ao perfil do cliente.
 
-"Fala [NOME DO LEAD]! Cara, seja muito bem-vindo à nossa reunião. Eu me chamo [SEU NOME], sou um dos executivos de vendas aqui da SIMPLIFICA e nos próximos minutos eu vou te mostrar como que a gente vai aumentar as vendas da sua empresa (clínica) em até 42 dias."Cara, vamos lá. Deixa eu te explicar um pouco mais sobre a SIMPLIFICA. A gente é uma ASSESSORIA DE VENDAS E MARKETING  focada em vendas, localizada na cidade de BELO HORIZONTE ,  Minas Gerais. A gente está presente em 25 estados do Brasil e ao longo desses quase 8 anos no mercado, já atendemos mais de 530 empresas. Com nossos clientes atuais, geramos mais de 1 milhão em vendas anualmente."LOGO EM SEGUIDA APRESENTAR OS SÓCIOS E MAIS A EMPRESA COMO ESTÁ NOS SLIDES
+ -  Autoridade
 
+2º ABERTURA PARA CONDUÇÃO
+- Vou me apresentar de um jeito um pouco mais formal, para que você me conheça melhor como profissional e te explicar também qual é o objetivo e como é o funcionamento desta reunião, para que você consiga me acompanhar.  ok? vamos lá?
+Principal objetivo: Mostrar para o cliente quem está no comando / Conseguir a atenção dele e fazer com que lhe acompanhe.
 
+3º APRESENTAÇÃO PESSOAL / EXPLICAÇÃO DO OBJETIVO E FUNCIONAMENTO DA REUNIÃO–
+Objetivos: Fazer com que o cliente me enxergue como autoridade, Quando o cliente compra o vendedor, ele compra o produto.
 
 
+3 - B - Explicação objetivo e funcionamento-
 
+Objetivo: tirar a pressão de “vender” e posicionar a conversa como diagnóstico.
+“Antes de te apresentar qualquer coisa, eu quero entender como funciona o seu comercial [CLÍNICA/ESCOLA] hoje.
+Porque a gente não acredita em chegar com uma solução pronta sem entender primeiro onde está o problema.
+Vou te fazer algumas perguntas rápidas sobre números, marketing e vendas. No final, se eu enxergar que realmente existe algo que podemos resolver, eu te mostro como funciona o nosso trabalho. Pode ser?”
 
+4ª ESCUTA ATIVA:  ENCONTRAR DORES PARA USAR NA VENDA
+Quero te conhecer melhor, me conta mais sobre a sua história, como chegou até aqui, a quanto tempo tem a sua empresa… realmente o objetivo é conhecer melhor você e sua empresa. Pode ser? bora? vamos lá? me ajuda aqui.
 
-🎯 ETAPA 2 - APRESENTAÇÃO DO LEAD
+DIAGNÓSTICO SPIN
+SITUAÇÃO
+Objetivo: mapear o processo comercial atual sem julgar.
+Perguntas
+“Qual é a meta de faturamento [MATRÍCULA] de vocês hoje?”
+“Vocês sabem quantas oportunidades precisam gerar para chegar nessa meta?”
+“E vocês acompanham esses números durante o mês?”
+Quem atende o primeiro contato — e em quanto tempo?
 
-"“Então, (Fulano) eu quero entender primeiro o seu negócio.
+Usam alguma ferramenta hoje? (planilha, CRM, WhatsApp solto?)
+Não tente preencher silêncio. Deixe o empresário responder.
 
-Já quero deixar três intenções muito claras:
 
-Primeiro,  meu objetivo e te gerar valor independe se vamos avançar ou você irá aprender
+PROBLEMA
+Perguntas de problema (achar a dor):
+“Hoje vocês sabem exatamente onde estão perdendo mais vendas?”
+“Quando vocês ficam abaixo da meta, conseguem identificar exatamente o que aconteceu?”
+“Hoje você sente que tem controle do comercial ou depende muito do que acontece no mês?”
 
-Segundo, eu quero entender  o que você precisa, para ver se realmente o nosso método irá te ajudar.
+Já perdeu vendas por demora no atendimento?
 
-Terceiro, eu quero que você entenda nosso trabalho, para ver se faz sentido para você também.
+O follow-up é feito? Por quem? Como você garante que é feito?
 
-Então,  seria essas três coisas para a gente começar aqui, combinado? [NOME]. Cara, quanto tempo que você está no mercado, como é que tá fazendo para vender, enfim, fica à vontade aí."
 
+IMPACTO
+Aqui você começa a aprofundar.
+“Se vocês não sabem quantas oportunidades precisam gerar, como definem se o investimento em marketing está adequado?”
+“Quanto você acha que pode estar deixando de faturar por não saber exatamente onde estão essas perdas?”
 
+Se um vendedor sair amanhã, o histórico e o relacionamento vão junto com ele?
 
-Obs: Importante tentar identificar o perfil comportamental
+Esse gargalo tende a piorar conforme você aumenta o volume de leads?
+E então a principal:
+“Se eu te perguntasse hoje quanto sua empresa vai faturar no próximo mês, você conseguiria me responder com segurança?”
 
 
+NECESSIDADE
+“Se você tivesse clareza dos números que precisam acontecer para bater sua meta, isso mudaria a forma como você administra o comercial hoje?”
 
-🎯 ETAPA 3 - MAPEAMENTO
+Faz sentido ter um processo que não dependa da memória de cada vendedor?
 
+Quanto valeria recuperar boa parte dos leads que hoje somem?
+ Não precisa fazer todas as perguntas do diagnóstico mais pelo 2 de cada etapa.
 
+O VENDEDOR EXCELENTE, ELE PERGUNTA E NÃO AFIRMA.
+ELE FAZ O CLIENTE PERCEBER AS PRÓPRIAS FRAQUEZAS.
 
-linkhttps://www.min
+TRANSIÇÃO N → PROPOSTA
 
-dmeister.com/app/map/4030484565
+Agora você não apresenta a ROTA ainda.
+Primeiro, devolva para o empresário o que você ouviu.
+“Pelo que você me contou, eu vejo três pontos aqui.”
 
-
-
-
-
-
-
-AFIRMAÇÕES DE CONEXÃO:"Bacana, bacana. Cara, fico feliz que esse canal aí que você já tá fazendo, ele já traz resultado aí para você e pra sua empresa
-
-
-
-🎯 ETAPA 4 - ALINHAMENTO DE EXPECTATIVAS
-
-[NOME], Vendo tudo isso que você me passou e o cenário que você está acredito que faz sentido eu te mostrar nosso método que pode ajudar a levar sua empresa de ( onde ela está) GAP ( pra onde ele quer chegar) 
-
- Mas antes de te explicar como que a gente vai aumentar as suas vendas, eu preciso fazer um breve alinhamento de expectativa contigo para você poder entender o que que a gente faz e o que que a gente não faz. Porque cara, se o que a gente não faz é o que você tá buscando, a gente já interrompe a reunião por aqui em respeito ao seu tempo e em respeito ao meu tempo. Beleza?"
-
-[Esperar confirmação]
-
-
-
-"Perfeito. E já fazendo esse alinhamento contigo, eu quero já começar ele da seguinte forma: ao final da nossa reunião, eu precisaria de um feedback teu, se positivo ou se negativo. Porque eu vou te apresentar aqui o  como o nosso método funciona e, caso faça sentido para você, eu vou te fazer um convite para que a gente possa de fato implementar na sua empresa e aumentar as vendas  nos próximos 42 dias.  
-
-Quero que fique bem à vontade, porque se a solução for para você, ótimo. Mas se não for, também vamos ser transparentes.
-
-Posso contar com seu sim ou com seu não hoje?
-
-🎯 ETAPA 5 - APRESENTAÇÃO DA METODOLOGIA
-
-BASE:
-
-"Então vamos lá. Nossa metodologia funciona em 4 grandes fases. A primeira fase é a BASE. É aqui onde a gente monta toda a BASE digital da sua empresa para conseguir processar o volume de leads que vai chegar.
-
-Dentro da BASE, a gente tem: 
-
-toda sua estrutura digital; o PMI - Plano de Marketing Inteligente, onde nosso setor de marketing  desenvolve um plano pensando nos próximos 6 a 12 meses para alcançar sua meta de R$ [META DELE]/mês; a Definição dos Canais de Aquisição...
-
-Você me falou que hoje faz indicação, né? Mas você só pede indicação de quem fechou. Você tá deixando muito dinheiro na mesa por não pegar indicação de quem não fechou contigo. Com a gente, você vai aprender a pegar essas indicações também. E mais: pegar esses clientes que fecharam, gravar vídeo com eles e aproveitar essas indicações em outros canais de aquisição, como o tráfego pago.
-
-Se precisar de tráfego pago, o investimento é de R$ 250 por semana. Mas isso nosso especialista vai definir no PMI - pode ser que nem precise, já que você tem [X] anos de mercado e uma boa base.
-
-Também fazemos o Benchmark dos seus concorrentes e implementamos o CRM - você pode acessar tanto do PC quanto do celular, porque sabemos que no mercado [NICHO DELE] você tá na rua toda hora."
-
-
-
-TRAÇÃO:
-
-"Na fase de TRAÇÃO, executamos o PMI e implementamos os canais. É aqui que começam a chegar os leads, você já tem propostas na mesa, visitas sendo feitas. E tem a Capacitação do time comercial - E fazemos Acompanhamento de Performance para garantir que você venda."
-
-
-
-MATURAÇÃO:
-
-"A MATURAÇÃO e fase onde maturamos o que deu certo,  para poder na próxima fase escalar o que de melhor estiver performando. Isso valida nosso trabalho. É aqui que você fala: 'o método  funciona, eu indico'. Sabe aquela indicação que você faz pro seu cliente? É nesse momento que eu conto com você pra indicar nossa agência."
-
-
-
-ESCALA:
-
-"E depois que tá tudo validado, a gente parte pra Escala, implementando novos canais de aquisição."
-
-🎯 ETAPA 6 - ANCORAGEM EQUIPE
-
-"[NOME], nesse momento você pode até estar pensando: 'Cara, talvez eu possa montar uma equipe e fazer isso internamente'. E de fato, você pode. Para montar esse time de marketing dentro da sua empresa, você vai fazer um investimento médio de R$ 27.466.
-
-Mas não tem problema nenhum investir R$ 27.466 se fosse garantido que ia voltar meio milhão pra sua conta. É ou não é? Todo mundo ia querer. Mas sabe qual é o problema? Esse time interno, na maioria das vezes, não vai ter a expertise que nossa equipe tem e vai demorar 2, 3 meses para performar. O problema não é investir os 27 mil. O problema é investir e ficar esperando resultado.
-
-Na nossa empresa, você não paga nem metade desse valor"
-
-
-
-
-
-🎯 ETAPA 7 - PROBLEMA QUE NOSSO MÉTODO RESOLVE
-
-"E cara, deixa eu te mostrar os principais gargalos que o nosso método resolve depois que ele é implementado
-
-
-
-
-
-🎯 ETAPA 8 - PROVA SOCIAL
-
-[Dar zoom na tela]
-
-
-
-"Olha só, temos aqui um cliente que fechou 2 vendas já nos primeiros 40 dias. Esse outro aqui também fechou 2 vendas nos primeiros 40 dias. Esse aqui vendeu R$
-
-72.000 nos primeiros 40 dias trabalhando conosco.
-
-
-
-Mas será que nossa empresa é só de 40 dias? Não. Olha esse cliente mais antigo: vendeu 4 projetos no último mês. Esse aqui, após os 40 dias, também continuou fechando vendas consistentemente."
-
-[Voltar zoom - duplo clique]
-
-🎯 ETAPA 9 - PERGUNTAS SOBRE O MÉTODO
-
-“ Você acredita, que tudo o que te mostrei resolve seu problema agora? Sim ou não?”
-
- De tudo que te apresentei, o que você mais te chamou atenção?
-
-De zero a dez, qual valor você dá para a necessidade de ter essa solução na sua empresa hoje?
-
-Se ele falar menos de 10O que está faltando para ser 10?
-
-Então, hoje a necessidade é dez?”
-
-Depois da confirmação:
-
-“Perfeito, João.
-
-Você disse que gostou, que faz sentido para você e que a necessidade de ter essa solução hoje é dez.
-
-Então, tirando a parte de valores, digamos que exista um preço justo e que a gente consiga encaixar uma forma de pagamento viável com a sua realidade de hoje, eu posso considerar você um novo cliente da Simplifica?”
-
-
-
-[Se sim, seguir. Se não, voltar e explicar]
-
-
-
-
-
-🎯 ETAPA 11 - PIT #2 (PREÇO E GARANTIAS)
-
-"Perfeito, [NOME]. Então acho que a única dúvida que você tem agora é o preço, né? Deixa eu te explicar.
-
-Como te falei, temos a primeira fase que é o Setup. O Setup tem valor de investimento de R$ 2.000. É um pagamento único que você pode fazer até amanhã - PIX ou cartão em até 12x.
-
-Além do Setup, temos nosso plano de marketing, nossa assessoria mensal - a mão de obra que vai fazer você vender mais. O valor da assessoria é R$ 3.300. E cara, nosso pagamento é sempre pós-pago. Você não vai pagar agora. Só vai pagar daqui 40 dias e depois a cada 30 dias.
-
-Se fizer as contas, em um ano dá uns R$ 39.600. Mas lembrando que temos a garantia de resultado. Você sabe disso, né [NOME]? Se você não vender de 1 a 3 projetos nos primeiros 40 dias, você não paga os R$ 3.300. A gente vai trabalhar para que esses R$
-
-3.300 já estejam garantidos. Até porque eu preciso ganhar minha comissão. Se você não vender, eu fico no prejuízo duas vezes. Mas não é essa a intenção.
-
-Estamos no mesmo barco. Se der ruim pra você, dá ruim pra mim.
-
-
-
-E [NOME], eu tenho mais duas coisas muito importantes pra te falar. Tenho certeza que se você ficou até aqui comigo e já viu valor no que apresentei, vai gostar ainda mais do que vou te falar. Mas antes, você entendeu sobre os investimentos? Ficou claro pra ti?"
-
-
-
-
-
-🎯 ETAPA 12 - OBJEÇÕES DE PREÇO
-
-[Se tiver objeções, contornar]
-
-
-
-OBJEÇÃO: "Posso fazer sozinho depois"
-
-"Cara, ninguém constrói nada grande sozinho. Se você tem uma empresa, é porque quer que ela cresça. E pra crescer, precisa de gente. A gente tá aqui pra crescer junto. O sucesso não precisa ser solitário."
-
-
-
-Como lidar com dúvida no fechamento
-
-Se o cliente quiser parar para pensar, ele pode estar apenas tentando adiar a decisão.
-
-O vendedor precisa responder com naturalidade, sem pressão exagerada.
-
-Script exemplo
-
-Cliente: “Eu vou pensar.”
-
-Vendedor:
-
-“Claro, João. Você pode pensar com toda tranquilidade.
-
-Só me ajuda a entender uma coisa e melhorar como profissional : qual ponto exatamente você ainda está avaliando?
-
-É sobre a solução, sobre o valor, sobre a forma de pagamento ou sobre o momento?”Se ele falar sobre investimento aqui pode entrar na calculadora e você falar que trabalha com dinheiro futuro dele trazer agora pro racionalCalculadora Link
-
-Depois que ele responder, trate a dúvida com calma.
-
-Se ele disser:
-
-“Mas é para fazer agora?”
-
-Responda:
-
-“Sim, é para fazer agora, justamente porque a gente já alinhou o problema, a solução e o próximo passo. O que eu quero é te ajudar a tomar uma decisão com clareza.”
-
-Depois disso, pare de falar.
-
-O silêncio trabalha a favor do fechamento.🎯 ETAPA 14 - FECHAMENTO
-
-
-
-Se não for ao vivo, boa parte dos fechamentos não acontece depois.
-
-
-
-Script exemplo
-
-Esse investimento pode ser feito nessas 3 formas qual seria a melhor pra você? Pode ser uma entrada e restante no cartãoVocê prefere seguir no Pix, boleto ou cartão? .Como ficam esses valores para você hoje?
-
-Depois disso:
-
-Espere o cliente falar. Ouça as objeções. Não interrompa. Não tente justificar antes da hora.
-
-
-
-Pegando o pagamento
-
-Depois que o cliente concordar, conduza o pagamento de forma natural.
-
-Frases possíveis
-
-“Assim está fechado?” “Fica melhor esse ou esse aqui?” “Vamos fazer assim?” “Essa primeira, fica melhor para você no Pix ou no cartão?”
-
-Rito de fechamento
-
-Cliente: “Vamos fazer assim.” Vendedor: “Fica melhor parcelado?”
-
-Depois:
-
-“Perfeito, João. Vou abrir aqui meu painel para gerar o link.”
-
-Enquanto gera o link, vá para um assunto pessoal. Despressurize a venda.
-
+Por exemplo:
+“Primeiro: vocês têm uma meta, mas não existe uma matemática clara mostrando o que precisa acontecer para chegar nela.
+Segundo: vocês até conseguem acompanhar vendas e leads, mas não conseguem identificar com precisão onde estão as perdas.
+E terceiro: quando o mês termina, vocês sabem quanto venderam, mas não necessariamente conseguem prever quanto vão vender no próximo.”
+Então faça a pergunta:
+“Faz sentido essa leitura?”
+Espere o sim.
+Esse momento é importante porque o problema passa a ser validado pelo próprio cliente.
+
+
+DESCOBRIU QUAL A PRINCIPAL DOR? ENFATIZAR A SOLUÇÃO QUE RESOLVE A DOR, DURANTE A ETAPA DE APRESENTAÇÃO DE IMPACTO (5ª ETAPA)
+
+
+  -  Apresentação MÉTODO
+Agora vem a virada.
+“É exatamente esse problema que a gente resolve.
+E foi por isso que criamos a ROTA.”
+R — RESULTADO
+“Primeiro, definimos exatamente onde você quer chegar.
+Qual é a meta de faturamento? Quantas vendas? Qual ticket? Em quanto tempo?”
+O — OPORTUNIDADES
+“Depois, descobrimos quantas oportunidades precisam entrar para essa meta acontecer.
+De onde elas vêm, quanto custa gerar essas oportunidades e quais canais realmente fazem sentido.”
+T — TAXAS
+“Depois olhamos para as taxas.
+Quantas oportunidades viram atendimento? Quantas viram proposta? Quantas viram venda?
+Porque não adianta simplesmente gerar mais leads se o problema está na conversão.”
+A — ACOMPANHAMENTO
+“E finalmente, acompanhamos tudo isso.
+Porque a previsibilidade não vem de fazer um planejamento uma vez.
+Vem de acompanhar os números e corrigir a rota durante o caminho.”
+“A ROTA transforma uma meta em números, processos e ações para você saber o que precisa acontecer para chegar no resultado.”
+E então:
+“Você tem uma meta. A gente constrói a ROTA até ela.”
+DEMONSTRAÇÃO DOS NÚMEROS
+
+Aqui está uma das partes mais importantes da reunião.
+Calculadora: https://docs.google.com/spreadsheets/d/1NCTkq1zt79-b3BGW8xGVU0Z8yRcEKWhS0pDeIRFLE74/edit?gid=1659636408#gid=1659636408
+
+Você pega os números reais daquele negócio e constrói a ROTA na frente dele.
 Exemplo:
+Meta: R$ 200.000
+Ticket médio: R$ 5.000
+→ Precisamos de 40 vendas
+Se a taxa de fechamento é 20%:
+→ Precisamos de 200 oportunidades
+Se 40% dos leads viram oportunidades:
+→ Precisamos de 500 leads
+Agora você mostra:
+“Percebe a diferença?”
+“Antes você tinha uma meta de R$ 200 mil.”
+“Agora nós sabemos que, para chegar nesses R$ 200 mil, precisamos de aproximadamente 500 leads, 200 oportunidades e 40 vendas — considerando essas taxas.”
+E então:
+“Agora sua meta deixou de ser um desejo. Ela passou a ter uma matemática.”
+E aqui você encontra o gargalo.
+Se o cliente já gera 800 leads, mas só transforma 40 em vendas:
+“Então o problema provavelmente não está na quantidade de leads.”
+Se gera poucos leads:
+“Então existe um problema de geração de oportunidades.”
+Se gera muitas oportunidades, mas converte pouco:
+“Então precisamos olhar para o comercial.”
+Se as taxas são desconhecidas:
+“Então o primeiro problema é justamente a falta de controle.”
 
-“Enquanto eu faço o link, me conta uma coisa...”
 
-Depois:
+Agora eu vou te mostrar como eu entrego o meu trabalho  e valor de investimento, Você sentiu que nós conseguimos resolver o seu problema?
 
-“Pronto, João. Fiz aqui o link e enviei para você pelo WhatsApp. Vê se chegou.”
+só queria alinhar contigo de  ter o seu sim ou seu não nessa reunião pode ser?
 
-Cliente: “Perfeito, vou ver.”
 
-Vendedor: “Chegou?”
+ 6ª Ancoragem da equipe
 
-Cliente: “Sim.”
 
+ 7ª Depoimentos (Pegar o que mais encaixa com aquele cliente)
 
+ - Negociação
 
+CHECK LIST
+   8ª ETAPA:
 
+Alinhamento após apresentação de entregáveis -  Após o resumo da proposta antes de mostrar os valores
 
+1 - Na sua visão tudo isso, resolve o problema da sua empresa hoje?
 
+2 - Na sua visão a Simplifica te leva pra um próximo nível?
 
 
 
+Porque perguntei isso:
+“A próxima etapa é a etapa de negociação”
 
+E eu gosto de realizar um alinhamento aqui, eu não consigo entregar uma negociação para clientes que não estão preparados,  agora e hora da negociação você quer negociar comigo?
+Afinal, negociação é uma troca. tem que ser bom pra mim e pra você. Você está preparado? Quer negociar comigo?
 
-🎯 PEDIDO DE INDICAÇÕES
+Preço regular
 
-SE FECHOU:
 
-"[NOME], parabéns pela sua decisão! Não tenho dúvida que vamos gerar muito resultado. E cara, pra iniciar nossa parceria ainda melhor, quero te dar um site de presente. Sabe como? Me passa agora 2 contatos de empresários que você conhece - qualquer nicho. Se eu fechar com um deles, te dou o site grátis."
+Caso não avance no preço regular  entramos com a parte do CAF
 
 
+       9ª ETAPA:
 
-SE NÃO FECHOU:
+* Abraçar a objeção:
 
-"Cara, entendo que nossa parceria não vai iniciar agora, mas não precisamos deixar de nos falar. Já trocamos essa ideia todo esse tempo, já é uma amizade.
+“- Eu te entendo, também passo pelo mesmo processo quando vou tomar uma decisão”
 
-Deixa eu te entregar um presente. Temos um produto chamado Máquina de Leads - não é o que apresentei. Vale R$ 1.000. Se você indicar 2 contatos e eles fecharem, você ganha de graça. Se só um fechar, paga metade. Melhor que ficar sem nada, né? Me passa aí um contato agora no zap. Tô com celular aberto aqui."
+* Encontro a real objeção e forneço falsa sensação de escolha:
+“- Certo, me ajuda a melhorar como profissional. O fato que você precisa validar é relacionado a valor de investimento ou realmente eu não fui claro na minha apresentação?”.
+* (Matriz de isolamento de objeção).
 
 
+ 10ª ETAPA:
 
-CHECKLIST - ESTRUTURA DA REUNIÃO
+* Isolamento de objeção e criação de compromisso: (gatilho da coerência)
+“Certo, só pra eu entender melhor.. quer dizer que tirando o fator investimento, por você estamos fechados? - É SÓ ESSE FATOR?
 
+“Então vamos lá, eu tenho uma oferta especial aqui pra te fazer, se a questão é só financeira eu estou disposto a resolver pra você. Oferta CAF
 
+ Quer ouvir minha oferta?”
+caso ele não tenha falado qual é a melhor forma de pagamento? Mas me fala dessas maneiras qual é a melhor pra você? para tentar algo bom pra mim e pra você….
 
-CHECKLIST - ESTRUTURA DA REUNIÃO SIMPLIFICA✅
 
-PRÉ-REUNIÃO
+Olha vou aproveitar que meu sócio está na empresa hoje me diz qual é melhor forma de pagamento que vou tentar alguma coisa pra que fique bom pra mim e pra você nessa negociação
 
-[ ] Abrir apresentação na tela de boas-vindas
 
-[ ] Caderno e caneta do lado
+ - Fechamento
 
-[ ] Sorriso no rosto (energia alta)
+ 11ª ETAPA:
 
-[ ] fazer toda a pré análise da empresa
+* Oferta de Impacto CAF
+“Essa oferta que eu vou te entregar é o melhor que eu posso fazer, mas negociação é troca,  ganha ganha, então eu vou te pedir algo nessa negociação também, e é uma entrada aqui na reunião. Bora? você está disposto?”
 
+Não entenda como arrogância da minha parte é metodo.
+ Vou pensar: De 0 a 10 qual chance de dia dia do empresário te pegar e você não não avançar comigo?
+ Bora pra dentro do projeto?
 
+ 12ª ETAPA:
 
+*  Falsa sensação de conquista
+“Essa oferta é a melhor que consigo te entregar, mas eu tenho um sócio e preciso da validação. O que eu quero deixar acordado aqui com você, é que se eu ir até lá e conseguir validar essa oferta, você me faz o sinal aqui e vamos iniciar o projeto. Tenho seu compromisso? a oferta ficou boa?
 
-
-DURANTE A REUNIÃO
-
-✅ ETAPA 1 - APRESENTAÇÃO DO CLOSER- APRESENTAÇÃO DA AGÊNCIA
-
-[ ] Abrir slide da SIMPLIFICA
-
-[ ] Agência focada em vendas
-
-[ ] Localizada em Belo Horizonte/MG
-
-[ ] Presente em 25 estados
-
-[ ] Mais de 500 empresas atendidas
-
-[ ] Gera mais de 1 milhão em vendas/ano
-
-
-
-[ ] "Fala [nome], seja muito bem-vindo à nossa reunião"
-
-[ ] "Eu me chamo [nome], sou um dos executivos de vendas aqui da SIMPLIFICA"
-
-[ ] "Nos próximos minutos vou te mostrar como aumentar as vendas em até 42 dias"
-
-✅ ETAPA 2 - APRESENTAÇÃO DO LEAD
-
-[ ] "Antes de apresentar nossa metodologia, deixa eu te conhecer melhor"
-
-[ ] "Se apresenta aí, quanto tempo de mercado, como tá vendendo..."
-
-✅ ETAPA 3 - MAPEAMENTO (ANOTAR TUDO!)
-
-[ ] Tempo de mercado
-
-[ ] Quantas pessoas na equipe (atendimento)
-
-[ ] Faturamento médio atual (últimos 3 meses)
-
-[ ] Faturamento recorde da empresa
-
-[ ] Ticket médio das vendas
-
-[ ] Quantas vendas por mês
-
-[ ] Meta de faturamento para o ano
-
-[ ] Como faz as vendas hoje
-
-
-
-✅ ETAPA 6 - APRESENTAÇÃO DA METODOLOGIA
-
-[ ] BASE (Setup, PMI, Canais, Benchmark, CRM)
-
-[ ] TRAÇÃO (execução PMI, canais, capacitação)
-
-[ ] MATURAÇÃO (vendas realizadas)
-
-[ ] ESCALA (novos canais)
-
-✅ ETAPA 7 - ANCORAGEM EQUIPE
-
-[ ] "Você pode montar time interno: R$ 27.466"
-
-[ ] "Mas o problema é que demora para performar"
-
-[ ] "Conosco não paga nem metade e garantimos resultado"
-
-✅ ETAPA 8 - O QUE MÉTODO RESOLVE
-
-[ ] "Essas são métricas do pior cenário"
-
-[ ] "Canal de aquisição público frio"
-
-[ ] "Por isso implementamos múltiplos canais"
-
-✅ ETAPA 9 - PROVA SOCIAL
-
-[ ] Dar zoom nos resultados
-
-[ ] Mostrar 3-4 cases específicos
-
-[ ] "Cliente fechou X vendas em 40 dias"
-
-✅ ETAPA 10 - PERGUNTAS SOBRE O MÉTODO
-
-[ ] "Você entendeu como vamos entregar o resultado?"
-
-[ ] Se não, explicar novamente
-
-✅ ETAPA 13 - OBJEÇÕES DE PREÇO
-
-[ ] "Tu entendeu sobre os investimentos?"
-
-[ ] Contornar objeções específicas
-
-[ ] Manter postura e confiança
-
-
-
-PÓS-FECHAMENTO
-
-[ ] Colocar no grupo do WhatsApp
-
-[ ] Pedir 2 indicações (site de presente)
-
-[ ] "Parabéns pela sua decisão"
-
-[ ] Só sair quando estiver no grupo
-
-
-
-SE NÃO FECHOU
-
-[ ] Pedir indicações (Máquina de Leads)
-
-[ ] "Nossa parceria não vai iniciar agora, mas não precisamos deixar de nos falar"
-
-[ ] Manter porta aberta
-
-
-
-Transcrição 01
-
-Impromptu Google Meet Meeting - March 27
-`;
+A reunião inteira deve conduzir para uma ideia:
+
+* “Você não precisa adivinhar quanto vai vender. Você precisa saber o que precisa acontecer para vender.”
+* E a ROTA é o mecanismo que mostra esse caminho.
+* Resultado → Oportunidades → Taxas → Acompanhamento.
+* Meta → Matemática → Processo → Previsibilidade.
+
+
+ Pegar indicação
+
+MICRO LEARNING -
+
+1 - Fazer o cliente se sentir burro -
+Perguntar algo e fazer o cliente falar que não sabe o que é
+
+2 - Promover ensino -
+Dar uma pequena aula sobre o tema e deixar bem claro que : “- Vou te ensinar aqui pra você sair dessa reunião mais esperto do que entrou”
+
+3 - Apresentar uma solução -
+Mostrar na prática como você entrega a solução!
+`.trim();
+
+export const GUIA_MIN = 200;
+export const GUIA_MAX = 120_000;
+
+export type GuiaAtual = {
+  texto: string;
+  atualizadoEm: string | null;
+  atualizadoPor: string | null;
+  padrao: boolean;
+};
+
+export type VersaoGuia = {
+  id: string;
+  caracteres: number;
+  trecho: string;
+  substituidaEm: string | null;
+  autor: string | null;
+};
+
+const iso = (t: Timestamp | undefined | null) => t?.toDate?.().toISOString() ?? null;
+
+/** O guia em uso agora (o editado, ou o de fábrica). */
+export async function lerGuia(): Promise<GuiaAtual> {
+  const snap = await DOC.get();
+  const texto = (snap.get("texto") as string | undefined)?.trim();
+  if (!snap.exists || !texto) {
+    return { texto: GUIA_PADRAO, atualizadoEm: null, atualizadoPor: null, padrao: true };
+  }
+  return {
+    texto,
+    atualizadoEm: iso(snap.get("atualizadoEm")),
+    atualizadoPor: (snap.get("atualizadoPor") as string | null) ?? null,
+    padrao: false,
+  };
+}
+
+/** Grava um guia novo, guardando o anterior no histórico. */
+export async function salvarGuia(texto: string, autor: string | null): Promise<void> {
+  const anterior = await lerGuia();
+  if (anterior.texto.trim() === texto.trim()) return; // nada mudou
+
+  await HISTORICO.add({
+    texto: anterior.texto,
+    eraPadrao: anterior.padrao,
+    autorDaVersao: anterior.atualizadoPor,
+    substituidaEm: FieldValue.serverTimestamp(),
+    substituidaPor: autor,
+  });
+  await DOC.set({
+    texto: texto.trim(),
+    atualizadoEm: FieldValue.serverTimestamp(),
+    atualizadoPor: autor,
+  });
+}
+
+/** Últimas versões substituídas, da mais recente para a mais antiga. */
+export async function listarVersoes(limite = 15): Promise<VersaoGuia[]> {
+  const snap = await HISTORICO.orderBy("substituidaEm", "desc").limit(limite).get();
+  return snap.docs.map((d) => {
+    const texto = (d.get("texto") as string) ?? "";
+    return {
+      id: d.id,
+      caracteres: texto.length,
+      trecho: texto.slice(0, 140),
+      substituidaEm: iso(d.get("substituidaEm")),
+      autor: (d.get("substituidaPor") as string | null) ?? null,
+    };
+  });
+}
+
+/** Volta uma versão antiga (a atual também vai para o histórico). */
+export async function restaurarVersao(id: string, autor: string | null): Promise<boolean> {
+  const snap = await HISTORICO.doc(id).get();
+  const texto = snap.get("texto") as string | undefined;
+  if (!snap.exists || !texto) return false;
+  await salvarGuia(texto, autor ? `${autor} (restaurou)` : "restauração");
+  return true;
+}
 
 /** O guia formatado para entrar no prompt da análise de reunião. */
-export function guiaReuniaoTexto(): string {
+export async function guiaReuniaoTexto(): Promise<string> {
+  const { texto } = await lerGuia().catch(() => ({ texto: GUIA_PADRAO }));
   return [
-    "METODOLOGIA DA REUNIÃO SIMPLIFICA (script oficial do closer).",
-    "Avalie o vendedor CONTRA este roteiro: o que cumpriu, o que pulou e o",
-    "que fez fora de ordem. Ao apontar, cite a etapa pelo nome.",
+    "GUIA DA REUNIÃO DE FECHAMENTO SIMPLIFICA (a régua oficial do time).",
+    "Avalie o vendedor CONTRA este guia: o que cumpriu, o que pulou e o que",
+    "fez fora de ordem. Ao apontar, cite a etapa pelo nome que o guia usa.",
     "",
-    GUIA_REUNIAO.trim(),
+    texto,
   ].join("\n");
 }
